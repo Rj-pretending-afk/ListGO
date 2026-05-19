@@ -7,7 +7,7 @@
 
 ## 1. 当前阶段
 
-**Phase 1 · MVP 本地工具**（Phase 0 已完成）
+**Phase 2 · 视觉打磨**（Phase 0、Phase 1 已完成）
 
 每次会话开始时,先确认当前 Phase 和上次会话留下的进度。完成任务后及时更新 `PLANNING.md` 的 checkbox。
 

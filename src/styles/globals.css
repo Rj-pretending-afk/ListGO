@@ -15,3 +15,10 @@ body {
   color: var(--color-text);
   transition: background-color 0.2s, color 0.2s;
 }
+
+/* contenteditable placeholder */
+[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  opacity: 0.35;
+  pointer-events: none;
+}

@@ -1,8 +1,30 @@
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Header } from './components/layout/Header'
+import { useAppStore } from './lib/store'
+import Home from './pages/Home'
+import ListPage from './pages/ListPage'
+import NotFound from './pages/NotFound'
+
 export default function App() {
+  const init = useAppStore(s => s.init)
+
+  useEffect(() => {
+    init()
+  }, [init])
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }}>
-      <h1 className="p-8 text-2xl font-bold">💌 ListGo</h1>
-      <p className="px-8 opacity-60">Phase 0 · 项目搭建完成，待开发</p>
-    </div>
+    <BrowserRouter>
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <Header />
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/list/:id" element={<ListPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+      </div>
+    </BrowserRouter>
   )
 }

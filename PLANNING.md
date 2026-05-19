@@ -359,15 +359,18 @@ listgo/
 
 **目标：** 完整本地清单工具，三模块 + 四主题
 
-- [ ] IndexedDB schema
-- [ ] 主页：清单卡片网格
-- [ ] 创建清单（标题必填）
-- [ ] `+ 添加模块` → 选类型
-- [ ] **待办模块**：完整 CRUD
-- [ ] **文本模块**：纯文字编辑
-- [ ] **投票模块**：完整配置 + 投票交互 + 柱状图结果
-- [ ] **四主题**：Day / **Dark（默认）** / Light Pink / Dark Pink
-- [ ] 响应式布局
+- [x] IndexedDB schema（Dexie v4，`src/lib/db.ts`）
+- [x] 主页：清单卡片网格
+- [x] 创建清单（标题必填）
+- [x] `+ 添加模块` → 选类型
+- [x] **待办模块**：完整 CRUD（含小标题、勾选、删除）
+- [x] **文本模块**：纯文字编辑（contenteditable，Phase 2 升级富文本）
+- [x] **投票模块**：完整配置 + 投票交互 + 柱状图结果
+  - 本地用 `votes['local']` 记录投票，Phase 4 升级为多用户
+- [x] **四主题**：Day / Dark（默认）/ Light Pink / Dark Pink
+  - 通过 Zustand store + `data-theme` attribute 切换，localStorage 持久化
+- [x] 响应式布局（`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`）
+  - build 验证：TS 零报错，JS gzip 98KB
 
 **验收标准：**
 > 创建"今晚吃啥"清单，加投票模块（3 选项）。切换 Light Pink 后整体明亮温柔，切 Dark Pink 后是夜玫瑰氛围。手机能用。
@@ -1352,8 +1355,7 @@ node scripts/generate-seed-codes.ts 20    # 生成 20 个,打印到控制台
 - [Are.na](https://are.na) · 温柔小众的协作氛围
 
 ### 邀请码机制参考
-- 早期 Pinterest / Clubhouse 邀请制度
-- Mastodon 实例邀请码
+- 早期 论坛 邀请制度
 
 ---
 
