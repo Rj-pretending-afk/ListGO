@@ -1,6 +1,6 @@
 export const zh = {
   // Header
-  login: '登录', register: '注册', profileSettings: '个人设置', logout: '退出登录',
+  login: '登录', register: '注册', profileSettings: '个人设置', logout: '退出登录', switchAccount: '切换账号',
   // Home
   loading: '加载中…', myLists: '我的清单', newList: '新建',
   newListPlaceholder: '清单标题（必填）', cancel: '取消', create: '创建',
@@ -82,7 +82,7 @@ export const zh = {
 export type I18nKey = keyof typeof zh
 
 export const en: Record<I18nKey, string> = {
-  login: 'Login', register: 'Sign Up', profileSettings: 'Settings', logout: 'Logout',
+  login: 'Login', register: 'Sign Up', profileSettings: 'Settings', logout: 'Logout', switchAccount: 'Switch Account',
   loading: 'Loading…', myLists: 'My Lists', newList: 'New',
   newListPlaceholder: 'List title (required)', cancel: 'Cancel', create: 'Create',
   emptyHint: 'No lists yet. Click "New" to get started.', moduleCount: 'modules',

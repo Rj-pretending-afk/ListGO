@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Copy, Check, Plus } from 'lucide-react'
 import { createPortal } from 'react-dom'
@@ -30,7 +30,12 @@ export default function ProfilePage() {
   const [pendingAvatar, setPendingAvatar] = useState<string | null>(null)
   const [avatarLoading, setAvatarLoading] = useState(false)
 
-  if (!user) { navigate('/login'); return null }
+  // Redirect in effect to avoid calling navigate during render
+  useEffect(() => {
+    if (!user) navigate('/login')
+  }, [user, navigate])
+
+  if (!user) return null
 
   const saveName = async () => {
     if (!displayName.trim()) return

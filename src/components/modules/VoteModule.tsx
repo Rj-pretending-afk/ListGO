@@ -40,16 +40,27 @@ export function VoteModule({ module, onChange, contentFontSettings }: VoteModule
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-3 text-xs select-none" style={{ color: 'var(--color-text)', opacity: 0.45 }}>
-        <button onClick={() => update({ multiSelect: !module.multiSelect })}
-          className="hover:opacity-80 transition-opacity underline-offset-2 hover:underline">
-          {module.multiSelect ? t('voteMulti') : t('voteSingle')}
-        </button>
-        <button onClick={() => update({ anonymous: !module.anonymous })}
-          className="hover:opacity-80 transition-opacity underline-offset-2 hover:underline">
-          {module.anonymous ? t('voteAnon') : t('voteReal')}
-        </button>
-        {totalVotes > 0 && <span>{totalVotes} {t('voteTotal')}</span>}
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: module.multiSelect ? t('voteMulti') : t('voteSingle'), active: module.multiSelect, onClick: () => update({ multiSelect: !module.multiSelect }) },
+          { label: module.anonymous   ? t('voteAnon')  : t('voteReal'),   active: module.anonymous,   onClick: () => update({ anonymous:   !module.anonymous   }) },
+        ].map(({ label, active, onClick }) => (
+          <button key={label} onClick={onClick}
+            className="px-2.5 py-0.5 rounded-full text-xs transition-all hover:opacity-90 select-none"
+            style={{
+              border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-text)'}`,
+              backgroundColor: active ? 'color-mix(in srgb, var(--color-primary) 18%, transparent)' : 'color-mix(in srgb, var(--color-text) 8%, transparent)',
+              color: active ? 'var(--color-primary)' : 'var(--color-text)',
+              opacity: active ? 1 : 0.55,
+            }}>
+            {label}
+          </button>
+        ))}
+        {totalVotes > 0 && (
+          <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.35 }}>
+            {totalVotes} {t('voteTotal')}
+          </span>
+        )}
       </div>
 
       <div className="space-y-2">

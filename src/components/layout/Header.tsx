@@ -27,7 +27,7 @@ function UserMenu() {
   const [open, setOpen] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
-  const handleLogout = () => { logout(); setOpen(false); navigate('/') }
+  const handleLogout = () => { setOpen(false); navigate('/'); logout() }
 
   return (
     <div className="relative">
@@ -61,6 +61,12 @@ function UserMenu() {
               style={{ color: 'var(--color-text)' }}>
               {t('profileSettings')}
             </Link>
+            <div style={{ borderTop: '1px solid var(--color-border)' }} />
+            <button onClick={() => { logout(); setOpen(false); navigate('/login') }}
+              className="w-full flex items-center px-4 py-3 text-sm hover:opacity-70"
+              style={{ color: 'var(--color-text)', opacity: 0.65 }}>
+              {t('switchAccount')}
+            </button>
             <div style={{ borderTop: '1px solid var(--color-border)' }} />
             <button onClick={handleLogout}
               className="w-full flex items-center px-4 py-3 text-sm hover:opacity-70"

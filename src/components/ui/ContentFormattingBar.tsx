@@ -37,7 +37,12 @@ export function ContentFormattingBar({ settings, onChange }: ContentFormattingBa
 
   return (
     <div className="flex items-center gap-1 px-2 py-1.5 flex-wrap"
-      style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)' }}>
+      style={{
+        borderBottom: '1px solid color-mix(in srgb, var(--color-border) 60%, transparent)',
+        backgroundColor: 'color-mix(in srgb, var(--color-card) 70%, transparent)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+      }}>
 
       {/* Bold */}
       <button className={btnBase} onClick={() => toggle('bold')} title={t('fmtBold')}
