@@ -118,10 +118,11 @@ export async function handleMe(
   if (!auth) return err('Unauthorized', 401)
 
   const user = await env.DB.prepare(
-    'SELECT id, username, display_name, avatar_color, invite_codes_remaining, is_admin FROM users WHERE id = ?'
+    'SELECT id, username, display_name, avatar_color, avatar_image, invite_codes_remaining, is_admin FROM users WHERE id = ?'
   ).bind(auth.userId).first<{
     id: string; username: string; display_name: string
-    avatar_color: string; invite_codes_remaining: number; is_admin: number
+    avatar_color: string; avatar_image: string | null
+    invite_codes_remaining: number; is_admin: number
   }>()
   if (!user) return err('User not found', 404)
 
@@ -134,6 +135,7 @@ export async function handleMe(
     username: user.username,
     displayName: user.display_name,
     avatarColor: user.avatar_color,
+    avatarImage: user.avatar_image ?? undefined,
     isAdmin: Boolean(user.is_admin),
     inviteCodes: (codes.results ?? []).map(c => ({
       code: c.code,
@@ -150,7 +152,7 @@ export async function handleUpdateProfile(
 ): Promise<Response> {
   if (!auth) return err('Unauthorized', 401)
 
-  let body: { displayName?: string; avatarColor?: string }
+  let body: { displayName?: string; avatarColor?: string; avatarImage?: string | null }
   try { body = await request.json() } catch { return err('Invalid JSON', 400) }
 
   const updates: string[] = []
@@ -166,6 +168,14 @@ export async function handleUpdateProfile(
     if (!/^#[0-9a-fA-F]{6}$/.test(body.avatarColor)) return err('颜色格式无效', 400)
     updates.push('avatar_color = ?')
     values.push(body.avatarColor)
+  }
+  if ('avatarImage' in body) {
+    if (body.avatarImage !== null && body.avatarImage !== undefined &&
+        !String(body.avatarImage).startsWith('data:image')) {
+      return err('无效的图片格式', 400)
+    }
+    updates.push('avatar_image = ?')
+    values.push(body.avatarImage ?? null)
   }
   if (updates.length === 0) return err('无可更新字段', 400)
 

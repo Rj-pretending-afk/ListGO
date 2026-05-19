@@ -25,6 +25,7 @@ dist-ssr
 .env.*.local
 .env.development
 .env.production
+.dev.vars
 
 # wrangler (Phase 3+)
 .wrangler/

@@ -3,6 +3,7 @@ export interface User {
   username: string
   displayName: string
   avatarColor: string
+  avatarImage?: string
   isAdmin: boolean
   inviteCodes: InviteCodeInfo[]
 }

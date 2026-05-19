@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { ThemeSwitcher } from '../theme/ThemeSwitcher'
 import { useAuthStore } from '../../hooks/useAuth'
+import { AvatarDisplay } from '../../pages/ProfilePage'
 
 function UserMenu() {
   const navigate = useNavigate()
@@ -23,12 +24,7 @@ function UserMenu() {
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-2 px-2 py-1 rounded-lg hover:opacity-80 transition-opacity"
       >
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold select-none flex-shrink-0"
-          style={{ backgroundColor: user!.avatarColor }}
-        >
-          {user!.username[0].toUpperCase()}
-        </div>
+        <AvatarDisplay user={user!} size={28} />
         <span className="text-sm max-w-[80px] truncate" style={{ color: 'var(--color-text)' }}>
           {user!.displayName}
         </span>
