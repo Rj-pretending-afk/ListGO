@@ -124,41 +124,45 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Avatar upload */}
+      {/* Avatar + color — single row */}
       <div className="rounded-xl p-5 mb-4" style={card}>
-        <p className="text-xs font-medium mb-3" style={secLabel}>{t('profileAvatar')}</p>
         <div className="flex items-center gap-4">
-          <AvatarDisplay user={user} size={56} />
-          <div className="flex flex-col gap-2">
+          {/* Left: avatar preview + action buttons */}
+          <div className="flex flex-col items-center gap-2 flex-shrink-0">
+            <AvatarDisplay user={user} size={52} />
             <button onClick={() => fileRef.current?.click()} disabled={avatarLoading}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40"
+              className="px-2.5 py-1 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40 whitespace-nowrap"
               style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
               {avatarLoading ? t('profileProcessing') : t('profileUploadAvatar')}
             </button>
             {user.avatarImage && (
               <button onClick={removeAvatar} disabled={avatarLoading}
-                className="px-3 py-1.5 rounded-lg text-xs hover:opacity-70 disabled:opacity-40"
+                className="px-2.5 py-1 rounded-lg text-xs hover:opacity-70 disabled:opacity-40 whitespace-nowrap"
                 style={{ color: '#ef4444', border: '1px solid var(--color-border)' }}>
                 {t('profileRemoveAvatar')}
               </button>
             )}
           </div>
+
+          {/* Right: 7 preset colors + custom picker */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {AVATAR_COLORS.map(({ label, value }) => (
+              <button key={value} onClick={() => saveColor(value)} title={label}
+                className="w-8 h-8 rounded-full transition-transform hover:scale-110 flex-shrink-0"
+                style={{ backgroundColor: value, outline: user.avatarColor === value ? `3px solid var(--color-text)` : 'none', outlineOffset: '2px' }} />
+            ))}
+            {/* Custom color */}
+            <label className="w-8 h-8 rounded-full cursor-pointer hover:scale-110 transition-transform flex-shrink-0 relative overflow-hidden border-2"
+              style={{ borderColor: 'var(--color-border)', backgroundColor: AVATAR_COLORS.some(c => c.value === user.avatarColor) ? 'transparent' : user.avatarColor }}
+              title="Custom">
+              <span className="absolute inset-0 flex items-center justify-center text-xs select-none"
+                style={{ color: 'var(--color-text)', opacity: 0.5 }}>+</span>
+              <input type="color" className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                value={user.avatarColor} onChange={e => saveColor(e.target.value)} />
+            </label>
+          </div>
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} />
-      </div>
-
-      {/* Avatar color */}
-      <div className="rounded-xl p-5 mb-4" style={card}>
-        <p className="text-xs font-medium mb-3" style={secLabel}>
-          {t('profileColorLabel')}{user.avatarImage ? t('profileColorWithImg') : ''}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {AVATAR_COLORS.map(({ label, value }) => (
-            <button key={value} onClick={() => saveColor(value)} title={label}
-              className="w-8 h-8 rounded-full transition-transform hover:scale-110"
-              style={{ backgroundColor: value, outline: user.avatarColor === value ? `3px solid var(--color-text)` : 'none', outlineOffset: '2px' }} />
-          ))}
-        </div>
       </div>
 
       {/* Display name */}
