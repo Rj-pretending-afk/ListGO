@@ -10,7 +10,8 @@ import { useAppStore } from '../lib/store'
 export default function Home() {
   const t = useT()
   const lang = useLangStore(s => s.lang)
-  const { timeFormat, toggleTimeFormat } = useAppStore(s => ({ timeFormat: s.timeFormat, toggleTimeFormat: s.toggleTimeFormat }))
+  const timeFormat = useAppStore(s => s.timeFormat)
+  const toggleTimeFormat = useAppStore(s => s.toggleTimeFormat)
 
   const fmt = (ts: number) => timeFormat === 'relative'
     ? formatDistanceToNow(ts, { locale: lang === 'zh' ? zhCN : undefined, addSuffix: true })
