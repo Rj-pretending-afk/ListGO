@@ -345,12 +345,15 @@ listgo/
 
 ### Phase 0 · 项目搭建（预计 0.5 天）
 
-- [ ] Vite + React + TypeScript 初始化
-- [ ] Tailwind CSS + CSS 变量配置（4 主题占位）
-- [ ] 安装核心依赖
-- [ ] 创建 GitHub 仓库
-- [ ] .gitignore、README.md、PLANNING.md
-- [ ] 验证 `npm run dev` 跑通
+- [x] Vite + React + TypeScript 初始化
+- [x] Tailwind CSS + CSS 变量配置（4 主题占位）
+  - 使用 Tailwind v4 + `@tailwindcss/vite`（无需 postcss/tailwind.config.js）
+  - 主题通过 `data-theme` attribute + CSS 变量实现
+- [x] 安装核心依赖
+- [x] 创建 GitHub 仓库
+- [x] .gitignore、README.md、PLANNING.md
+- [x] 验证 `npm run dev` 跑通
+  - `npm run build` 验证：TS 零报错，产物 JS 46KB gzip（远低于 200KB 限制）
 
 ### Phase 1 · MVP 本地工具（预计 4-5 天）
 

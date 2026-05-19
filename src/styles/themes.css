@@ -1,0 +1,37 @@
+/* ☀ Day */
+[data-theme="day"] {
+  --color-bg: #FAFAF8;
+  --color-card: #FFFFFF;
+  --color-primary: #10B981;
+  --color-text: #1F2937;
+  --color-border: #E5E7EB;
+}
+
+/* 🌙 Dark (default) */
+[data-theme="dark"] {
+  --color-bg: #0F172A;
+  --color-card: #1E293B;
+  --color-primary: #34D399;
+  --color-text: #F1F5F9;
+  --color-border: #334155;
+}
+
+/* 🌸 Light Pink */
+[data-theme="light-pink"] {
+  --color-bg: #FFF1F5;
+  --color-card: #FFFFFF;
+  --color-primary: #EC4899;
+  --color-accent: #F472B6;
+  --color-text: #831843;
+  --color-border: #FCE7F3;
+}
+
+/* 🥀 Dark Pink */
+[data-theme="dark-pink"] {
+  --color-bg: #1F0A14;
+  --color-card: #3D1428;
+  --color-primary: #F472B6;
+  --color-accent: #EC4899;
+  --color-text: #FCE7F3;
+  --color-border: #5B1E3D;
+}
