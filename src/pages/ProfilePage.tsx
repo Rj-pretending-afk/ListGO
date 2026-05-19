@@ -27,6 +27,7 @@ export default function ProfilePage() {
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [pendingAvatar, setPendingAvatar] = useState<string | null>(null)
   const [avatarLoading, setAvatarLoading] = useState(false)
 
   if (!user) { navigate('/login'); return null }
@@ -61,11 +62,18 @@ export default function ProfilePage() {
   }
 
   const handleCropConfirm = async (dataUrl: string) => {
-    setCropSrc(null); setAvatarLoading(true)
+    setCropSrc(null)
+    const resized = await resizeDataUrl(dataUrl, 200)
+    setPendingAvatar(resized)
+  }
+
+  const savePendingAvatar = async () => {
+    if (!pendingAvatar) return
+    setAvatarLoading(true)
     try {
-      const resized = await resizeDataUrl(dataUrl, 200)
-      await api.put('/auth/profile', { avatarImage: resized })
-      updateUser({ avatarImage: resized })
+      await api.put('/auth/profile', { avatarImage: pendingAvatar })
+      updateUser({ avatarImage: pendingAvatar })
+      setPendingAvatar(null)
     } catch { /* ignore */ }
     finally { setAvatarLoading(false) }
   }
@@ -126,18 +134,39 @@ export default function ProfilePage() {
 
       {/* Avatar + color */}
       <div className="rounded-xl p-5 mb-4" style={card}>
-        <div className="flex items-center gap-3">
-          {/* Avatar */}
-          <AvatarDisplay user={user} size={52} />
-
-          {/* Rows: [btn] [●●●●] */}
-          <div className="flex flex-col gap-2 flex-1 min-w-0">
-            {/* Row 1: upload + first 4 colors */}
-            <div className="flex items-center gap-2">
-              <button onClick={() => fileRef.current?.click()} disabled={avatarLoading}
-                className="flex-shrink-0 w-24 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40 text-center"
+        {/* Pending avatar preview */}
+        {pendingAvatar && (
+          <div className="flex items-center gap-4 mb-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--color-border)' }}>
+            <img src={pendingAvatar} alt="preview"
+              className="rounded-full object-cover flex-shrink-0"
+              style={{ width: 52, height: 52, border: `2px solid ${user.avatarColor}` }} />
+            <div className="flex flex-col gap-2 flex-1">
+              <button onClick={savePendingAvatar} disabled={avatarLoading}
+                className="w-full py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40"
                 style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                {avatarLoading ? t('profileProcessing') : t('profileUploadAvatar')}
+                {avatarLoading ? t('profileProcessing') : t('profileSave')}
+              </button>
+              <button onClick={() => { setPendingAvatar(null); fileRef.current?.click() }}
+                className="w-full py-1.5 rounded-lg text-xs hover:opacity-70"
+                style={{ color: 'var(--color-text)', opacity: 0.6, border: '1px solid var(--color-border)' }}>
+                {t('cropCancel')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-5">
+          {/* Avatar — larger */}
+          <AvatarDisplay user={user} size={64} />
+
+          {/* Button col + color col, equal share */}
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
+            {/* Row 1 */}
+            <div className="flex items-center gap-4">
+              <button onClick={() => fileRef.current?.click()} disabled={avatarLoading || !!pendingAvatar}
+                className="flex-shrink-0 w-28 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40 text-center"
+                style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                {t('profileUploadAvatar')}
               </button>
               <div className="flex gap-2">
                 {AVATAR_COLORS.slice(0, 4).map(({ label, value }) => (
@@ -148,16 +177,16 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Row 2: remove (or spacer) + last 3 colors + custom */}
-            <div className="flex items-center gap-2">
+            {/* Row 2 */}
+            <div className="flex items-center gap-4">
               {user.avatarImage ? (
                 <button onClick={removeAvatar} disabled={avatarLoading}
-                  className="flex-shrink-0 w-24 py-1.5 rounded-lg text-xs hover:opacity-70 disabled:opacity-40 text-center"
+                  className="flex-shrink-0 w-28 py-1.5 rounded-lg text-xs hover:opacity-70 disabled:opacity-40 text-center"
                   style={{ color: '#ef4444', border: '1px solid var(--color-border)' }}>
                   {t('profileRemoveAvatar')}
                 </button>
               ) : (
-                <div className="flex-shrink-0 w-24" />
+                <div className="flex-shrink-0 w-28" />
               )}
               <div className="flex gap-2">
                 {AVATAR_COLORS.slice(4).map(({ label, value }) => (
@@ -165,7 +194,6 @@ export default function ProfilePage() {
                     className="w-8 h-8 rounded-full transition-transform hover:scale-110 flex-shrink-0"
                     style={{ backgroundColor: value, outline: user.avatarColor === value ? '3px solid var(--color-text)' : 'none', outlineOffset: '2px' }} />
                 ))}
-                {/* Custom color circle */}
                 <label
                   className="w-8 h-8 rounded-full border-2 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform flex-shrink-0 relative"
                   style={{
@@ -257,7 +285,7 @@ export default function ProfilePage() {
       </div>
 
       {cropSrc && createPortal(
-        <CropModal src={cropSrc} onConfirm={handleCropConfirm} onClose={() => setCropSrc(null)} />,
+        <CropModal src={cropSrc} onConfirm={handleCropConfirm} onClose={() => setCropSrc(null)} shape="circle" />,
         document.body
       )}
     </div>
