@@ -46,6 +46,8 @@ export interface TextModule {
   background?: ModuleBackground
   fontSettings?: ModuleFontSettings
   customLabel?: string
+  createdAt?: number
+  updatedAt?: number
 }
 
 export interface TodoModule {
@@ -56,6 +58,8 @@ export interface TodoModule {
   background?: ModuleBackground
   fontSettings?: ModuleFontSettings
   customLabel?: string
+  createdAt?: number
+  updatedAt?: number
 }
 
 export interface TodoItem {
@@ -76,6 +80,8 @@ export interface VoteModule {
   background?: ModuleBackground
   fontSettings?: ModuleFontSettings
   customLabel?: string
+  createdAt?: number
+  updatedAt?: number
 }
 
 export interface VoteOption {

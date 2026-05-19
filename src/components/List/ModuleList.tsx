@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { formatDistanceToNow, format } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
+import { Clock } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -12,7 +15,8 @@ import { TextModule } from '../modules/TextModule'
 import { ModuleMenu } from '../ui/ModuleMenu'
 import { ModuleSettingsPicker } from '../ui/ModuleSettingsPicker'
 import { FontSettingsPicker } from '../ui/FontSettingsPicker'
-import { useT } from '../../hooks/useLang'
+import { useT, useLangStore } from '../../hooks/useLang'
+import { useAppStore } from '../../lib/store'
 import type { List, Module, ModuleBackground, ModuleFontSettings } from '../../types/list.types'
 
 const MODULE_ICONS: Record<Module['type'], string> = {
@@ -27,26 +31,30 @@ interface SortableModuleProps {
 
 function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModuleProps) {
   const t = useT()
+  const lang = useLangStore(s => s.lang)
+  const { timeFormat, toggleTimeFormat } = useAppStore(s => ({ timeFormat: s.timeFormat, toggleTimeFormat: s.toggleTimeFormat }))
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: module.id })
   const icon = MODULE_ICONS[module.type]
   const DEFAULT_LABELS = { todo: t('moduleLabelTodo'), vote: t('moduleLabelVote'), text: t('moduleLabelText') }
   const defaultLabel = DEFAULT_LABELS[module.type]
+  const defaultFull = `${icon} ${defaultLabel}`
   const bg = module.background
 
-  // Label editing state
   const [editingLabel, setEditingLabel] = useState(false)
   const [labelDraft, setLabelDraft] = useState('')
 
-  const displayLabel = module.customLabel || defaultLabel
+  // Show customLabel if set, otherwise emoji + default label as one string
+  const displayLabel = module.customLabel || defaultFull
 
   const saveLabel = () => {
     const trimmed = labelDraft.trim()
-    onUpdateModule({ ...module, customLabel: trimmed || undefined } as Module)
+    // If user typed back exactly the default, treat as "no custom label"
+    onUpdateModule({ ...module, customLabel: (trimmed && trimmed !== defaultFull) ? trimmed : undefined } as Module)
     setEditingLabel(false)
   }
 
   const startEditLabel = () => {
-    setLabelDraft(module.customLabel ?? '')
+    setLabelDraft(module.customLabel ?? defaultFull)
     setEditingLabel(true)
   }
 
@@ -90,10 +98,8 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
           {hasBg && <div style={{ position: 'absolute', inset: 0, ...bgLayerStyle }} />}
 
           <div style={{ position: 'relative', zIndex: 1, padding: '1rem' }}>
-            {/* Header row */}
+            {/* Header row — emoji is part of the editable label */}
             <div className="flex items-center gap-1.5 mb-2">
-              <span className="text-sm select-none">{icon}</span>
-
               {editingLabel ? (
                 <input
                   autoFocus
@@ -105,14 +111,14 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
                     if (e.key === 'Enter') saveLabel()
                     if (e.key === 'Escape') setEditingLabel(false)
                   }}
-                  placeholder={defaultLabel}
-                  className="flex-1 bg-transparent outline-none font-medium min-w-0 text-xs"
+                  placeholder={defaultFull}
+                  className="flex-1 bg-transparent outline-none font-medium min-w-0 text-sm"
                   style={labelStyle}
                 />
               ) : (
                 <span
                   onClick={startEditLabel}
-                  className="font-medium select-none flex-1 cursor-text hover:opacity-70 transition-opacity truncate"
+                  className="font-medium select-none flex-1 cursor-text hover:opacity-70 transition-opacity truncate text-sm"
                   style={labelStyle}
                   title={t('editLabelHint')}
                 >
@@ -136,6 +142,31 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
             {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} />}
             {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} />}
             {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} />}
+
+            {/* Timestamps */}
+            {(module.createdAt || module.updatedAt) && (
+              <div className="flex items-center gap-3 mt-2 pt-1.5"
+                style={{ borderTop: '1px solid var(--color-border)', opacity: 0.3 }}>
+                {module.createdAt && (
+                  <span className="text-xs" style={{ color: 'var(--color-text)' }}>
+                    {t('timeCreated')} {timeFormat === 'relative'
+                      ? formatDistanceToNow(module.createdAt, { locale: lang === 'zh' ? zhCN : undefined, addSuffix: true })
+                      : format(module.createdAt, 'MM/dd HH:mm')}
+                  </span>
+                )}
+                {module.updatedAt && module.updatedAt !== module.createdAt && (
+                  <span className="text-xs" style={{ color: 'var(--color-text)' }}>
+                    {t('timeModified')} {timeFormat === 'relative'
+                      ? formatDistanceToNow(module.updatedAt, { locale: lang === 'zh' ? zhCN : undefined, addSuffix: true })
+                      : format(module.updatedAt, 'MM/dd HH:mm')}
+                  </span>
+                )}
+                <button onClick={toggleTimeFormat} className="ml-auto hover:opacity-70 transition-opacity"
+                  title={t('toggleTimeFormat')} style={{ color: 'var(--color-text)' }}>
+                  <Clock size={11} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

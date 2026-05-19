@@ -51,8 +51,13 @@ export function VoteModule({ module, onChange }: VoteModuleProps) {
           return (
             <div key={opt.id} className="flex items-center gap-2 group">
               <button onClick={() => castVote(opt.id)}
-                className="w-4 h-4 flex-shrink-0 border-2 transition-colors"
-                style={{ borderColor: voted ? 'var(--color-primary)' : 'var(--color-border)', backgroundColor: voted ? 'var(--color-primary)' : 'transparent', borderRadius: module.multiSelect ? '3px' : '50%' }} />
+                className="w-5 h-5 flex-shrink-0 border-2 transition-all"
+                style={{
+                  borderColor: 'var(--color-primary)',
+                  backgroundColor: voted ? 'var(--color-primary)' : 'transparent',
+                  borderRadius: module.multiSelect ? '4px' : '50%',
+                  opacity: voted ? 1 : 0.35,
+                }} />
               <IMEInput value={opt.text}
                 onChange={v => update({ options: module.options.map(o => o.id === opt.id ? { ...o, text: v } : o) })}
                 placeholder={t('voteOption')}
@@ -68,8 +73,8 @@ export function VoteModule({ module, onChange }: VoteModuleProps) {
             </div>
           )
         })}
-        <button onClick={addOption} className="flex items-center gap-1 text-xs mt-1 hover:opacity-70 transition-opacity"
-          style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+        <button onClick={addOption} className="flex items-center gap-1 text-xs mt-1 hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--color-primary)', opacity: 0.75 }}>
           <Plus size={12} /> {t('voteAddOption')}
         </button>
       </div>

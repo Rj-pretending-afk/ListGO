@@ -69,6 +69,8 @@ export const zh = {
   profilePwLabel: '修改密码',
   profileOldPw: '当前密码', profileNewPw: '新密码（至少 8 字符）', profileConfirmPw: '确认新密码',
   profileChangePw: '确认修改', profileChangingPw: '修改中…', profileLogout: '退出登录',
+  // Timestamps
+  timeCreated: '创建', timeModified: '修改', toggleTimeFormat: '切换时间格式',
   // Feedback messages
   saved: '已保存', saveFailed: '保存失败',
   pwChanged: '密码已修改', pwMismatch: '两次密码不一致',
@@ -134,6 +136,7 @@ export const en: Record<I18nKey, string> = {
   profilePwLabel: 'Change Password',
   profileOldPw: 'Current password', profileNewPw: 'New password (≥8 chars)', profileConfirmPw: 'Confirm new password',
   profileChangePw: 'Change Password', profileChangingPw: 'Saving…', profileLogout: 'Logout',
+  timeCreated: 'Created', timeModified: 'Modified', toggleTimeFormat: 'Toggle time format',
   saved: 'Saved', saveFailed: 'Save failed',
   pwChanged: 'Password changed', pwMismatch: 'Passwords do not match',
   pwTooShort: 'New password must be at least 8 characters', changeFailed: 'Failed to change',

@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
+import { Plus, X, Clock } from 'lucide-react'
+import { formatDistanceToNow, format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useLists, useLoaded, useListActions } from '../hooks/useList'
 import { useT, useLangStore } from '../hooks/useLang'
+import { useAppStore } from '../lib/store'
 
 export default function Home() {
   const t = useT()
   const lang = useLangStore(s => s.lang)
+  const { timeFormat, toggleTimeFormat } = useAppStore(s => ({ timeFormat: s.timeFormat, toggleTimeFormat: s.toggleTimeFormat }))
+
+  const fmt = (ts: number) => timeFormat === 'relative'
+    ? formatDistanceToNow(ts, { locale: lang === 'zh' ? zhCN : undefined, addSuffix: true })
+    : format(ts, 'MM/dd HH:mm')
   const lists = useLists()
   const loaded = useLoaded()
   const { createList, deleteList } = useListActions()
@@ -81,9 +87,24 @@ export default function Home() {
               <h3 className="font-semibold text-sm mb-1.5 pr-6 truncate" style={{ color: 'var(--color-text)' }}>
                 {list.title}
               </h3>
-              <p className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.45 }}>
-                {list.modules.length} {t('moduleCount')} · {formatDistanceToNow(list.updatedAt, { locale: lang === 'zh' ? zhCN : undefined, addSuffix: true })}
-              </p>
+              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.45 }}>
+                  {list.modules.length} {t('moduleCount')}
+                </span>
+                <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.3 }}>·</span>
+                <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.45 }}>
+                  {t('timeCreated')} {fmt(list.createdAt)}
+                </span>
+                <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.3 }}>·</span>
+                <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.45 }}>
+                  {t('timeModified')} {fmt(list.updatedAt)}
+                </span>
+                <button onClick={e => { e.stopPropagation(); toggleTimeFormat() }}
+                  className="hover:opacity-70 transition-opacity ml-auto"
+                  title={t('toggleTimeFormat')} style={{ color: 'var(--color-text)', opacity: 0.3 }}>
+                  <Clock size={10} />
+                </button>
+              </div>
               <button onClick={e => { e.stopPropagation(); deleteList(list.id) }}
                 className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:opacity-70"
                 style={{ color: 'var(--color-text)' }}><X size={14} /></button>

@@ -22,6 +22,8 @@ function ts() {
 interface AppStore {
   theme: Theme
   cycleTheme: () => void
+  timeFormat: 'relative' | 'absolute'
+  toggleTimeFormat: () => void
   lists: List[]
   loaded: boolean
   init: () => Promise<void>
@@ -46,6 +48,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return { theme: next }
     })
   },
+
+  timeFormat: 'relative' as const,
+  toggleTimeFormat: () => set(s => ({ timeFormat: s.timeFormat === 'relative' ? 'absolute' : 'relative' })),
 
   lists: [],
   loaded: false,
@@ -87,10 +92,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!list) return
 
     const id = generateModuleId()
+    const now = ts()
     let module: Module
 
     if (type === 'todo') {
-      const m: TodoModule = { id, type: 'todo', items: [] }
+      const m: TodoModule = { id, type: 'todo', items: [], createdAt: now, updatedAt: now }
       module = m
     } else if (type === 'vote') {
       const m: VoteModule = {
@@ -103,13 +109,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         multiSelect: false,
         anonymous: false,
         votes: {},
+        createdAt: now,
+        updatedAt: now,
       }
       module = m
     } else {
-      module = { id, type: 'text', content: '' }
+      module = { id, type: 'text', content: '', createdAt: now, updatedAt: now }
     }
 
-    const t = ts()
+    const t = now
     const modules = [...list.modules, module]
     await db.lists.update(listId, { modules, updatedAt: t })
     set(s => ({ lists: s.lists.map(l => l.id === listId ? { ...l, modules, updatedAt: t } : l) }))
@@ -120,7 +128,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!list) return
 
     const t = ts()
-    const modules = list.modules.map(m => m.id === updatedModule.id ? updatedModule : m)
+    const stamped = { ...updatedModule, updatedAt: t }
+    const modules = list.modules.map(m => m.id === updatedModule.id ? stamped : m)
     // 先同步更新 Zustand（React 立即拿到正确值，不会在 IME 组合期间重置 DOM）
     set(s => ({ lists: s.lists.map(l => l.id === listId ? { ...l, modules, updatedAt: t } : l) }))
     // 后台持久化，不阻塞 UI
