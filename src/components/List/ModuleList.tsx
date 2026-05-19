@@ -20,51 +20,64 @@ import { TextModule } from '../modules/TextModule'
 import { ModuleMenu } from '../ui/ModuleMenu'
 import type { List, Module } from '../../types/list.types'
 
-const MODULE_LABELS: Record<Module['type'], string> = {
-  todo: '✅ 待办',
-  vote: '📊 投票',
-  text: '📝 文本',
+const MODULE_META: Record<Module['type'], { icon: string; label: string }> = {
+  todo: { icon: '✅', label: '待办' },
+  vote: { icon: '📊', label: '投票' },
+  text: { icon: '📝', label: '文本' },
 }
 
 interface SortableModuleProps {
   module: Module
+  cardOpacity: number
   onUpdateModule: (module: Module) => void
   onDeleteModule: (id: string) => void
 }
 
-function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModuleProps) {
+function SortableModule({ module, cardOpacity, onUpdateModule, onDeleteModule }: SortableModuleProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: module.id,
   })
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  }
+  const { icon, label } = MODULE_META[module.type]
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+      }}
+    >
       <div
         className="rounded-xl p-4"
-        style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+        style={{
+          backgroundColor: `rgba(var(--color-card-rgb), ${cardOpacity})`,
+          border: '1px solid var(--color-border)',
+          backdropFilter: cardOpacity < 1 ? 'blur(8px)' : undefined,
+        }}
       >
+        {/* Card header row */}
         <div className="flex items-center gap-2 mb-3">
-          {/* Drag handle */}
+          <span className="text-sm select-none">{icon}</span>
+          <span className="text-xs font-medium select-none flex-1" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+            {label}
+          </span>
+          {/* Menu + drag handle on the right */}
+          <ModuleMenu onDelete={() => onDeleteModule(module.id)} />
           <button
             {...attributes}
             {...listeners}
-            className="touch-none flex-shrink-0 cursor-grab active:cursor-grabbing hover:opacity-70 transition-opacity"
-            style={{ color: 'var(--color-text)', opacity: 0.25 }}
+            className="touch-none cursor-grab active:cursor-grabbing hover:opacity-70 transition-opacity p-0.5"
+            style={{ color: 'var(--color-text)', opacity: 0.3 }}
             aria-label="拖拽排序"
           >
-            <GripVertical size={14} />
+            <GripVertical size={15} />
           </button>
-          <span className="text-xs font-medium select-none flex-1" style={{ color: 'var(--color-text)', opacity: 0.35 }}>
-            {MODULE_LABELS[module.type]}
-          </span>
-          <ModuleMenu onDelete={() => onDeleteModule(module.id)} />
         </div>
+
+        {/* Divider */}
+        <div className="mb-3" style={{ borderTop: '1px solid var(--color-border)', opacity: 0.5 }} />
 
         {module.type === 'todo' && (
           <TodoModule module={module} onChange={onUpdateModule} />
@@ -82,12 +95,13 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
 
 interface ModuleListProps {
   list: List
+  cardOpacity: number
   onUpdateModule: (module: Module) => void
   onDeleteModule: (moduleId: string) => void
   onReorder: (fromIndex: number, toIndex: number) => void
 }
 
-export function ModuleList({ list, onUpdateModule, onDeleteModule, onReorder }: ModuleListProps) {
+export function ModuleList({ list, cardOpacity, onUpdateModule, onDeleteModule, onReorder }: ModuleListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 500, tolerance: 5 } }),
@@ -104,9 +118,9 @@ export function ModuleList({ list, onUpdateModule, onDeleteModule, onReorder }: 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
-    const fromIndex = list.modules.findIndex(m => m.id === active.id)
-    const toIndex = list.modules.findIndex(m => m.id === over.id)
-    if (fromIndex !== -1 && toIndex !== -1) onReorder(fromIndex, toIndex)
+    const from = list.modules.findIndex(m => m.id === active.id)
+    const to = list.modules.findIndex(m => m.id === over.id)
+    if (from !== -1 && to !== -1) onReorder(from, to)
   }
 
   return (
@@ -117,6 +131,7 @@ export function ModuleList({ list, onUpdateModule, onDeleteModule, onReorder }: 
             <SortableModule
               key={module.id}
               module={module}
+              cardOpacity={cardOpacity}
               onUpdateModule={onUpdateModule}
               onDeleteModule={onDeleteModule}
             />

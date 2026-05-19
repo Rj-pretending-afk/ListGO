@@ -2,7 +2,7 @@
 @import "./themes.css";
 
 html {
-  font-size: 150%; /* 24px，与浏览器 150% 缩放等效 */
+  font-size: 120%; /* 19.2px */
 }
 
 *,

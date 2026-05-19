@@ -1,72 +1,67 @@
-import { useRef, useEffect, useState } from 'react'
+import { useEffect, useImperativeHandle, forwardRef } from 'react'
 import DOMPurify from 'dompurify'
-import { BubbleToolbar } from './BubbleToolbar'
+
+export interface RichTextEditorRef {
+  applyFormat: (cmd: string, value?: string) => void
+  getEl: () => HTMLDivElement | null
+}
 
 interface RichTextEditorProps {
   content: string
   onChange: (html: string) => void
-  imageUrl?: string
+  onSelectionChange?: (rect: DOMRect | null) => void
 }
 
-export function RichTextEditor({ content, onChange, imageUrl }: RichTextEditorProps) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [showToolbar, setShowToolbar] = useState(false)
+export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
+  ({ content, onChange, onSelectionChange }, ref) => {
+    let el: HTMLDivElement | null = null
 
-  // 仅在非焦点状态下同步外部内容（避免光标跳位）
-  useEffect(() => {
-    if (ref.current && document.activeElement !== ref.current) {
-      ref.current.innerHTML = content
-    }
-  }, [content])
+    const setRef = (node: HTMLDivElement | null) => { el = node }
 
-  // 插入图片时追加到末尾
-  useEffect(() => {
-    if (!imageUrl || !ref.current) return
-    const img = document.createElement('img')
-    img.src = imageUrl
-    img.style.maxWidth = '100%'
-    img.style.borderRadius = '8px'
-    img.style.marginTop = '8px'
-    ref.current.appendChild(img)
-    emitChange()
+    useImperativeHandle(ref, () => ({
+      applyFormat: (cmd, value) => {
+        el?.focus()
+        document.execCommand(cmd, false, value)
+        if (el) onChange(DOMPurify.sanitize(el.innerHTML))
+      },
+      getEl: () => el,
+    }))
+
+    useEffect(() => {
+      if (el && document.activeElement !== el) {
+        el.innerHTML = content
+      }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageUrl])
+    }, [content])
 
-  const emitChange = () => {
-    if (!ref.current) return
-    onChange(DOMPurify.sanitize(ref.current.innerHTML))
-  }
+    const emitChange = () => {
+      if (el) onChange(DOMPurify.sanitize(el.innerHTML))
+    }
 
-  const handleSelectionChange = () => {
-    const sel = window.getSelection()
-    setShowToolbar(!!sel && !sel.isCollapsed && ref.current?.contains(sel.anchorNode) === true)
-  }
+    const checkSelection = () => {
+      if (!onSelectionChange) return
+      const sel = window.getSelection()
+      if (!sel || sel.isCollapsed || !el?.contains(sel.anchorNode)) {
+        onSelectionChange(null)
+        return
+      }
+      onSelectionChange(sel.getRangeAt(0).getBoundingClientRect())
+    }
 
-  const applyFormat = (cmd: string, value?: string) => {
-    document.execCommand(cmd, false, value)
-    ref.current?.focus()
-    emitChange()
-  }
-
-  return (
-    <div className="relative">
-      {showToolbar && (
-        <div className="mb-2">
-          <BubbleToolbar onFormat={applyFormat} />
-        </div>
-      )}
+    return (
       <div
-        ref={ref}
+        ref={setRef}
         contentEditable
         suppressContentEditableWarning
         onInput={emitChange}
-        onMouseUp={handleSelectionChange}
-        onKeyUp={handleSelectionChange}
-        onBlur={() => setShowToolbar(false)}
-        className="outline-none min-h-[40px] text-sm leading-relaxed"
+        onMouseUp={checkSelection}
+        onKeyUp={checkSelection}
+        onBlur={() => onSelectionChange?.(null)}
+        className="outline-none min-h-[60px] text-sm leading-relaxed"
         style={{ color: 'var(--color-text)' }}
         data-placeholder="输入文字…"
       />
-    </div>
-  )
-}
+    )
+  }
+)
+RichTextEditor.displayName = 'RichTextEditor'

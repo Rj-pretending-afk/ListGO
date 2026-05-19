@@ -8,6 +8,7 @@ export interface List {
   id: string
   title: string
   background: ListBackground
+  cardOpacity: number   // 模块卡片不透明度 0-1，有背景时生效
   modules: Module[]
   ownerId?: string
   ownerToken?: string
