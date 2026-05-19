@@ -3,7 +3,7 @@ import { ImagePlus, Link } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import { BubbleToolbar } from '../editor/BubbleToolbar'
 import { RichTextEditor, type RichTextEditorRef } from '../editor/RichTextEditor'
-import { ImageControls } from '../editor/ImageControls'
+import { ImageResizeOverlay } from '../editor/ImageResizeOverlay'
 import { CropModal } from '../editor/CropModal'
 import type { TextModule as TextModuleType } from '../../types/list.types'
 
@@ -23,6 +23,12 @@ export function TextModule({ module, onChange }: TextModuleProps) {
 
   const applyFormat = (cmd: string, value?: string) => editorRef.current?.applyFormat(cmd, value)
   const handleContentChange = (html: string) => onChange({ ...module, content: html })
+
+  const editorStyle: React.CSSProperties = {
+    ...(module.fontSettings?.size ? { fontSize: module.fontSettings.size } : {}),
+    ...(module.fontSettings?.family ? { fontFamily: module.fontSettings.family } : {}),
+    ...(module.fontSettings?.color ? { color: module.fontSettings.color } : {}),
+  }
 
   const insertImageSrc = (src: string) => {
     const el = editorRef.current?.getEl()
@@ -54,14 +60,6 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     setSelectedImg(img)
     setImgRect(rect)
     setSelRect(null) // dismiss selection toolbar
-  }
-
-  const handleWidthChange = (w: number) => {
-    if (!selectedImg) return
-    selectedImg.style.width = `${w}px`
-    const el = editorRef.current?.getEl()
-    if (el) onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
-    setImgRect(selectedImg.getBoundingClientRect())
   }
 
   const handleRemoveImg = () => {
@@ -103,6 +101,7 @@ export function TextModule({ module, onChange }: TextModuleProps) {
         onChange={handleContentChange}
         onSelectionChange={setSelRect}
         onImageClick={handleImageClick}
+        editorStyle={editorStyle}
       />
 
       {/* Floating selection toolbar — viewport-fixed */}
@@ -112,12 +111,11 @@ export function TextModule({ module, onChange }: TextModuleProps) {
         </div>
       )}
 
-      {/* Image controls (width + crop + remove) */}
+      {/* Corner resize overlay */}
       {selectedImg && imgRect && (
-        <ImageControls
+        <ImageResizeOverlay
           imgEl={selectedImg}
-          rect={imgRect}
-          onWidthChange={handleWidthChange}
+          onResizeEnd={() => setImgRect(selectedImg.getBoundingClientRect())}
           onCrop={() => setShowCrop(true)}
           onRemove={handleRemoveImg}
         />

@@ -73,11 +73,11 @@ export function CropModal({ src, onConfirm, onClose }: CropModalProps) {
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
           >
+            {/* max-width+height:auto (no object-fit) ensures clientWidth/Height = actual rendered pixels */}
             <img
               ref={imgRef}
               src={src}
-              className="w-full block object-contain"
-              style={{ maxHeight: '60vh' }}
+              style={{ maxWidth: '100%', maxHeight: '60vh', height: 'auto', display: 'block' }}
               draggable={false}
             />
             {valid && (
