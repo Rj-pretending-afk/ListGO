@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { db } from './db'
 import { generateListId, generateModuleId, generateItemId } from './shortid'
+import { getOwnerToken } from './ownerToken'
 import type { List, ListBackground, Module, TodoModule, VoteModule } from '../types/list.types'
 
 export type Theme = 'day' | 'dark' | 'light-pink' | 'dark-pink'
@@ -27,7 +28,7 @@ interface AppStore {
   lists: List[]
   loaded: boolean
   init: () => Promise<void>
-  createList: (title: string) => Promise<string>
+  createList: (title: string, ownerId?: string) => Promise<string>
   updateListTitle: (id: string, title: string) => Promise<void>
   deleteList: (id: string) => Promise<void>
   addModule: (listId: string, type: Module['type']) => Promise<void>
@@ -60,7 +61,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ lists, loaded: true })
   },
 
-  createList: async (title) => {
+  createList: async (title, ownerId) => {
     const id = generateListId()
     const t = ts()
     const list: List = {
@@ -68,6 +69,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       background: { type: 'color', value: '' },
       modules: [],
       permission: 'public',
+      ownerId,
+      ownerToken: ownerId ? undefined : getOwnerToken(),
       createdAt: t, updatedAt: t, lastAccessedAt: t,
       version: 1,
     }

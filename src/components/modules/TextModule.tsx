@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ImagePlus, Link } from 'lucide-react'
 import { useT } from '../../hooks/useLang'
+import { contentFontStyle } from '../ui/ContentFormattingBar'
+import type { ContentFontSettings } from '../../types/list.types'
 import DOMPurify from 'dompurify'
 import { BubbleToolbar } from '../editor/BubbleToolbar'
 import { RichTextEditor, type RichTextEditorRef } from '../editor/RichTextEditor'
@@ -13,9 +15,10 @@ import type { TextModule as TextModuleType } from '../../types/list.types'
 interface TextModuleProps {
   module: TextModuleType
   onChange: (module: TextModuleType) => void
+  contentFontSettings?: ContentFontSettings
 }
 
-export function TextModule({ module, onChange }: TextModuleProps) {
+export function TextModule({ module, onChange, contentFontSettings }: TextModuleProps) {
   const t = useT()
   const editorRef = useRef<RichTextEditorRef>(null)
   const [selRect, setSelRect] = useState<DOMRect | null>(null)
@@ -31,6 +34,7 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     ...(module.fontSettings?.size ? { fontSize: module.fontSettings.size } : {}),
     ...(module.fontSettings?.family ? { fontFamily: module.fontSettings.family } : {}),
     ...(module.fontSettings?.color ? { color: module.fontSettings.color } : {}),
+    ...contentFontStyle(contentFontSettings),
   }
 
   const insertImageSrc = (src: string) => {
@@ -142,7 +146,10 @@ export function TextModule({ module, onChange }: TextModuleProps) {
       {selectedImg && createPortal(
         <ImageResizeOverlay
           imgEl={selectedImg}
-          onResizeEnd={() => { /* rect updates internally in overlay */ }}
+          onResizeEnd={() => {
+            const el = editorRef.current?.getEl()
+            if (el) onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
+          }}
           onCrop={handleCropOpen}
           onRemove={handleRemoveImg}
           onRestore={handleRestore}

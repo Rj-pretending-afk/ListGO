@@ -37,6 +37,16 @@ export interface ModuleFontSettings {
   color?: string   // hex color
 }
 
+export interface ContentFontSettings {
+  bold?: boolean
+  italic?: boolean
+  underline?: boolean
+  strike?: boolean
+  color?: string
+  family?: string
+  size?: string    // CSS font-size
+}
+
 export type Module = TextModule | TodoModule | VoteModule
 
 export interface TextModule {
@@ -46,6 +56,7 @@ export interface TextModule {
   background?: ModuleBackground
   fontSettings?: ModuleFontSettings
   customLabel?: string
+  contentFontSettings?: ContentFontSettings
   createdAt?: number
   updatedAt?: number
 }
@@ -58,6 +69,7 @@ export interface TodoModule {
   background?: ModuleBackground
   fontSettings?: ModuleFontSettings
   customLabel?: string
+  contentFontSettings?: ContentFontSettings
   createdAt?: number
   updatedAt?: number
 }
@@ -80,6 +92,7 @@ export interface VoteModule {
   background?: ModuleBackground
   fontSettings?: ModuleFontSettings
   customLabel?: string
+  contentFontSettings?: ContentFontSettings
   createdAt?: number
   updatedAt?: number
 }

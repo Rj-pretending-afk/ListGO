@@ -15,9 +15,10 @@ import { TextModule } from '../modules/TextModule'
 import { ModuleMenu } from '../ui/ModuleMenu'
 import { ModuleSettingsPicker } from '../ui/ModuleSettingsPicker'
 import { FontSettingsPicker } from '../ui/FontSettingsPicker'
+import { ContentFormattingBar } from '../ui/ContentFormattingBar'
 import { useT, useLangStore } from '../../hooks/useLang'
 import { useAppStore } from '../../lib/store'
-import type { List, Module, ModuleBackground, ModuleFontSettings } from '../../types/list.types'
+import type { List, Module, ModuleBackground, ModuleFontSettings, ContentFontSettings } from '../../types/list.types'
 
 const MODULE_ICONS: Record<Module['type'], string> = {
   todo: '✅', vote: '📊', text: '📝',
@@ -55,7 +56,7 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
   }
 
   const startEditLabel = () => {
-    setLabelDraft(module.customLabel ?? defaultFull)
+    setLabelDraft(module.customLabel ?? '')   // start empty so user types fresh
     setEditingLabel(true)
   }
 
@@ -78,6 +79,9 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
 
   const updateFont = (font: ModuleFontSettings | undefined) =>
     onUpdateModule({ ...module, fontSettings: font } as Module)
+
+  const updateContentFont = (cf: ContentFontSettings | undefined) =>
+    onUpdateModule({ ...module, contentFontSettings: cf } as Module)
 
   const labelStyle: React.CSSProperties = {
     color: module.fontSettings?.color || 'var(--color-text)',
@@ -119,8 +123,11 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
               ) : (
                 <span
                   onClick={startEditLabel}
-                  className="font-medium select-none flex-1 cursor-text hover:opacity-70 transition-opacity truncate text-sm"
-                  style={labelStyle}
+                  className="font-medium select-none flex-1 cursor-text hover:opacity-60 transition-opacity truncate text-sm"
+                  style={module.customLabel
+                    ? labelStyle
+                    : { ...labelStyle, opacity: 0.28 }  // ghost placeholder
+                  }
                   title={t('editLabelHint')}
                 >
                   {displayLabel}
@@ -138,11 +145,16 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
               <ModuleMenu onDelete={() => onDeleteModule(module.id)} />
             </div>
 
-            <div className="mb-3" style={{ borderTop: '1px solid var(--color-border)', opacity: 0.35 }} />
+            <div style={{ borderTop: '1px solid var(--color-border)', opacity: 0.35 }} />
 
-            {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} />}
-            {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} />}
-            {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} />}
+            <ContentFormattingBar
+              settings={module.contentFontSettings}
+              onChange={updateContentFont}
+            />
+
+            {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} />}
+            {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} />}
+            {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} />}
 
             {/* Timestamps */}
             {(module.createdAt || module.updatedAt) && (

@@ -4,13 +4,20 @@ import { generateItemId } from '../../lib/shortid'
 import type { TodoModule as TodoModuleType, TodoItem } from '../../types/list.types'
 import { IMEInput } from '../ui/IMEInput'
 import { useT } from '../../hooks/useLang'
+import { contentFontStyle } from '../ui/ContentFormattingBar'
+import type { ContentFontSettings } from '../../types/list.types'
 
-interface TodoModuleProps { module: TodoModuleType; onChange: (module: TodoModuleType) => void }
+interface TodoModuleProps {
+  module: TodoModuleType
+  onChange: (module: TodoModuleType) => void
+  contentFontSettings?: ContentFontSettings
+}
 
-export function TodoModule({ module, onChange }: TodoModuleProps) {
+export function TodoModule({ module, onChange, contentFontSettings }: TodoModuleProps) {
   const t = useT()
   const [newText, setNewText] = useState('')
   const update = (patch: Partial<TodoModuleType>) => onChange({ ...module, ...patch })
+  const cfStyle = contentFontStyle(contentFontSettings)
 
   const addItem = () => {
     const text = newText.trim()
@@ -32,7 +39,7 @@ export function TodoModule({ module, onChange }: TodoModuleProps) {
             onChange={v => update({ items: module.items.map(it => it.id === item.id ? { ...it, text: v } : it) })}
             onKeyDown={e => !e.nativeEvent.isComposing && e.key === 'Enter' && addItem()}
             className="flex-1 bg-transparent outline-none text-sm"
-            style={{ color: 'var(--color-text)', opacity: item.done ? 0.45 : 1, textDecoration: item.done ? 'line-through' : 'none' }} />
+            style={{ ...cfStyle, color: cfStyle.color ?? 'var(--color-text)', opacity: item.done ? 0.45 : 1, textDecoration: item.done ? 'line-through' : cfStyle.textDecoration }} />
           <button onClick={() => update({ items: module.items.filter(it => it.id !== item.id) })}
             className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
             style={{ color: 'var(--color-text)' }}>

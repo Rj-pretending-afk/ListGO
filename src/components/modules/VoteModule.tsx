@@ -4,13 +4,20 @@ import type { VoteModule as VoteModuleType, VoteOption } from '../../types/list.
 import { VoteResults } from './VoteResults'
 import { IMEInput } from '../ui/IMEInput'
 import { useT } from '../../hooks/useLang'
+import { contentFontStyle } from '../ui/ContentFormattingBar'
+import type { ContentFontSettings } from '../../types/list.types'
 
 const LOCAL_VOTER = 'local'
 
-interface VoteModuleProps { module: VoteModuleType; onChange: (module: VoteModuleType) => void }
+interface VoteModuleProps {
+  module: VoteModuleType
+  onChange: (module: VoteModuleType) => void
+  contentFontSettings?: ContentFontSettings
+}
 
-export function VoteModule({ module, onChange }: VoteModuleProps) {
+export function VoteModule({ module, onChange, contentFontSettings }: VoteModuleProps) {
   const t = useT()
+  const cfStyle = contentFontStyle(contentFontSettings)
   const myVotes = module.votes[LOCAL_VOTER] ?? []
   const totalVotes = Object.values(module.votes).reduce((sum, ids) => sum + ids.length, 0)
   const update = (patch: Partial<VoteModuleType>) => onChange({ ...module, ...patch })
@@ -53,16 +60,16 @@ export function VoteModule({ module, onChange }: VoteModuleProps) {
               <button onClick={() => castVote(opt.id)}
                 className="w-5 h-5 flex-shrink-0 border-2 transition-all"
                 style={{
-                  borderColor: 'var(--color-primary)',
+                  borderColor: voted ? 'var(--color-primary)' : 'var(--color-text)',
                   backgroundColor: voted ? 'var(--color-primary)' : 'transparent',
                   borderRadius: module.multiSelect ? '4px' : '50%',
-                  opacity: voted ? 1 : 0.35,
+                  opacity: voted ? 1 : 0.55,
                 }} />
               <IMEInput value={opt.text}
                 onChange={v => update({ options: module.options.map(o => o.id === opt.id ? { ...o, text: v } : o) })}
                 placeholder={t('voteOption')}
                 className="flex-1 bg-transparent outline-none text-sm"
-                style={{ color: 'var(--color-text)' }} />
+                style={{ ...cfStyle, color: cfStyle.color ?? 'var(--color-text)' }} />
               {module.options.length > 2 && (
                 <button onClick={() => removeOption(opt.id)}
                   className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"

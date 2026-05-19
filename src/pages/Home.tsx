@@ -6,10 +6,12 @@ import { zhCN } from 'date-fns/locale'
 import { useLists, useLoaded, useListActions } from '../hooks/useList'
 import { useT, useLangStore } from '../hooks/useLang'
 import { useAppStore } from '../lib/store'
+import { useAuthStore } from '../hooks/useAuth'
 
 export default function Home() {
   const t = useT()
   const lang = useLangStore(s => s.lang)
+  const currentUser = useAuthStore(s => s.user)
   const timeFormat = useAppStore(s => s.timeFormat)
   const toggleTimeFormat = useAppStore(s => s.toggleTimeFormat)
 
@@ -26,7 +28,7 @@ export default function Home() {
   const handleCreate = async () => {
     const title = newTitle.trim()
     if (!title) return
-    const id = await createList(title)
+    const id = await createList(title, currentUser?.id)
     setNewTitle('')
     setCreating(false)
     navigate(`/list/${id}`)
