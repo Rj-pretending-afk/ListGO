@@ -8,7 +8,7 @@ export interface List {
   id: string
   title: string
   background: ListBackground
-  cardOpacity: number   // 模块卡片不透明度 0-1，有背景时生效
+  cardOpacity?: number  // 保留字段（已移至模块级别），可能存在于旧数据
   modules: Module[]
   ownerId?: string
   ownerToken?: string
@@ -20,13 +20,21 @@ export interface List {
   version: number
 }
 
+export interface ModuleBackground {
+  type: 'color' | 'image'
+  value: string        // hex color; '' for image type
+  imageData?: string   // base64 data URL or https:// URL
+  opacity: number      // 0-1
+  size: 'cover' | 'contain' | 'auto'
+}
+
 export type Module = TextModule | TodoModule | VoteModule
 
 export interface TextModule {
   id: string
   type: 'text'
   content: string
-  imageUrl?: string
+  background?: ModuleBackground
 }
 
 export interface TodoModule {
@@ -34,6 +42,7 @@ export interface TodoModule {
   type: 'todo'
   subtitle?: string
   items: TodoItem[]
+  background?: ModuleBackground
 }
 
 export interface TodoItem {
@@ -50,8 +59,8 @@ export interface VoteModule {
   options: VoteOption[]
   multiSelect: boolean
   anonymous: boolean
-  // Phase 1: keyed by voterId; locally uses 'local' as the single voter key
   votes: Record<string, string[]>
+  background?: ModuleBackground
 }
 
 export interface VoteOption {

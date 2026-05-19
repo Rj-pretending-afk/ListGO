@@ -32,7 +32,6 @@ interface AppStore {
   updateModule: (listId: string, module: Module) => void
   deleteModule: (listId: string, moduleId: string) => Promise<void>
   updateListBackground: (id: string, background: ListBackground) => Promise<void>
-  updateCardOpacity: (id: string, opacity: number) => void
   reorderModules: (listId: string, fromIndex: number, toIndex: number) => void
 }
 
@@ -62,7 +61,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const list: List = {
       id, title,
       background: { type: 'color', value: '' },
-      cardOpacity: 0.7,
       modules: [],
       permission: 'public',
       createdAt: t, updatedAt: t, lastAccessedAt: t,
@@ -143,11 +141,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const t = ts()
     await db.lists.update(id, { background, updatedAt: t })
     set(s => ({ lists: s.lists.map(l => l.id === id ? { ...l, background, updatedAt: t } : l) }))
-  },
-
-  updateCardOpacity: (id, cardOpacity) => {
-    set(s => ({ lists: s.lists.map(l => l.id === id ? { ...l, cardOpacity } : l) }))
-    void db.lists.update(id, { cardOpacity })
   },
 
   reorderModules: (listId, fromIndex, toIndex) => {
