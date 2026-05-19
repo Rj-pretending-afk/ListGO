@@ -4,6 +4,7 @@ import { getAuth } from './middleware/auth'
 import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword } from './routes/auth'
 import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList } from './routes/lists'
 import { handleClaimPreview, handleClaim } from './routes/claim'
+import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode } from './routes/admin'
 
 export interface Env {
   DB: D1Database
@@ -89,7 +90,24 @@ export default {
       return handleClaim(request, auth, env, json, err)
     }
 
-    // ── Admin (Day 7) ──
+    // ── Admin ──
+    if (method === 'GET' && pathname === '/admin/stats') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminStats(auth, env, json, err)
+    }
+    if (method === 'GET' && pathname === '/admin/invite-codes') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminGetCodes(auth, env, json)
+    }
+    if (method === 'POST' && pathname === '/admin/invite-codes') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminGenerateCodes(request, auth, env, json, err)
+    }
+    const revokeMatch = pathname.match(/^\/admin\/invite-codes\/([^/]+)$/)
+    if (revokeMatch && method === 'DELETE') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminRevokeCode(revokeMatch[1], auth, env, json)
+    }
 
     return err('Not found', 404)
   },
