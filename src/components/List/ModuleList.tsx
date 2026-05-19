@@ -48,8 +48,10 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
   const updateFont = (font: ModuleFontSettings | undefined) =>
     onUpdateModule({ ...module, fontSettings: font } as Module)
 
-  // Font settings cascade to child content
-  const fontStyle: React.CSSProperties = {
+  // Font settings apply to the module label (left-top type text), not user content
+  const labelStyle: React.CSSProperties = {
+    color: module.fontSettings?.color || 'var(--color-text)',
+    opacity: module.fontSettings?.color ? 1 : 0.4,
     ...(module.fontSettings?.size ? { fontSize: module.fontSettings.size } : {}),
     ...(module.fontSettings?.family ? { fontFamily: module.fontSettings.family } : {}),
   }
@@ -75,7 +77,7 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
             {/* Header row */}
             <div className="flex items-center gap-1.5 mb-2">
               <span className="text-sm select-none">{icon}</span>
-              <span className="text-xs font-medium select-none flex-1" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+              <span className="font-medium select-none flex-1" style={labelStyle}>
                 {label}
               </span>
               <ModuleSettingsPicker
@@ -89,12 +91,9 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
 
             <div className="mb-3" style={{ borderTop: '1px solid var(--color-border)', opacity: 0.35 }} />
 
-            {/* Module content with font cascade */}
-            <div style={fontStyle}>
-              {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} />}
-              {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} />}
-              {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} />}
-            </div>
+            {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} />}
+            {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} />}
+            {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} />}
           </div>
         </div>
 

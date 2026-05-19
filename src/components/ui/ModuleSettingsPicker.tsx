@@ -54,7 +54,12 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
     e.stopPropagation()
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect()
-      setPanelPos({ top: r.bottom + 4, right: Math.max(4, window.innerWidth - r.right) })
+      // Panel max-height is 82vh; if too close to bottom, cap top so it stays visible
+      const maxTop = window.innerHeight - Math.min(window.innerHeight * 0.82, 600) - 8
+      setPanelPos({
+        top: Math.min(r.bottom + 4, Math.max(8, maxTop)),
+        right: Math.max(4, window.innerWidth - r.right),
+      })
     }
     setOpen(v => !v)
   }
