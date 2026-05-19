@@ -78,6 +78,13 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     setSelectedImg(null)
   }
 
+  const handleCropOpen = () => {
+    if (selectedImg && !selectedImg.dataset.originalSrc) {
+      selectedImg.dataset.originalSrc = selectedImg.src
+    }
+    setShowCrop(true)
+  }
+
   const handleCropConfirm = (dataUrl: string) => {
     if (!selectedImg) return
     selectedImg.src = dataUrl
@@ -85,6 +92,16 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     const el = editorRef.current?.getEl()
     if (el) onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
     setShowCrop(false)
+    setSelectedImg(null)
+  }
+
+  const handleRestore = () => {
+    if (!selectedImg?.dataset.originalSrc) return
+    selectedImg.src = selectedImg.dataset.originalSrc
+    delete selectedImg.dataset.originalSrc
+    selectedImg.style.width = ''
+    const el = editorRef.current?.getEl()
+    if (el) onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
     setSelectedImg(null)
   }
 
@@ -124,8 +141,9 @@ export function TextModule({ module, onChange }: TextModuleProps) {
         <ImageResizeOverlay
           imgEl={selectedImg}
           onResizeEnd={() => { /* rect updates internally in overlay */ }}
-          onCrop={() => setShowCrop(true)}
+          onCrop={handleCropOpen}
           onRemove={handleRemoveImg}
+          onRestore={handleRestore}
         />,
         document.body
       )}

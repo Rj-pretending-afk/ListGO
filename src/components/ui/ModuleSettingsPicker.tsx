@@ -43,7 +43,7 @@ interface ModuleSettingsPickerProps {
 
 export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onFontChange }: ModuleSettingsPickerProps) {
   const [open, setOpen] = useState(false)
-  const [panelPos, setPanelPos] = useState({ top: 0, right: 0 })
+  const [panelPos, setPanelPos] = useState({ top: 0, left: 0 })
   const [urlInput, setUrlInput] = useState('')
   const btnRef = useRef<HTMLButtonElement>(null)
 
@@ -54,12 +54,12 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
     e.stopPropagation()
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect()
-      // Panel max-height is 82vh; if too close to bottom, cap top so it stays visible
-      const maxTop = window.innerHeight - Math.min(window.innerHeight * 0.82, 600) - 8
-      setPanelPos({
-        top: Math.min(r.bottom + 4, Math.max(8, maxTop)),
-        right: Math.max(4, window.innerWidth - r.right),
-      })
+      const panelW = 288 + 32 // 18rem at base font-size, with safety margin
+      const panelMaxH = Math.min(window.innerHeight * 0.82, 600)
+      const top = Math.max(8, Math.min(r.bottom + 4, window.innerHeight - panelMaxH - 8))
+      // Right-align panel with button, then clamp so it never overflows either side
+      const left = Math.max(4, Math.min(r.right - panelW, window.innerWidth - panelW - 4))
+      setPanelPos({ top, left })
     }
     setOpen(v => !v)
   }
@@ -93,7 +93,7 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
         className="fixed z-[201] rounded-xl shadow-2xl overflow-y-auto"
         style={{
           top: panelPos.top,
-          right: panelPos.right,
+          left: panelPos.left,
           width: '18rem',
           maxHeight: '82vh',
           backgroundColor: 'var(--color-card)',
