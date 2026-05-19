@@ -11,6 +11,7 @@ import { VoteModule } from '../modules/VoteModule'
 import { TextModule } from '../modules/TextModule'
 import { ModuleMenu } from '../ui/ModuleMenu'
 import { ModuleSettingsPicker } from '../ui/ModuleSettingsPicker'
+import { FontSettingsPicker } from '../ui/FontSettingsPicker'
 import type { List, Module, ModuleBackground, ModuleFontSettings } from '../../types/list.types'
 
 const MODULE_META: Record<Module['type'], { icon: string; label: string }> = {
@@ -117,11 +118,13 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
                 </span>
               )}
 
+              <FontSettingsPicker
+                fontSettings={module.fontSettings}
+                onFontChange={updateFont}
+              />
               <ModuleSettingsPicker
                 background={module.background}
-                fontSettings={module.fontSettings}
                 onBgChange={updateBg}
-                onFontChange={updateFont}
               />
               <ModuleMenu onDelete={() => onDeleteModule(module.id)} />
             </div>

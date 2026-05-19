@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Settings, X } from 'lucide-react'
 import { resizeDataUrl } from '../../lib/imageUtils'
-import type { ModuleBackground, ModuleFontSettings } from '../../types/list.types'
+import type { ModuleBackground } from '../../types/list.types'
 
 const PRESET_COLORS = [
   { label: '无', value: '' },
@@ -16,39 +16,20 @@ const PRESET_COLORS = [
   { label: '深紫', value: '#1E1B4B' },
 ]
 
-const FONT_SIZES = [
-  { label: '小', value: '0.75rem' },
-  { label: '中', value: '1rem' },
-  { label: '大', value: '1.25rem' },
-  { label: '特大', value: '1.5rem' },
-]
-
-const FONT_FAMILIES = [
-  { label: '系统默认', value: '' },
-  { label: '黑体', value: "'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif" },
-  { label: '宋体', value: "'SimSun', 'STSong', Georgia, serif" },
-  { label: '楷体', value: "'KaiTi', 'STKaiti', cursive" },
-  { label: '等宽', value: "'Courier New', Consolas, monospace" },
-  { label: '圆体', value: "'PingFang SC', 'Hiragino Sans GB', 'Segoe UI', sans-serif" },
-]
-
 const DEFAULT_BG: ModuleBackground = { type: 'color', value: '', opacity: 0.85, size: 'cover', posX: 50, posY: 50 }
 
 interface ModuleSettingsPickerProps {
   background?: ModuleBackground
-  fontSettings?: ModuleFontSettings
   onBgChange: (bg: ModuleBackground | undefined) => void
-  onFontChange: (font: ModuleFontSettings | undefined) => void
 }
 
-export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onFontChange }: ModuleSettingsPickerProps) {
+export function ModuleSettingsPicker({ background, onBgChange }: ModuleSettingsPickerProps) {
   const [open, setOpen] = useState(false)
   const [panelPos, setPanelPos] = useState({ top: 0, left: 0 })
   const [urlInput, setUrlInput] = useState('')
   const btnRef = useRef<HTMLButtonElement>(null)
 
   const bg = background ?? DEFAULT_BG
-  const font = fontSettings ?? {}
 
   const handleOpen = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -65,10 +46,6 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
   }
 
   const updateBg = (patch: Partial<ModuleBackground>) => onBgChange({ ...bg, ...patch })
-  const updateFont = (patch: Partial<ModuleFontSettings>) => {
-    const next = { ...font, ...patch }
-    onFontChange(!next.size && !next.family && !next.color ? undefined : next)
-  }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -84,7 +61,6 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
   }
 
   const hasBg = background && (background.imageData || (background.type === 'color' && background.value))
-  const hasFont = fontSettings && (fontSettings.size || fontSettings.family || fontSettings.color)
 
   const panel = (
     <>
@@ -109,64 +85,6 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
               <X size={14} />
             </button>
           </div>
-
-          {/* ── 字体 ── */}
-          <div>
-            <p className="text-xs font-medium mb-2" style={{ color: 'var(--color-text)', opacity: 0.55 }}>字体</p>
-
-            {/* Size */}
-            <div className="flex gap-1 mb-2">
-              {FONT_SIZES.map(({ label, value }) => (
-                <button key={label} onClick={() => updateFont({ size: font.size === value ? undefined : value })}
-                  className="flex-1 py-1 rounded text-xs transition-colors"
-                  style={{
-                    backgroundColor: font.size === value ? 'var(--color-primary)' : 'var(--color-border)',
-                    color: font.size === value ? 'white' : 'var(--color-text)',
-                  }}>
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Family — scrollable select */}
-            <select
-              value={font.family || ''}
-              onChange={e => updateFont({ family: e.target.value })}
-              className="w-full text-xs rounded-lg outline-none px-2 py-1.5 mb-2"
-              style={{
-                backgroundColor: 'var(--color-border)',
-                color: 'var(--color-text)',
-                border: 'none',
-              }}
-            >
-              {FONT_FAMILIES.map(({ label, value }) => (
-                <option key={label} value={value} style={{ fontFamily: value || undefined }}>
-                  {label}
-                </option>
-              ))}
-            </select>
-
-            {/* Color */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.5 }}>文字颜色</span>
-              <label className="w-7 h-7 rounded overflow-hidden cursor-pointer border-2 relative flex-shrink-0"
-                style={{ borderColor: 'var(--color-border)', backgroundColor: font.color || 'transparent' }}>
-                <input type="color" className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  value={font.color || '#ffffff'}
-                  onChange={e => updateFont({ color: e.target.value })} />
-              </label>
-              {font.color && (
-                <button className="text-xs hover:opacity-70" style={{ color: '#ef4444' }}
-                  onClick={() => updateFont({ color: undefined })}>清除</button>
-              )}
-              {hasFont && (
-                <button className="text-xs hover:opacity-70 ml-auto" style={{ color: '#ef4444' }}
-                  onClick={() => onFontChange(undefined)}>重置字体</button>
-              )}
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px solid var(--color-border)' }} />
 
           {/* ── 背景 ── */}
           <div>
@@ -273,7 +191,7 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
         ref={btnRef}
         onClick={handleOpen}
         className="p-1 rounded hover:opacity-70 transition-opacity"
-        style={{ color: 'var(--color-text)', opacity: (hasBg || hasFont) ? 0.8 : 0.3 }}
+        style={{ color: 'var(--color-text)', opacity: hasBg ? 0.8 : 0.3 }}
         title="模块设置"
       >
         <Settings size={14} />
