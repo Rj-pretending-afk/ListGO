@@ -24,6 +24,8 @@ export function ListTitle({ title, onSave }: ListTitleProps) {
         onChange={e => setValue(e.target.value)}
         onBlur={save}
         onKeyDown={e => {
+          // 输入法组合期间忽略所有快捷键，避免截获确认候选字的 Enter/Space
+          if (e.nativeEvent.isComposing || e.keyCode === 229) return
           if (e.key === 'Enter') save()
           if (e.key === 'Escape') { setValue(title); setEditing(false) }
         }}

@@ -56,7 +56,7 @@ export function TodoModule({ module, onChange }: TodoModuleProps) {
           <input
             value={item.text}
             onChange={e => updateText(item.id, e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addItem()}
+            onKeyDown={e => !e.nativeEvent.isComposing && e.key === 'Enter' && addItem()}
             className="flex-1 bg-transparent outline-none text-sm"
             style={{
               color: 'var(--color-text)',
@@ -80,7 +80,7 @@ export function TodoModule({ module, onChange }: TodoModuleProps) {
         <input
           value={newText}
           onChange={e => setNewText(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && addItem()}
+          onKeyDown={e => !e.nativeEvent.isComposing && e.key === 'Enter' && addItem()}
           placeholder="添加条目…"
           className="flex-1 bg-transparent outline-none text-sm"
           style={{ color: 'var(--color-text)', opacity: 0.4 }}

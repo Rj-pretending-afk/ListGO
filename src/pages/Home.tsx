@@ -57,7 +57,11 @@ export default function Home() {
             autoFocus
             value={newTitle}
             onChange={e => setNewTitle(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setCreating(false) }}
+            onKeyDown={e => {
+              if (e.nativeEvent.isComposing || e.keyCode === 229) return
+              if (e.key === 'Enter') handleCreate()
+              if (e.key === 'Escape') setCreating(false)
+            }}
             placeholder="清单标题（必填）"
             className="w-full bg-transparent outline-none text-sm mb-3"
             style={{ color: 'var(--color-text)' }}
