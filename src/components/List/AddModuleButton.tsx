@@ -37,22 +37,35 @@ export function AddModuleButton({ onAdd }: AddModuleButtonProps) {
       </button>
 
       {open && (
-        <div
-          className="mt-1 rounded-xl overflow-hidden"
-          style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
-        >
-          {OPTIONS.map(({ type, label, icon }) => (
-            <button
-              key={type}
-              onClick={() => handleAdd(type)}
-              className="flex items-center gap-3 px-4 py-3 w-full text-sm text-left hover:opacity-70 transition-opacity"
-              style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
-            >
-              <span>{icon}</span>
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
+        <>
+          {/* 移动端半透明遮罩 + 底部弹层 */}
+          <div className="fixed inset-0 z-20 sm:hidden" onClick={() => setOpen(false)}
+            style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+          />
+          <div
+            className="fixed bottom-0 left-0 right-0 z-30 rounded-t-2xl pb-safe sm:static sm:rounded-xl sm:pb-0 sm:mt-1 sm:bottom-auto sm:left-auto sm:right-auto sm:z-auto overflow-hidden"
+            style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+          >
+            <div className="h-1 w-10 rounded-full mx-auto mt-3 mb-1 sm:hidden"
+              style={{ backgroundColor: 'var(--color-border)' }}
+            />
+            {OPTIONS.map(({ type, label, icon }) => (
+              <button
+                key={type}
+                onClick={() => handleAdd(type)}
+                className="flex items-center gap-3 px-5 w-full text-sm text-left hover:opacity-70 transition-opacity"
+                style={{
+                  color: 'var(--color-text)',
+                  borderBottom: '1px solid var(--color-border)',
+                  minHeight: '52px', // ≥44px 触控目标
+                }}
+              >
+                <span>{icon}</span>
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

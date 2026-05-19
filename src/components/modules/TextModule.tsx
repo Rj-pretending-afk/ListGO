@@ -1,4 +1,6 @@
-import { useRef, useEffect } from 'react'
+import { useState } from 'react'
+import { RichTextEditor } from '../editor/RichTextEditor'
+import { ImageInsert } from '../editor/ImageInsert'
 import type { TextModule as TextModuleType } from '../../types/list.types'
 
 interface TextModuleProps {
@@ -7,24 +9,24 @@ interface TextModuleProps {
 }
 
 export function TextModule({ module, onChange }: TextModuleProps) {
-  const ref = useRef<HTMLDivElement>(null)
+  const [pendingImage, setPendingImage] = useState<string | undefined>()
 
-  // Only sync from props when not focused (avoids caret jumping)
-  useEffect(() => {
-    if (ref.current && document.activeElement !== ref.current) {
-      ref.current.innerText = module.content
-    }
-  }, [module.content])
+  const handleImageInsert = (url: string) => {
+    setPendingImage(url)
+    // 传给编辑器后立刻清除，避免重复插入
+    setTimeout(() => setPendingImage(undefined), 100)
+  }
 
   return (
-    <div
-      ref={ref}
-      contentEditable
-      suppressContentEditableWarning
-      onInput={e => onChange({ ...module, content: (e.target as HTMLDivElement).innerText })}
-      className="outline-none min-h-[40px] text-sm leading-relaxed"
-      style={{ color: 'var(--color-text)' }}
-      data-placeholder="输入文字…"
-    />
+    <div>
+      <RichTextEditor
+        content={module.content}
+        onChange={html => onChange({ ...module, content: html })}
+        imageUrl={pendingImage}
+      />
+      <div className="mt-2">
+        <ImageInsert onInsert={handleImageInsert} />
+      </div>
+    </div>
   )
 }

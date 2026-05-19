@@ -381,12 +381,19 @@ listgo/
 
 **目标：** 富文本、图片 URL、背景、移动端打磨
 
-- [ ] 富文本工具栏（选区浮现）：粗体 / 斜体 / 下划线 / 删除线 / 字号
-- [ ] 文本模块插入图片（粘贴 URL，本地预览用 base64）
-- [ ] **清单背景**：色块 9 选 1 + 自定义颜色 + **背景图 URL**
-- [ ] 模块拖拽排序
-- [ ] 模块操作菜单
-- [ ] **移动端打磨**：触摸 ≥44px、底部弹层、长按拖拽（详见第 11 章）
+- [x] 富文本工具栏（选区浮现）：粗体 / 斜体 / 下划线 / 删除线 / 字号
+  - 选中文字时顶部弹出工具栏（BubbleToolbar），execCommand 实现
+- [x] 文本模块插入图片（粘贴 URL）
+  - ImageInsert 组件，图片追加到 contenteditable 末尾
+- [x] **清单背景**：色块 9 选 1 + 自定义颜色 + **背景图 URL**
+  - ListBackground 组件嵌入子标题栏
+- [x] 模块拖拽排序（桌面鼠标 + 移动端长按 500ms）
+  - dnd-kit PointerSensor + TouchSensor，GripVertical 拖拽手柄
+- [x] 模块操作菜单（⋯ 按钮替换 hover 删除）
+  - ModuleMenu 组件，点击外部关闭
+- [x] **移动端打磨**：触摸 ≥44px、底部弹层（AddModuleButton）、viewport-fit=cover
+  - 全局 touch-action: manipulation 防双击缩放
+  - CSS 基础字号设为 150%（24px）提升可读性
 
 **验收标准：**
 > 选中文字加粗变蓝；插入网络图片正确显示；背景换成樱花图整体协调；手机端拖拽顺滑。
