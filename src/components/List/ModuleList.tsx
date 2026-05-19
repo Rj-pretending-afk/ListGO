@@ -12,12 +12,11 @@ import { TextModule } from '../modules/TextModule'
 import { ModuleMenu } from '../ui/ModuleMenu'
 import { ModuleSettingsPicker } from '../ui/ModuleSettingsPicker'
 import { FontSettingsPicker } from '../ui/FontSettingsPicker'
+import { useT } from '../../hooks/useLang'
 import type { List, Module, ModuleBackground, ModuleFontSettings } from '../../types/list.types'
 
-const MODULE_META: Record<Module['type'], { icon: string; label: string }> = {
-  todo: { icon: '✅', label: '待办' },
-  vote: { icon: '📊', label: '投票' },
-  text: { icon: '📝', label: '文本' },
+const MODULE_ICONS: Record<Module['type'], string> = {
+  todo: '✅', vote: '📊', text: '📝',
 }
 
 interface SortableModuleProps {
@@ -27,8 +26,11 @@ interface SortableModuleProps {
 }
 
 function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModuleProps) {
+  const t = useT()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: module.id })
-  const { icon, label: defaultLabel } = MODULE_META[module.type]
+  const icon = MODULE_ICONS[module.type]
+  const DEFAULT_LABELS = { todo: t('moduleLabelTodo'), vote: t('moduleLabelVote'), text: t('moduleLabelText') }
+  const defaultLabel = DEFAULT_LABELS[module.type]
   const bg = module.background
 
   // Label editing state
@@ -112,7 +114,7 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
                   onClick={startEditLabel}
                   className="font-medium select-none flex-1 cursor-text hover:opacity-70 transition-opacity truncate"
                   style={labelStyle}
-                  title="点击编辑标签"
+                  title={t('editLabelHint')}
                 >
                   {displayLabel}
                 </span>
@@ -143,7 +145,7 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
           {...listeners}
           className="touch-none cursor-grab active:cursor-grabbing flex-shrink-0 flex items-center justify-center"
           style={{ width: '28px', backgroundColor: 'var(--color-drag)', color: 'var(--color-drag-icon)' }}
-          aria-label="拖拽排序"
+          aria-label={t('editLabelHint')}
         >
           <GripVertical size={14} />
         </div>

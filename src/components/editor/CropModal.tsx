@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useT } from '../../hooks/useLang'
 
 interface Box { x: number; y: number; w: number; h: number }
 
@@ -9,6 +10,7 @@ interface CropModalProps {
 }
 
 export function CropModal({ src, onConfirm, onClose }: CropModalProps) {
+  const t = useT()
   const imgRef = useRef<HTMLImageElement>(null)
   const [box, setBox] = useState<Box | null>(null)
   const dragStartRef = useRef<{ x: number; y: number } | null>(null)
@@ -99,8 +101,8 @@ export function CropModal({ src, onConfirm, onClose }: CropModalProps) {
           <div className="p-4">
             <p className="text-sm mb-3 font-medium" style={{ color: 'var(--color-text)' }}>
               {valid
-                ? `已选择 ${Math.round(box!.w)} × ${Math.round(box!.h)} px — 点击确认裁剪`
-                : '拖动选择裁剪区域'}
+                ? `${t('cropSelected')} ${Math.round(box!.w)} × ${Math.round(box!.h)} ${t('cropPxSuffix')}`
+                : t('cropDragHint')}
             </p>
 
             {/* Crop area — onMouseDown only, document handles move/up */}
@@ -133,20 +135,14 @@ export function CropModal({ src, onConfirm, onClose }: CropModalProps) {
             </div>
 
             <div className="flex gap-2 justify-end mt-3">
-              <button
-                onClick={onClose}
-                className="px-3 py-1.5 text-sm rounded-lg hover:opacity-70"
-                style={{ color: 'var(--color-text)', opacity: 0.6 }}
-              >
-                取消
+              <button onClick={onClose} className="px-3 py-1.5 text-sm rounded-lg hover:opacity-70"
+                style={{ color: 'var(--color-text)', opacity: 0.6 }}>
+                {t('cropCancel')}
               </button>
-              <button
-                onClick={handleConfirm}
-                disabled={!valid}
+              <button onClick={handleConfirm} disabled={!valid}
                 className="px-3 py-1.5 text-sm font-medium rounded-lg disabled:opacity-35 hover:opacity-80 transition-opacity"
-                style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
-              >
-                确认裁剪
+                style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                {t('cropConfirm')}
               </button>
             </div>
           </div>

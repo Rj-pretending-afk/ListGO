@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ImagePlus, Link } from 'lucide-react'
+import { useT } from '../../hooks/useLang'
 import DOMPurify from 'dompurify'
 import { BubbleToolbar } from '../editor/BubbleToolbar'
 import { RichTextEditor, type RichTextEditorRef } from '../editor/RichTextEditor'
@@ -15,6 +16,7 @@ interface TextModuleProps {
 }
 
 export function TextModule({ module, onChange }: TextModuleProps) {
+  const t = useT()
   const editorRef = useRef<RichTextEditorRef>(null)
   const [selRect, setSelRect] = useState<DOMRect | null>(null)
   const [selectedImg, setSelectedImg] = useState<HTMLImageElement | null>(null)
@@ -168,7 +170,7 @@ export function TextModule({ module, onChange }: TextModuleProps) {
           className="flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer hover:opacity-70 transition-opacity"
           style={{ color: 'var(--color-text)', opacity: 0.55 }}
         >
-          <ImagePlus size={13} /> 上传
+          <ImagePlus size={13} /> {t('insertImage')}
           <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
         </label>
         <button

@@ -1,0 +1,177 @@
+export const zh = {
+  // Header
+  login: '登录', register: '注册', profileSettings: '个人设置', logout: '退出登录',
+  // Home
+  loading: '加载中…', myLists: '我的清单', newList: '新建',
+  newListPlaceholder: '清单标题（必填）', cancel: '取消', create: '创建',
+  emptyHint: '还没有清单，点「新建」开始', moduleCount: '个模块',
+  // List page
+  addModule: '+ 添加模块', collapseMenu: '收起',
+  moduleTypeTodo: '待办列表', moduleTypeVote: '投票', moduleTypeText: '文本',
+  moduleLabelTodo: '待办', moduleLabelVote: '投票', moduleLabelText: '文本',
+  editLabelHint: '点击编辑标签', deleteModule: '删除模块',
+  // Font picker
+  titleFont: '标题字体',
+  fontS: '小', fontM: '中', fontL: '大', fontXL: '特大',
+  fontColor: '颜色', clearColor: '清除', resetFont: '重置',
+  fontFamilyDefault: '系统默认', fontFamilyHei: '黑体', fontFamilySong: '宋体',
+  fontFamilyKai: '楷体', fontFamilyMono: '等宽', fontFamilyRound: '圆体',
+  // Module / list background
+  moduleSettings: '模块设置', background: '背景', clearBg: '清除背景',
+  uploadBg: '上传背景图', pasteUrl: '或粘贴图片 URL…', apply: '套用',
+  opacity: '透明度', imageSize: '图片大小', posX: '位置 X', posY: '位置 Y',
+  fillMode: '填充', fillCover: '铺满', fillContain: '适应', fillOriginal: '原始',
+  customColorBtn: '自',
+  // List background panel
+  bgButton: '背景', bgSettings: '背景设置', bgColorLabel: '背景色',
+  bgUrlLabel: '背景图 URL', bgCardOpacity: '卡片透明度',
+  // Color preset tooltips (shared)
+  colorNone: '无', colorWarmBeige: '暖米', colorMint: '薄荷', colorSkyBlue: '天蓝',
+  colorLavender: '浅紫', colorPeach: '蜜桃', colorLightGray: '浅灰',
+  colorCharcoal: '炭黑', colorDarkPurple: '深紫',
+  colorDefault: '默认', colorForestGreen: '墨绿', colorDarkGray: '深灰',
+  colorCustom: '自定义颜色',
+  // Todo
+  todoSubtitle: '小标题（可选）', todoNewItem: '添加条目…',
+  // Vote
+  voteQuestion: '投票问题…', voteOption: '选项…',
+  voteSingle: '单选', voteMulti: '多选', voteAnon: '匿名', voteReal: '实名',
+  voteTotal: '票', voteAddOption: '添加选项',
+  // Text
+  insertImage: '上传',
+  // Bubble toolbar
+  fmtBold: '粗体', fmtItalic: '斜体', fmtUnderline: '下划线', fmtStrike: '删除线',
+  fmtSizeSmall: '小', fmtSizeMedium: '中', fmtSizeLarge: '大',
+  // Image overlay
+  cropAction: '✂ 裁剪', restoreImg: '↩ 原图', removeImg: '✕ 移除',
+  // Crop modal
+  cropDragHint: '拖动选择裁剪区域', cropSelected: '已选择',
+  cropPxSuffix: 'px — 点击确认裁剪', cropConfirm: '确认裁剪', cropCancel: '取消',
+  // Login
+  loginTitle: '登录 ListGo', loginUsername: '用户名', loginPassword: '密码',
+  loginSubmit: '登录', loginLoading: '登录中…',
+  loginForgot: '忘记密码？联系作者重置', loginNoAccount: '没有账号？', loginGoRegister: '注册',
+  // Register
+  registerTitle: '加入 ListGo', registerSubtitle: '需要邀请码，联系作者获取',
+  registerUsername: '用户名', registerUsernamePlaceholder: '3-20 字符，字母数字下划线',
+  registerUsernameWarning: '⚠ 用户名一旦确定不可修改',
+  registerPassword: '密码', registerPasswordPlaceholder: '至少 8 字符',
+  registerInvite: '邀请码', registerInvitePlaceholder: '12 位大写码',
+  registerSubmit: '注册', registerLoading: '注册中…',
+  registerHasAccount: '已有账号？', registerGoLogin: '登录',
+  // Profile
+  profileAvatar: '头像', profileUploadAvatar: '上传头像',
+  profileProcessing: '处理中…', profileRemoveAvatar: '移除自定义头像',
+  profileColorLabel: '头像颜色', profileColorWithImg: '（自定义头像时作为边框色）',
+  profileNameLabel: '显示昵称', profileSave: '保存', profileSaving: '…',
+  profileCodesLabel: '我的邀请码', profileNoCodes: '暂无邀请码',
+  codeCopy: '复制', codeCopied: '已复制', codeUsed: '已使用', codeRevoked: '已撤销',
+  profilePwLabel: '修改密码',
+  profileOldPw: '当前密码', profileNewPw: '新密码（至少 8 字符）', profileConfirmPw: '确认新密码',
+  profileChangePw: '确认修改', profileChangingPw: '修改中…', profileLogout: '退出登录',
+  // Not found
+  notFound: '页面不存在', backHome: '回到首页',
+} as const
+
+export type I18nKey = keyof typeof zh
+
+export const en: Record<I18nKey, string> = {
+  login: 'Login', register: 'Sign Up', profileSettings: 'Settings', logout: 'Logout',
+  loading: 'Loading…', myLists: 'My Lists', newList: 'New',
+  newListPlaceholder: 'List title (required)', cancel: 'Cancel', create: 'Create',
+  emptyHint: 'No lists yet. Click "New" to get started.', moduleCount: 'modules',
+  addModule: '+ Add Module', collapseMenu: 'Close',
+  moduleTypeTodo: 'Todo List', moduleTypeVote: 'Vote', moduleTypeText: 'Text',
+  moduleLabelTodo: 'Todo', moduleLabelVote: 'Vote', moduleLabelText: 'Text',
+  editLabelHint: 'Click to edit label', deleteModule: 'Delete module',
+  titleFont: 'Title Font',
+  fontS: 'S', fontM: 'M', fontL: 'L', fontXL: 'XL',
+  fontColor: 'Color', clearColor: 'Clear', resetFont: 'Reset',
+  fontFamilyDefault: 'System default', fontFamilyHei: 'Gothic', fontFamilySong: 'Serif',
+  fontFamilyKai: 'Script', fontFamilyMono: 'Monospace', fontFamilyRound: 'Rounded',
+  moduleSettings: 'Module Settings', background: 'Background', clearBg: 'Clear background',
+  uploadBg: 'Upload background', pasteUrl: 'Or paste image URL…', apply: 'Apply',
+  opacity: 'Opacity', imageSize: 'Image size', posX: 'Position X', posY: 'Position Y',
+  fillMode: 'Fill', fillCover: 'Cover', fillContain: 'Contain', fillOriginal: 'Original',
+  customColorBtn: 'Custom',
+  bgButton: 'Background', bgSettings: 'Background', bgColorLabel: 'Color',
+  bgUrlLabel: 'Image URL', bgCardOpacity: 'Card opacity',
+  colorNone: 'None', colorWarmBeige: 'Warm', colorMint: 'Mint', colorSkyBlue: 'Blue',
+  colorLavender: 'Lavender', colorPeach: 'Peach', colorLightGray: 'Gray',
+  colorCharcoal: 'Dark', colorDarkPurple: 'Purple',
+  colorDefault: 'Default', colorForestGreen: 'Forest', colorDarkGray: 'Dark gray',
+  colorCustom: 'Custom color',
+  todoSubtitle: 'Subtitle (optional)', todoNewItem: 'Add item…',
+  voteQuestion: 'Question…', voteOption: 'Option…',
+  voteSingle: 'Single', voteMulti: 'Multi', voteAnon: 'Anonymous', voteReal: 'Public',
+  voteTotal: 'votes', voteAddOption: 'Add option',
+  insertImage: 'Upload',
+  fmtBold: 'Bold', fmtItalic: 'Italic', fmtUnderline: 'Underline', fmtStrike: 'Strikethrough',
+  fmtSizeSmall: 'S', fmtSizeMedium: 'M', fmtSizeLarge: 'L',
+  cropAction: '✂ Crop', restoreImg: '↩ Original', removeImg: '✕ Remove',
+  cropDragHint: 'Drag to select crop area', cropSelected: 'Selected',
+  cropPxSuffix: 'px — click to confirm', cropConfirm: 'Confirm Crop', cropCancel: 'Cancel',
+  loginTitle: 'Login to ListGo', loginUsername: 'Username', loginPassword: 'Password',
+  loginSubmit: 'Login', loginLoading: 'Logging in…',
+  loginForgot: 'Forgot password? Contact the author.', loginNoAccount: 'No account? ', loginGoRegister: 'Sign Up',
+  registerTitle: 'Join ListGo', registerSubtitle: 'An invite code is required.',
+  registerUsername: 'Username', registerUsernamePlaceholder: '3–20 chars, letters/digits/_',
+  registerUsernameWarning: '⚠ Username cannot be changed later',
+  registerPassword: 'Password', registerPasswordPlaceholder: 'At least 8 characters',
+  registerInvite: 'Invite Code', registerInvitePlaceholder: '12-character code',
+  registerSubmit: 'Sign Up', registerLoading: 'Signing up…',
+  registerHasAccount: 'Already have an account? ', registerGoLogin: 'Login',
+  profileAvatar: 'Avatar', profileUploadAvatar: 'Upload Avatar',
+  profileProcessing: 'Processing…', profileRemoveAvatar: 'Remove custom avatar',
+  profileColorLabel: 'Avatar Color', profileColorWithImg: '(used as border with custom avatar)',
+  profileNameLabel: 'Display Name', profileSave: 'Save', profileSaving: '…',
+  profileCodesLabel: 'My Invite Codes', profileNoCodes: 'No invite codes',
+  codeCopy: 'Copy', codeCopied: 'Copied!', codeUsed: 'Used', codeRevoked: 'Revoked',
+  profilePwLabel: 'Change Password',
+  profileOldPw: 'Current password', profileNewPw: 'New password (≥8 chars)', profileConfirmPw: 'Confirm new password',
+  profileChangePw: 'Change Password', profileChangingPw: 'Saving…', profileLogout: 'Logout',
+  notFound: 'Page not found', backHome: 'Back to home',
+}
+
+export const translations = { zh, en }
+
+// Shared data structures with i18n keys
+export const FONT_SIZES: { key: I18nKey; value: string }[] = [
+  { key: 'fontS', value: '0.75rem' },
+  { key: 'fontM', value: '1rem' },
+  { key: 'fontL', value: '1.25rem' },
+  { key: 'fontXL', value: '1.5rem' },
+]
+
+export const FONT_FAMILIES: { key: I18nKey; value: string }[] = [
+  { key: 'fontFamilyDefault', value: '' },
+  { key: 'fontFamilyHei', value: "'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif" },
+  { key: 'fontFamilySong', value: "'SimSun', 'STSong', Georgia, serif" },
+  { key: 'fontFamilyKai', value: "'KaiTi', 'STKaiti', cursive" },
+  { key: 'fontFamilyMono', value: "'Courier New', Consolas, monospace" },
+  { key: 'fontFamilyRound', value: "'PingFang SC', 'Hiragino Sans GB', 'Segoe UI', sans-serif" },
+]
+
+export const MODULE_PRESET_COLORS: { key: I18nKey; value: string }[] = [
+  { key: 'colorNone', value: '' },
+  { key: 'colorWarmBeige', value: '#FDF6EC' },
+  { key: 'colorMint', value: '#ECFDF5' },
+  { key: 'colorSkyBlue', value: '#EFF6FF' },
+  { key: 'colorLavender', value: '#F5F3FF' },
+  { key: 'colorPeach', value: '#FFF1F2' },
+  { key: 'colorLightGray', value: '#F9FAFB' },
+  { key: 'colorCharcoal', value: '#1F2937' },
+  { key: 'colorDarkPurple', value: '#1E1B4B' },
+]
+
+export const LIST_PRESET_COLORS: { key: I18nKey; value: string }[] = [
+  { key: 'colorDefault', value: '' },
+  { key: 'colorWarmBeige', value: '#FDF6EC' },
+  { key: 'colorMint', value: '#ECFDF5' },
+  { key: 'colorSkyBlue', value: '#EFF6FF' },
+  { key: 'colorLavender', value: '#F5F3FF' },
+  { key: 'colorPeach', value: '#FFF1F2' },
+  { key: 'colorLightGray', value: '#F9FAFB' },
+  { key: 'colorForestGreen', value: '#14532D' },
+  { key: 'colorDarkGray', value: '#1F2937' },
+]

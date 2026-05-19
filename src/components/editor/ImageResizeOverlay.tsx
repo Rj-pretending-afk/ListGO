@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useT } from '../../hooks/useLang'
 
 interface ImageResizeOverlayProps {
   imgEl: HTMLImageElement
@@ -23,6 +24,7 @@ const CURSOR: Record<Corner, string> = {
 }
 
 export function ImageResizeOverlay({ imgEl, onResizeEnd, onCrop, onRemove, onRestore }: ImageResizeOverlayProps) {
+  const t = useT()
   const [rect, setRect] = useState(() => imgEl.getBoundingClientRect())
 
   const refreshRect = useCallback(() => {
@@ -116,17 +118,11 @@ export function ImageResizeOverlay({ imgEl, onResizeEnd, onCrop, onRemove, onRes
         <span style={{ color: 'var(--color-text)', opacity: 0.45 }}>
           {w} × {h}px
         </span>
-        <button onClick={onCrop} className="hover:opacity-70" style={{ color: 'var(--color-text)' }}>
-          ✂ 裁剪
-        </button>
+        <button onClick={onCrop} className="hover:opacity-70" style={{ color: 'var(--color-text)' }}>{t('cropAction')}</button>
         {hasOriginal && (
-          <button onClick={onRestore} className="hover:opacity-70" style={{ color: 'var(--color-primary)' }}>
-            ↩ 原图
-          </button>
+          <button onClick={onRestore} className="hover:opacity-70" style={{ color: 'var(--color-primary)' }}>{t('restoreImg')}</button>
         )}
-        <button onClick={onRemove} className="hover:opacity-70" style={{ color: '#ef4444' }}>
-          ✕ 移除
-        </button>
+        <button onClick={onRemove} className="hover:opacity-70" style={{ color: '#ef4444' }}>{t('removeImg')}</button>
       </div>
     </>
   )

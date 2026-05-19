@@ -3,29 +3,41 @@ import { Link, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { ThemeSwitcher } from '../theme/ThemeSwitcher'
 import { useAuthStore } from '../../hooks/useAuth'
+import { useLangStore, useT } from '../../hooks/useLang'
 import { AvatarDisplay } from '../../pages/ProfilePage'
+
+function LangToggle() {
+  const { lang, toggle } = useLangStore()
+  return (
+    <button
+      onClick={toggle}
+      className="px-2 py-1 rounded-lg text-xs font-semibold hover:opacity-70 transition-opacity select-none"
+      style={{ color: 'var(--color-text)', opacity: 0.55, border: '1px solid var(--color-border)' }}
+      title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
+    >
+      {lang === 'zh' ? 'EN' : '中'}
+    </button>
+  )
+}
 
 function UserMenu() {
   const navigate = useNavigate()
+  const t = useT()
   const { user, logout } = useAuthStore()
   const [open, setOpen] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
-  const handleLogout = () => {
-    logout()
-    setOpen(false)
-    navigate('/')
-  }
+  const handleLogout = () => { logout(); setOpen(false); navigate('/') }
 
   return (
     <div className="relative">
       <button
         ref={btnRef}
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-2 px-2 py-1 rounded-lg hover:opacity-80 transition-opacity"
+        className="flex items-center gap-2 px-2 rounded-lg hover:opacity-80 transition-opacity h-10"
       >
-        <AvatarDisplay user={user!} size={28} />
-        <span className="text-sm max-w-[80px] truncate" style={{ color: 'var(--color-text)' }}>
+        <AvatarDisplay user={user!} size={32} />
+        <span className="text-sm font-medium max-w-[90px] truncate" style={{ color: 'var(--color-text)' }}>
           {user!.displayName}
         </span>
       </button>
@@ -44,21 +56,16 @@ function UserMenu() {
             }}
             onClick={e => e.stopPropagation()}
           >
-            <Link
-              to="/profile"
-              onClick={() => setOpen(false)}
-              className="flex items-center px-4 py-2.5 text-sm hover:opacity-70"
-              style={{ color: 'var(--color-text)' }}
-            >
-              个人设置
+            <Link to="/profile" onClick={() => setOpen(false)}
+              className="flex items-center px-4 py-3 text-sm hover:opacity-70"
+              style={{ color: 'var(--color-text)' }}>
+              {t('profileSettings')}
             </Link>
             <div style={{ borderTop: '1px solid var(--color-border)' }} />
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center px-4 py-2.5 text-sm hover:opacity-70"
-              style={{ color: '#ef4444' }}
-            >
-              退出登录
+            <button onClick={handleLogout}
+              className="w-full flex items-center px-4 py-3 text-sm hover:opacity-70"
+              style={{ color: '#ef4444' }}>
+              {t('logout')}
             </button>
           </div>
         </>,
@@ -69,6 +76,7 @@ function UserMenu() {
 }
 
 export function Header() {
+  const t = useT()
   const user = useAuthStore(s => s.user)
   const authLoading = useAuthStore(s => s.authLoading)
 
@@ -77,15 +85,12 @@ export function Header() {
       className="h-14 flex items-center justify-between px-4 border-b sticky top-0 z-10"
       style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)' }}
     >
-      <Link
-        to="/"
-        className="font-bold text-lg select-none"
-        style={{ color: 'var(--color-text)' }}
-      >
+      <Link to="/" className="font-bold text-lg select-none" style={{ color: 'var(--color-text)' }}>
         ListGo
       </Link>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <LangToggle />
         <ThemeSwitcher />
 
         {!authLoading && (
@@ -93,19 +98,15 @@ export function Header() {
             ? <UserMenu />
             : (
               <div className="flex items-center gap-2">
-                <Link
-                  to="/login"
-                  className="text-sm px-3 py-1.5 rounded-lg hover:opacity-70"
-                  style={{ color: 'var(--color-text)', opacity: 0.6 }}
-                >
-                  登录
+                <Link to="/login"
+                  className="text-sm px-3 h-9 flex items-center rounded-lg hover:opacity-70"
+                  style={{ color: 'var(--color-text)', opacity: 0.65 }}>
+                  {t('login')}
                 </Link>
-                <Link
-                  to="/register"
-                  className="text-sm px-3 py-1.5 rounded-lg font-medium hover:opacity-80"
-                  style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
-                >
-                  注册
+                <Link to="/register"
+                  className="text-sm px-3 h-9 flex items-center rounded-lg font-medium hover:opacity-80"
+                  style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                  {t('register')}
                 </Link>
               </div>
             )
