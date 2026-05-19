@@ -407,18 +407,18 @@ listgo/
 **目标：** 注册登录、本地清单上云、匿名领取
 
 **第 1-2 天：基础设施**
-- [ ] Cloudflare Workers + D1 + R2 配置
-- [ ] D1 schema 部署
-- [ ] 密码哈希工具（PBKDF2）
-- [ ] JWT 工具（30 天有效）
-- [ ] auth middleware
+- [x] Cloudflare Workers + D1 + R2 配置（wrangler.toml，需填入 D1 ID）
+- [x] D1 schema 部署（workers/schema.sql）
+- [x] 密码哈希工具（PBKDF2，workers/lib/crypto.ts）
+- [x] JWT 工具（30 天有效，workers/lib/jwt.ts，含 signJWT + verifyJWT）
+- [x] auth middleware（workers/middleware/auth.ts + adminOnly.ts）
 
 **第 3-4 天：注册登录流程**
-- [ ] `POST /auth/register`：用户名 + 密码 + 邀请码
-- [ ] `POST /auth/login` → JWT
-- [ ] `GET /auth/me`：拉用户信息
-- [ ] `PUT /auth/profile`：改昵称、头像色
-- [ ] `PUT /auth/password`：改密码（需输入旧密码）
+- [x] `POST /auth/register`：用户名 + 密码 + 邀请码
+- [x] `POST /auth/login` → JWT
+- [x] `GET /auth/me`：拉用户信息
+- [x] `PUT /auth/profile`：改昵称、头像色
+- [x] `PUT /auth/password`：改密码（需输入旧密码）
 - [ ] 前端：注册页、登录页、个人设置页
 - [ ] 邀请码面板：列出我的码、是否已用
 
