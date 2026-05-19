@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X, Clock } from 'lucide-react'
+import { Plus, X, Clock, CloudUpload } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useLists, useLoaded, useListActions } from '../hooks/useList'
@@ -22,8 +22,17 @@ export default function Home() {
   const loaded = useLoaded()
   const { createList, deleteList } = useListActions()
   const navigate = useNavigate()
+  const uploadToCloud = useAppStore(s => s.uploadToCloud)
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [uploading, setUploading] = useState<Record<string, boolean>>({})
+
+  const handleUpload = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    setUploading(u => ({ ...u, [id]: true }))
+    try { await uploadToCloud(id) } catch { /* silent */ }
+    finally { setUploading(u => ({ ...u, [id]: false })) }
+  }
 
   const handleCreate = async () => {
     const title = newTitle.trim()
@@ -108,6 +117,16 @@ export default function Home() {
                   <Clock size={10} />
                 </button>
               </div>
+              {currentUser && list.ownerToken && !list.ownerId && (
+                <button
+                  onClick={e => handleUpload(e, list.id)}
+                  disabled={uploading[list.id]}
+                  title={uploading[list.id] ? t('syncing') : t('syncToCloud')}
+                  className="absolute top-3 right-8 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:opacity-70 disabled:opacity-30"
+                  style={{ color: 'var(--color-primary)' }}>
+                  <CloudUpload size={14} />
+                </button>
+              )}
               <button onClick={e => { e.stopPropagation(); deleteList(list.id) }}
                 className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:opacity-70"
                 style={{ color: 'var(--color-text)' }}><X size={14} /></button>

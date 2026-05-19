@@ -1,4 +1,5 @@
 import { authStorage } from './auth'
+import type { List } from '../types/list.types'
 
 const BASE = import.meta.env.VITE_API_URL ?? ''
 
@@ -24,4 +25,42 @@ export const api = {
   post:   <T>(path: string, body: unknown) => request<T>(path, { method: 'POST',   body: JSON.stringify(body) }),
   put:    <T>(path: string, body: unknown) => request<T>(path, { method: 'PUT',    body: JSON.stringify(body) }),
   delete: <T>(path: string)               => request<T>(path, { method: 'DELETE' }),
+}
+
+function listPayload(list: List) {
+  return {
+    id:               list.id,
+    title:            list.title,
+    ownerToken:       list.ownerToken,
+    modules:          list.modules,
+    background:       list.background,
+    cardOpacity:      list.cardOpacity,
+    invitedUsernames: list.invitedUsernames,
+    permission:       list.permission ?? 'public',
+    version:          list.version,
+    createdAt:        list.createdAt,
+    updatedAt:        list.updatedAt,
+  }
+}
+
+export const listApi = {
+  create: (list: List) =>
+    api.post<{ ok: boolean }>('/lists', listPayload(list)),
+
+  update: (list: List) =>
+    api.put<{ ok: boolean; version: number }>(`/lists/${list.id}`, {
+      title:            list.title,
+      ownerToken:       list.ownerToken,
+      modules:          list.modules,
+      background:       list.background,
+      cardOpacity:      list.cardOpacity,
+      invitedUsernames: list.invitedUsernames,
+      permission:       list.permission ?? 'public',
+      version:          list.version,
+    }),
+
+  delete: (id: string, ownerToken?: string) => {
+    const qs = ownerToken ? `?ownerToken=${encodeURIComponent(ownerToken)}` : ''
+    return api.delete<{ ok: boolean }>(`/lists/${id}${qs}`)
+  },
 }

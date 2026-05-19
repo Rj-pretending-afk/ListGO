@@ -2,6 +2,7 @@
 
 import { getAuth } from './middleware/auth'
 import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword } from './routes/auth'
+import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList } from './routes/lists'
 
 export interface Env {
   DB: D1Database
@@ -56,9 +57,27 @@ export default {
       return handleChangePassword(request, auth, env, json, err)
     }
 
-    // ── Lists (Day 5) ──
-    // ── Admin (Day 7) ──
+    // ── Lists ──
+    if (method === 'POST' && pathname === '/lists') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleCreateList(request, auth, env, json, err)
+    }
+    if (method === 'GET' && pathname === '/lists') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (!auth) return err('Unauthorized', 401)
+      return handleGetUserLists(auth, env, json)
+    }
+    const listIdMatch = pathname.match(/^\/lists\/([^/]+)$/)
+    if (listIdMatch) {
+      const id = listIdMatch[1]
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (method === 'GET')    return handleGetList(id, request, auth, env, json, err)
+      if (method === 'PUT')    return handleUpdateList(id, request, auth, env, json, err)
+      if (method === 'DELETE') return handleDeleteList(id, request, auth, env, json, err)
+    }
+
     // ── Claim (Day 6) ──
+    // ── Admin (Day 7) ──
 
     return err('Not found', 404)
   },

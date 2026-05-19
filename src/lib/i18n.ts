@@ -71,6 +71,8 @@ export const zh = {
   profileChangePw: '确认修改', profileChangingPw: '修改中…', profileLogout: '退出登录',
   // Timestamps
   timeCreated: '创建', timeModified: '修改', toggleTimeFormat: '切换时间格式',
+  // Cloud sync
+  syncToCloud: '同步到云端', syncing: '同步中…', synced: '已同步',
   // Feedback messages
   saved: '已保存', saveFailed: '保存失败',
   pwChanged: '密码已修改', pwMismatch: '两次密码不一致',
@@ -137,6 +139,7 @@ export const en: Record<I18nKey, string> = {
   profileOldPw: 'Current password', profileNewPw: 'New password (≥8 chars)', profileConfirmPw: 'Confirm new password',
   profileChangePw: 'Change Password', profileChangingPw: 'Saving…', profileLogout: 'Logout',
   timeCreated: 'Created', timeModified: 'Modified', toggleTimeFormat: 'Toggle time format',
+  syncToCloud: 'Sync to cloud', syncing: 'Syncing…', synced: 'Synced',
   saved: 'Saved', saveFailed: 'Save failed',
   pwChanged: 'Password changed', pwMismatch: 'Passwords do not match',
   pwTooShort: 'New password must be at least 8 characters', changeFailed: 'Failed to change',

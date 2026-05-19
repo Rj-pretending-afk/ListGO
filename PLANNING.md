@@ -423,12 +423,14 @@ listgo/
 - [x] 邀请码面板：列出我的码、是否已用
 
 **第 5 天：云端清单**
-- [ ] `lib/ownerToken.ts`：浏览器生成 16 位 token 存 localStorage
-- [ ] `POST /lists`：创建（带 owner_id 或 owner_token）
-- [ ] `GET /lists/:id`：拉清单
-- [ ] `PUT /lists/:id`：更新（带版本号）
-- [ ] `DELETE /lists/:id`：删除
-- [ ] 前端：本地清单"上传到云"按钮（注册用户）
+- [x] `lib/ownerToken.ts`：浏览器生成 16 位 token 存 localStorage
+- [x] `POST /lists`：创建（带 owner_id 或 owner_token）
+- [x] `GET /lists/:id`：拉清单
+- [x] `PUT /lists/:id`：更新（带版本号）
+- [x] `DELETE /lists/:id`：删除
+- [x] 前端：本地清单"上传到云"按钮（注册用户）
+  - 登录用户新建清单时自动上传；编辑时 800ms debounce 同步到云端
+  - 匿名清单卡片 hover 时显示 CloudUpload 图标，点击手动上传
 
 **第 6 天：匿名领取**
 - [ ] `POST /claim`：把匿名清单转给注册用户
