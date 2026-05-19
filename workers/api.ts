@@ -3,6 +3,7 @@
 import { getAuth } from './middleware/auth'
 import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword } from './routes/auth'
 import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList } from './routes/lists'
+import { handleClaimPreview, handleClaim } from './routes/claim'
 
 export interface Env {
   DB: D1Database
@@ -76,7 +77,18 @@ export default {
       if (method === 'DELETE') return handleDeleteList(id, request, auth, env, json, err)
     }
 
-    // ── Claim (Day 6) ──
+    // ── Claim ──
+    if (pathname === '/claim/preview') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (!auth) return err('Unauthorized', 401)
+      return handleClaimPreview(request, auth, env, json, err)
+    }
+    if (method === 'POST' && pathname === '/claim') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (!auth) return err('Unauthorized', 401)
+      return handleClaim(request, auth, env, json, err)
+    }
+
     // ── Admin (Day 7) ──
 
     return err('Not found', 404)

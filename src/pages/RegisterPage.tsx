@@ -2,24 +2,48 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../hooks/useAuth'
+import { useAppStore } from '../lib/store'
 import { useT } from '../hooks/useLang'
+import { ClaimDialog } from '../components/ui/ClaimDialog'
 import type { User } from '../types/user.types'
+import type { List } from '../types/list.types'
 
 export default function RegisterPage() {
   const t = useT()
   const navigate = useNavigate()
   const login = useAuthStore(s => s.login)
+  const initApp = useAppStore(s => s.init)
+  const lists = useAppStore(s => s.lists)
   const [form, setForm] = useState({ username: '', password: '', inviteCode: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [claimData, setClaimData] = useState<{ userId: string; lists: List[] } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(''); setLoading(true)
     try {
       const res = await api.post<{ token: string } & User>('/auth/register', form)
-      login(res.token, res); navigate('/')
+      login(res.token, res)
+      await initApp()
+      // Collect anonymous local lists to offer claiming
+      const anonymous = lists.filter(l => l.ownerToken && !l.ownerId)
+      if (anonymous.length > 0) {
+        setClaimData({ userId: res.id, lists: anonymous })
+      } else {
+        navigate('/')
+      }
     } catch (e) { setError(e instanceof Error ? e.message : t('registerSubmit')) }
     finally { setLoading(false) }
+  }
+
+  if (claimData) {
+    return (
+      <ClaimDialog
+        userId={claimData.userId}
+        anonymousLists={claimData.lists}
+        onDone={() => navigate('/')}
+      />
+    )
   }
 
   const inputStyle = { backgroundColor: 'var(--color-border)', color: 'var(--color-text)', border: '1px solid transparent' }

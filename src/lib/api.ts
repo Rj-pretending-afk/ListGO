@@ -43,6 +43,15 @@ function listPayload(list: List) {
   }
 }
 
+export const claimApi = {
+  preview: (ownerToken: string) =>
+    api.get<{ id: string; title: string; updated_at: number }[]>(
+      `/claim/preview?ownerToken=${encodeURIComponent(ownerToken)}`
+    ),
+  claim: (ownerToken: string, listIds: string[]) =>
+    api.post<{ ok: boolean }>('/claim', { ownerToken, listIds }),
+}
+
 export const listApi = {
   create: (list: List) =>
     api.post<{ ok: boolean }>('/lists', listPayload(list)),

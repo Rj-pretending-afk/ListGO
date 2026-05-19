@@ -48,6 +48,7 @@ interface AppStore {
   updateListBackground: (id: string, background: ListBackground) => Promise<void>
   reorderModules: (listId: string, fromIndex: number, toIndex: number) => void
   uploadToCloud: (id: string) => Promise<void>
+  claimLists: (listIds: string[], newOwnerId: string) => Promise<void>
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -201,5 +202,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const list = get().lists.find(l => l.id === id)
     if (!list) return
     await listApi.create(list)
+  },
+
+  claimLists: async (listIds, newOwnerId) => {
+    const t = ts()
+    await Promise.all(
+      listIds.map(id => db.lists.update(id, { ownerId: newOwnerId, ownerToken: undefined, updatedAt: t }))
+    )
+    set(s => ({
+      lists: s.lists.map(l =>
+        listIds.includes(l.id)
+          ? { ...l, ownerId: newOwnerId, ownerToken: undefined, updatedAt: t }
+          : l
+      ),
+    }))
   },
 }))

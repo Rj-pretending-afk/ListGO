@@ -433,9 +433,9 @@ listgo/
   - 匿名清单卡片 hover 时显示 CloudUpload 图标，点击手动上传
 
 **第 6 天：匿名领取**
-- [ ] `POST /claim`：把匿名清单转给注册用户
-- [ ] 注册成功后弹窗：浏览器扫描所有匿名 ownerToken 的清单 → 让用户勾选要领取的
-- [ ] 领取后：`owner_id` 改成 user.id，`owner_token` 设 null，移出 30 天清理
+- [x] `POST /claim`：把匿名清单转给注册用户（同时实现 GET /claim/preview）
+- [x] 注册成功后弹窗：浏览器扫描所有匿名 ownerToken 的清单 → 让用户勾选要领取的
+- [x] 领取后：`owner_id` 改成 user.id，`owner_token` 设 null，移出 30 天清理
 
 **第 7 天：管理员后台**
 - [ ] 标记某账号为 `is_admin = 1`（DB 直改）

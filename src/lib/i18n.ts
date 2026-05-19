@@ -6,7 +6,7 @@ export const zh = {
   newListPlaceholder: '清单标题（必填）', cancel: '取消', create: '创建',
   emptyHint: '还没有清单，点「新建」开始', moduleCount: '个模块',
   // List page
-  addModule: '+ 添加模块', collapseMenu: '收起',
+  addModule: '添加模块', collapseMenu: '收起',
   moduleTypeTodo: '待办列表', moduleTypeVote: '投票', moduleTypeText: '文本',
   moduleLabelTodo: '待办', moduleLabelVote: '投票', moduleLabelText: '文本',
   editLabelHint: '点击编辑标签', deleteModule: '删除模块',
@@ -73,6 +73,10 @@ export const zh = {
   timeCreated: '创建', timeModified: '修改', toggleTimeFormat: '切换时间格式',
   // Cloud sync
   syncToCloud: '同步到云端', syncing: '同步中…', synced: '已同步',
+  // Claim
+  claimTitle: '领取之前创建的清单', claimSubtitle: '检测到你在未登录状态下创建了以下清单，是否将它们关联到你的账号？',
+  claimConfirm: '领取选中清单', claimSkip: '跳过', claimLoading: '领取中…',
+  claimEmpty: '没有可领取的本地清单',
   // Feedback messages
   saved: '已保存', saveFailed: '保存失败',
   pwChanged: '密码已修改', pwMismatch: '两次密码不一致',
@@ -140,6 +144,9 @@ export const en: Record<I18nKey, string> = {
   profileChangePw: 'Change Password', profileChangingPw: 'Saving…', profileLogout: 'Logout',
   timeCreated: 'Created', timeModified: 'Modified', toggleTimeFormat: 'Toggle time format',
   syncToCloud: 'Sync to cloud', syncing: 'Syncing…', synced: 'Synced',
+  claimTitle: 'Claim your previous lists', claimSubtitle: 'These lists were created before you signed in. Associate them with your account?',
+  claimConfirm: 'Claim selected', claimSkip: 'Skip', claimLoading: 'Claiming…',
+  claimEmpty: 'No local lists to claim',
   saved: 'Saved', saveFailed: 'Save failed',
   pwChanged: 'Password changed', pwMismatch: 'Passwords do not match',
   pwTooShort: 'New password must be at least 8 characters', changeFailed: 'Failed to change',
