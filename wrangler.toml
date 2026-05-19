@@ -5,7 +5,7 @@ compatibility_date = "2025-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "listgo"
-database_id = "REPLACE_WITH_YOUR_D1_ID"
+database_id = "84db5680-3705-47f6-b1cf-e022f55fd87f"
 
 [[r2_buckets]]
 binding = "IMAGES"
