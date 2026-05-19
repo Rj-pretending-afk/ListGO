@@ -152,9 +152,11 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
               onChange={updateContentFont}
             />
 
+            <div className="pt-3">
             {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} />}
             {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} />}
             {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} />}
+            </div>
 
             {/* Timestamps */}
             {(module.createdAt || module.updatedAt) && (

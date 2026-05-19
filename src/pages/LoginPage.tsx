@@ -2,14 +2,21 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../hooks/useAuth'
+import { useAppStore } from '../lib/store'
 import { useT } from '../hooks/useLang'
 import type { User } from '../types/user.types'
+
+const LAST_USER_KEY = 'listgo_last_username'
 
 export default function LoginPage() {
   const t = useT()
   const navigate = useNavigate()
   const login = useAuthStore(s => s.login)
-  const [form, setForm] = useState({ username: '', password: '' })
+  const initApp = useAppStore(s => s.init)
+  const [form, setForm] = useState({
+    username: localStorage.getItem(LAST_USER_KEY) ?? '',
+    password: '',
+  })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -17,7 +24,11 @@ export default function LoginPage() {
     e.preventDefault(); setError(''); setLoading(true)
     try {
       const res = await api.post<{ token: string } & User>('/auth/login', form)
-      login(res.token, res); navigate('/')
+      localStorage.setItem(LAST_USER_KEY, form.username)
+      login(res.token, res)
+      // Reload lists from DB so the new user's filtered view is fresh
+      await initApp()
+      navigate('/')
     } catch (e) { setError(e instanceof Error ? e.message : t('loginSubmit')) }
     finally { setLoading(false) }
   }
