@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { db } from './db'
 import { generateListId, generateModuleId, generateItemId } from './shortid'
+import { getOwnerToken } from './ownerToken'
 import type { List, ListBackground, Module, TodoModule, VoteModule } from '../types/list.types'
 
 export type Theme = 'day' | 'dark' | 'light-pink' | 'dark-pink'
@@ -22,10 +23,12 @@ function ts() {
 interface AppStore {
   theme: Theme
   cycleTheme: () => void
+  timeFormat: 'relative' | 'absolute'
+  toggleTimeFormat: () => void
   lists: List[]
   loaded: boolean
   init: () => Promise<void>
-  createList: (title: string) => Promise<string>
+  createList: (title: string, ownerId?: string) => Promise<string>
   updateListTitle: (id: string, title: string) => Promise<void>
   deleteList: (id: string) => Promise<void>
   addModule: (listId: string, type: Module['type']) => Promise<void>
@@ -47,6 +50,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     })
   },
 
+  timeFormat: 'relative' as const,
+  toggleTimeFormat: () => set(s => ({ timeFormat: s.timeFormat === 'relative' ? 'absolute' : 'relative' })),
+
   lists: [],
   loaded: false,
 
@@ -55,7 +61,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ lists, loaded: true })
   },
 
-  createList: async (title) => {
+  createList: async (title, ownerId) => {
     const id = generateListId()
     const t = ts()
     const list: List = {
@@ -63,6 +69,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       background: { type: 'color', value: '' },
       modules: [],
       permission: 'public',
+      ownerId,
+      ownerToken: ownerId ? undefined : getOwnerToken(),
       createdAt: t, updatedAt: t, lastAccessedAt: t,
       version: 1,
     }
@@ -87,10 +95,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!list) return
 
     const id = generateModuleId()
+    const now = ts()
     let module: Module
 
     if (type === 'todo') {
-      const m: TodoModule = { id, type: 'todo', items: [] }
+      const m: TodoModule = { id, type: 'todo', items: [], createdAt: now, updatedAt: now }
       module = m
     } else if (type === 'vote') {
       const m: VoteModule = {
@@ -103,13 +112,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         multiSelect: false,
         anonymous: false,
         votes: {},
+        createdAt: now,
+        updatedAt: now,
       }
       module = m
     } else {
-      module = { id, type: 'text', content: '' }
+      module = { id, type: 'text', content: '', createdAt: now, updatedAt: now }
     }
 
-    const t = ts()
+    const t = now
     const modules = [...list.modules, module]
     await db.lists.update(listId, { modules, updatedAt: t })
     set(s => ({ lists: s.lists.map(l => l.id === listId ? { ...l, modules, updatedAt: t } : l) }))
@@ -120,7 +131,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!list) return
 
     const t = ts()
-    const modules = list.modules.map(m => m.id === updatedModule.id ? updatedModule : m)
+    const stamped = { ...updatedModule, updatedAt: t }
+    const modules = list.modules.map(m => m.id === updatedModule.id ? stamped : m)
     // 先同步更新 Zustand（React 立即拿到正确值，不会在 IME 组合期间重置 DOM）
     set(s => ({ lists: s.lists.map(l => l.id === listId ? { ...l, modules, updatedAt: t } : l) }))
     // 后台持久化，不阻塞 UI

@@ -1,0 +1,18 @@
+name = "listgo-api"
+main = "workers/api.ts"
+compatibility_date = "2025-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "listgo"
+database_id = "84db5680-3705-47f6-b1cf-e022f55fd87f"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "listgo-images"
+
+[triggers]
+crons = ["0 4 * * *"]
+
+# JWT_SECRET 通过命令注入，不入代码：
+# npx wrangler secret put JWT_SECRET

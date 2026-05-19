@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ImagePlus, Link } from 'lucide-react'
+import { useT } from '../../hooks/useLang'
+import { contentFontStyle } from '../ui/ContentFormattingBar'
+import type { ContentFontSettings } from '../../types/list.types'
 import DOMPurify from 'dompurify'
 import { BubbleToolbar } from '../editor/BubbleToolbar'
 import { RichTextEditor, type RichTextEditorRef } from '../editor/RichTextEditor'
@@ -12,9 +15,11 @@ import type { TextModule as TextModuleType } from '../../types/list.types'
 interface TextModuleProps {
   module: TextModuleType
   onChange: (module: TextModuleType) => void
+  contentFontSettings?: ContentFontSettings
 }
 
-export function TextModule({ module, onChange }: TextModuleProps) {
+export function TextModule({ module, onChange, contentFontSettings }: TextModuleProps) {
+  const t = useT()
   const editorRef = useRef<RichTextEditorRef>(null)
   const [selRect, setSelRect] = useState<DOMRect | null>(null)
   const [selectedImg, setSelectedImg] = useState<HTMLImageElement | null>(null)
@@ -29,6 +34,7 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     ...(module.fontSettings?.size ? { fontSize: module.fontSettings.size } : {}),
     ...(module.fontSettings?.family ? { fontFamily: module.fontSettings.family } : {}),
     ...(module.fontSettings?.color ? { color: module.fontSettings.color } : {}),
+    ...contentFontStyle(contentFontSettings),
   }
 
   const insertImageSrc = (src: string) => {
@@ -78,6 +84,13 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     setSelectedImg(null)
   }
 
+  const handleCropOpen = () => {
+    if (selectedImg && !selectedImg.dataset.originalSrc) {
+      selectedImg.dataset.originalSrc = selectedImg.src
+    }
+    setShowCrop(true)
+  }
+
   const handleCropConfirm = (dataUrl: string) => {
     if (!selectedImg) return
     selectedImg.src = dataUrl
@@ -85,6 +98,16 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     const el = editorRef.current?.getEl()
     if (el) onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
     setShowCrop(false)
+    setSelectedImg(null)
+  }
+
+  const handleRestore = () => {
+    if (!selectedImg?.dataset.originalSrc) return
+    selectedImg.src = selectedImg.dataset.originalSrc
+    delete selectedImg.dataset.originalSrc
+    selectedImg.style.width = ''
+    const el = editorRef.current?.getEl()
+    if (el) onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
     setSelectedImg(null)
   }
 
@@ -123,9 +146,13 @@ export function TextModule({ module, onChange }: TextModuleProps) {
       {selectedImg && createPortal(
         <ImageResizeOverlay
           imgEl={selectedImg}
-          onResizeEnd={() => { /* rect updates internally in overlay */ }}
-          onCrop={() => setShowCrop(true)}
+          onResizeEnd={() => {
+            const el = editorRef.current?.getEl()
+            if (el) onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
+          }}
+          onCrop={handleCropOpen}
           onRemove={handleRemoveImg}
+          onRestore={handleRestore}
         />,
         document.body
       )}
@@ -150,7 +177,7 @@ export function TextModule({ module, onChange }: TextModuleProps) {
           className="flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer hover:opacity-70 transition-opacity"
           style={{ color: 'var(--color-text)', opacity: 0.55 }}
         >
-          <ImagePlus size={13} /> 上传
+          <ImagePlus size={13} /> {t('insertImage')}
           <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
         </label>
         <button

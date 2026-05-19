@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react'
+import { useT } from '../../hooks/useLang'
 
 interface ImageResizeOverlayProps {
   imgEl: HTMLImageElement
   onResizeEnd: () => void
   onCrop: () => void
   onRemove: () => void
+  onRestore?: () => void
 }
 
 type Corner = 'tl' | 'tr' | 'bl' | 'br'
@@ -21,7 +23,8 @@ const CURSOR: Record<Corner, string> = {
   tr: 'nesw-resize', bl: 'nesw-resize',
 }
 
-export function ImageResizeOverlay({ imgEl, onResizeEnd, onCrop, onRemove }: ImageResizeOverlayProps) {
+export function ImageResizeOverlay({ imgEl, onResizeEnd, onCrop, onRemove, onRestore }: ImageResizeOverlayProps) {
+  const t = useT()
   const [rect, setRect] = useState(() => imgEl.getBoundingClientRect())
 
   const refreshRect = useCallback(() => {
@@ -63,9 +66,11 @@ export function ImageResizeOverlay({ imgEl, onResizeEnd, onCrop, onRemove }: Ima
 
   const w = Math.round(rect.width)
   const h = Math.round(rect.height)
-  // Keep action bar visible within viewport
+  const hasOriginal = !!imgEl.dataset.originalSrc
+  // Keep action bar visible within viewport; widen estimate when restore button is present
+  const barWidth = hasOriginal ? 280 : 220
   const barTop = Math.min(window.innerHeight - 52, Math.max(4, rect.bottom + 6))
-  const barLeft = Math.max(4, Math.min(window.innerWidth - 220, rect.left))
+  const barLeft = Math.max(4, Math.min(window.innerWidth - barWidth, rect.left))
 
   return (
     <>
@@ -113,12 +118,11 @@ export function ImageResizeOverlay({ imgEl, onResizeEnd, onCrop, onRemove }: Ima
         <span style={{ color: 'var(--color-text)', opacity: 0.45 }}>
           {w} × {h}px
         </span>
-        <button onClick={onCrop} className="hover:opacity-70" style={{ color: 'var(--color-text)' }}>
-          ✂ 裁剪
-        </button>
-        <button onClick={onRemove} className="hover:opacity-70" style={{ color: '#ef4444' }}>
-          ✕ 移除
-        </button>
+        <button onClick={onCrop} className="hover:opacity-70" style={{ color: 'var(--color-text)' }}>{t('cropAction')}</button>
+        {hasOriginal && (
+          <button onClick={onRestore} className="hover:opacity-70" style={{ color: 'var(--color-primary)' }}>{t('restoreImg')}</button>
+        )}
+        <button onClick={onRemove} className="hover:opacity-70" style={{ color: '#ef4444' }}>{t('removeImg')}</button>
       </div>
     </>
   )
