@@ -21,11 +21,6 @@ export function TodoModule({ module, onChange }: TodoModuleProps) {
 
   return (
     <div className="space-y-1">
-      <IMEInput value={module.subtitle ?? ''} onChange={v => update({ subtitle: v })}
-        placeholder={t('todoSubtitle')}
-        className="w-full bg-transparent outline-none text-xs font-medium mb-2"
-        style={{ color: 'var(--color-text)', opacity: 0.5 }} />
-
       {module.items.map(item => (
         <div key={item.id} className="flex items-center gap-2 group py-0.5">
           <button onClick={() => update({ items: module.items.map(it => it.id === item.id ? { ...it, done: !it.done } : it) })}

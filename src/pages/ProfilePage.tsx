@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, Plus } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../hooks/useAuth'
@@ -202,8 +202,8 @@ export default function ProfilePage() {
                   }}
                   title="Custom">
                   {AVATAR_COLORS.some(c => c.value === user.avatarColor) && (
-                    <span className="select-none pointer-events-none leading-none"
-                      style={{ color: 'var(--color-text)', opacity: 0.5, fontSize: 18, fontWeight: 300 }}>+</span>
+                    <Plus size={14} strokeWidth={1.5} className="pointer-events-none"
+                      style={{ color: 'var(--color-text)', opacity: 0.5 }} />
                   )}
                   <input type="color" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     value={user.avatarColor} onChange={e => saveColor(e.target.value)} />

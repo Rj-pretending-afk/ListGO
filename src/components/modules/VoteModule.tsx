@@ -33,11 +33,6 @@ export function VoteModule({ module, onChange }: VoteModuleProps) {
 
   return (
     <div className="space-y-3">
-      <IMEInput value={module.question} onChange={v => update({ question: v })}
-        placeholder={t('voteQuestion')}
-        className="w-full font-medium text-sm bg-transparent outline-none"
-        style={{ color: 'var(--color-text)' }} />
-
       <div className="flex gap-3 text-xs select-none" style={{ color: 'var(--color-text)', opacity: 0.45 }}>
         <button onClick={() => update({ multiSelect: !module.multiSelect })}
           className="hover:opacity-80 transition-opacity underline-offset-2 hover:underline">
