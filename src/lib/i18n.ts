@@ -69,6 +69,10 @@ export const zh = {
   profilePwLabel: '修改密码',
   profileOldPw: '当前密码', profileNewPw: '新密码（至少 8 字符）', profileConfirmPw: '确认新密码',
   profileChangePw: '确认修改', profileChangingPw: '修改中…', profileLogout: '退出登录',
+  // Feedback messages
+  saved: '已保存', saveFailed: '保存失败',
+  pwChanged: '密码已修改', pwMismatch: '两次密码不一致',
+  pwTooShort: '新密码须至少 8 字符', changeFailed: '修改失败',
   // Not found
   notFound: '页面不存在', backHome: '回到首页',
 } as const
@@ -130,6 +134,9 @@ export const en: Record<I18nKey, string> = {
   profilePwLabel: 'Change Password',
   profileOldPw: 'Current password', profileNewPw: 'New password (≥8 chars)', profileConfirmPw: 'Confirm new password',
   profileChangePw: 'Change Password', profileChangingPw: 'Saving…', profileLogout: 'Logout',
+  saved: 'Saved', saveFailed: 'Save failed',
+  pwChanged: 'Password changed', pwMismatch: 'Passwords do not match',
+  pwTooShort: 'New password must be at least 8 characters', changeFailed: 'Failed to change',
   notFound: 'Page not found', backHome: 'Back to home',
 }
 
