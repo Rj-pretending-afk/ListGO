@@ -7,7 +7,7 @@ export const THEME_ICONS: Record<Theme, string> = {
   day: '☀',
   dark: '🌙',
   'light-pink': '🌸',
-  'dark-pink': '🥀',
+  'dark-pink': '🌹',
 }
 
 export function useTheme() {

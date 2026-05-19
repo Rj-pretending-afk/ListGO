@@ -98,16 +98,15 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
           </div>
         </div>
 
-        {/* ── Right drag strip ── */}
+        {/* ── Right drag strip (theme-aware color) ── */}
         <div
           {...attributes}
           {...listeners}
           className="touch-none cursor-grab active:cursor-grabbing flex-shrink-0 flex items-center justify-center"
           style={{
             width: '28px',
-            backgroundColor: 'var(--color-border)',
-            opacity: 0.45,
-            color: 'var(--color-text)',
+            backgroundColor: 'var(--color-drag)',
+            color: 'var(--color-drag-icon)',
           }}
           aria-label="拖拽排序"
         >

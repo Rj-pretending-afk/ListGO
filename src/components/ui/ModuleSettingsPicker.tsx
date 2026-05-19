@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Settings, X } from 'lucide-react'
+import { resizeDataUrl } from '../../lib/imageUtils'
 import type { ModuleBackground, ModuleFontSettings } from '../../types/list.types'
 
 const PRESET_COLORS = [
@@ -22,9 +24,12 @@ const FONT_SIZES = [
 ]
 
 const FONT_FAMILIES = [
-  { label: '默认', value: '' },
-  { label: '衬线', value: "Georgia, 'SimSun', serif" },
-  { label: '等宽', value: "'Courier New', monospace" },
+  { label: '系统默认', value: '' },
+  { label: '黑体', value: "'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif" },
+  { label: '宋体', value: "'SimSun', 'STSong', Georgia, serif" },
+  { label: '楷体', value: "'KaiTi', 'STKaiti', cursive" },
+  { label: '等宽', value: "'Courier New', Consolas, monospace" },
+  { label: '圆体', value: "'PingFang SC', 'Hiragino Sans GB', 'Segoe UI', sans-serif" },
 ]
 
 const DEFAULT_BG: ModuleBackground = { type: 'color', value: '', opacity: 0.85, size: 'cover', posX: 50, posY: 50 }
@@ -38,64 +43,77 @@ interface ModuleSettingsPickerProps {
 
 export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onFontChange }: ModuleSettingsPickerProps) {
   const [open, setOpen] = useState(false)
+  const [panelPos, setPanelPos] = useState({ top: 0, right: 0 })
   const [urlInput, setUrlInput] = useState('')
+  const btnRef = useRef<HTMLButtonElement>(null)
+
   const bg = background ?? DEFAULT_BG
   const font = fontSettings ?? {}
+
+  const handleOpen = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      setPanelPos({ top: r.bottom + 4, right: Math.max(4, window.innerWidth - r.right) })
+    }
+    setOpen(v => !v)
+  }
 
   const updateBg = (patch: Partial<ModuleBackground>) => onBgChange({ ...bg, ...patch })
   const updateFont = (patch: Partial<ModuleFontSettings>) => {
     const next = { ...font, ...patch }
-    const isEmpty = !next.size && !next.family && !next.color
-    onFontChange(isEmpty ? undefined : next)
+    onFontChange(!next.size && !next.family && !next.color ? undefined : next)
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = ev => {
-      if (ev.target?.result) updateBg({ type: 'image', imageData: ev.target.result as string })
+    reader.onload = async ev => {
+      if (!ev.target?.result) return
+      const resized = await resizeDataUrl(ev.target.result as string)
+      updateBg({ type: 'image', imageData: resized })
     }
     reader.readAsDataURL(file)
     e.target.value = ''
   }
 
-  const hasBackground = background && (background.imageData || (background.type === 'color' && background.value))
-  const hasFontSettings = fontSettings && (fontSettings.size || fontSettings.family || fontSettings.color)
+  const hasBg = background && (background.imageData || (background.type === 'color' && background.value))
+  const hasFont = fontSettings && (fontSettings.size || fontSettings.family || fontSettings.color)
 
-  return (
-    <div className="relative flex-shrink-0">
-      <button
-        onClick={e => { e.stopPropagation(); setOpen(v => !v) }}
-        className="p-1 rounded hover:opacity-70 transition-opacity"
-        style={{ color: 'var(--color-text)', opacity: (hasBackground || hasFontSettings) ? 0.8 : 0.3 }}
-        title="模块设置"
+  const panel = (
+    <>
+      <div className="fixed inset-0 z-[200]" onClick={() => setOpen(false)} />
+      <div
+        className="fixed z-[201] rounded-xl shadow-2xl overflow-y-auto"
+        style={{
+          top: panelPos.top,
+          right: panelPos.right,
+          width: '18rem',
+          maxHeight: '82vh',
+          backgroundColor: 'var(--color-card)',
+          border: '1px solid var(--color-border)',
+        }}
+        onClick={e => e.stopPropagation()}
       >
-        <Settings size={14} />
-      </button>
+        <div className="p-4 space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>模块设置</span>
+            <button onClick={() => setOpen(false)} style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+              <X size={14} />
+            </button>
+          </div>
 
-      {open && (
-        <>
-          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-          <div
-            className="absolute right-0 top-8 z-30 rounded-xl p-4 w-80 shadow-xl overflow-y-auto"
-            style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', maxHeight: '80vh' }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>模块设置</span>
-              <button onClick={() => setOpen(false)} style={{ color: 'var(--color-text)', opacity: 0.4 }}>
-                <X size={14} />
-              </button>
-            </div>
+          {/* ── 字体 ── */}
+          <div>
+            <p className="text-xs font-medium mb-2" style={{ color: 'var(--color-text)', opacity: 0.55 }}>字体</p>
 
-            {/* ── 字体设置 ── */}
-            <p className="text-xs font-medium mb-2" style={{ color: 'var(--color-text)', opacity: 0.6 }}>字体</p>
-
-            <div className="flex gap-1 mb-2 flex-wrap">
+            {/* Size */}
+            <div className="flex gap-1 mb-2">
               {FONT_SIZES.map(({ label, value }) => (
-                <button key={label} onClick={() => updateFont({ size: value })}
-                  className="px-2 py-0.5 rounded text-xs transition-colors"
+                <button key={label} onClick={() => updateFont({ size: font.size === value ? undefined : value })}
+                  className="flex-1 py-1 rounded text-xs transition-colors"
                   style={{
                     backgroundColor: font.size === value ? 'var(--color-primary)' : 'var(--color-border)',
                     color: font.size === value ? 'white' : 'var(--color-text)',
@@ -105,25 +123,30 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
               ))}
             </div>
 
-            <div className="flex gap-1 mb-2 flex-wrap">
+            {/* Family — scrollable select */}
+            <select
+              value={font.family || ''}
+              onChange={e => updateFont({ family: e.target.value })}
+              className="w-full text-xs rounded-lg outline-none px-2 py-1.5 mb-2"
+              style={{
+                backgroundColor: 'var(--color-border)',
+                color: 'var(--color-text)',
+                border: 'none',
+              }}
+            >
               {FONT_FAMILIES.map(({ label, value }) => (
-                <button key={label} onClick={() => updateFont({ family: value })}
-                  className="px-2 py-0.5 rounded text-xs transition-colors"
-                  style={{
-                    fontFamily: value || undefined,
-                    backgroundColor: font.family === value ? 'var(--color-primary)' : 'var(--color-border)',
-                    color: font.family === value ? 'white' : 'var(--color-text)',
-                  }}>
+                <option key={label} value={value} style={{ fontFamily: value || undefined }}>
                   {label}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
 
-            <div className="flex items-center gap-2 mb-4">
+            {/* Color */}
+            <div className="flex items-center gap-2">
               <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.5 }}>文字颜色</span>
-              <label className="w-7 h-7 rounded overflow-hidden cursor-pointer border-2 relative"
+              <label className="w-7 h-7 rounded overflow-hidden cursor-pointer border-2 relative flex-shrink-0"
                 style={{ borderColor: 'var(--color-border)', backgroundColor: font.color || 'transparent' }}>
-                <input type="color" className="absolute inset-0 opacity-0 cursor-pointer"
+                <input type="color" className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                   value={font.color || '#ffffff'}
                   onChange={e => updateFont({ color: e.target.value })} />
               </label>
@@ -131,14 +154,20 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
                 <button className="text-xs hover:opacity-70" style={{ color: '#ef4444' }}
                   onClick={() => updateFont({ color: undefined })}>清除</button>
               )}
+              {hasFont && (
+                <button className="text-xs hover:opacity-70 ml-auto" style={{ color: '#ef4444' }}
+                  onClick={() => onFontChange(undefined)}>重置字体</button>
+              )}
             </div>
+          </div>
 
-            <div className="mb-4" style={{ borderTop: '1px solid var(--color-border)' }} />
+          <div style={{ borderTop: '1px solid var(--color-border)' }} />
 
-            {/* ── 背景设置 ── */}
+          {/* ── 背景 ── */}
+          <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium" style={{ color: 'var(--color-text)', opacity: 0.6 }}>背景</p>
-              {background && (
+              <p className="text-xs font-medium" style={{ color: 'var(--color-text)', opacity: 0.55 }}>背景</p>
+              {hasBg && (
                 <button onClick={() => onBgChange(undefined)} className="text-xs hover:opacity-70" style={{ color: '#ef4444' }}>
                   清除背景
                 </button>
@@ -154,7 +183,6 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
                     borderColor: bg.type === 'color' && bg.value === value ? 'var(--color-primary)' : 'var(--color-border)',
                     backgroundImage: !value ? 'linear-gradient(135deg,#ccc 25%,transparent 25%),linear-gradient(225deg,#ccc 25%,transparent 25%),linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(315deg,#ccc 25%,transparent 25%)' : undefined,
                     backgroundSize: !value ? '8px 8px' : undefined,
-                    backgroundPosition: !value ? '0 0,0 4px,4px -4px,-4px 0' : undefined,
                   }} />
               ))}
               <label className="w-10 h-10 rounded-lg border-2 flex items-center justify-center cursor-pointer hover:scale-110 transition-all relative overflow-hidden"
@@ -165,13 +193,12 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
               </label>
             </div>
 
-            <div className="flex gap-2 mb-2">
-              <label className="flex-1 text-xs px-2 py-1.5 rounded-lg text-center cursor-pointer hover:opacity-80 transition-opacity"
-                style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                上传图片
-                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-              </label>
-            </div>
+            <label className="block text-xs px-2 py-1.5 rounded-lg text-center cursor-pointer hover:opacity-80 mb-2"
+              style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+              上传背景图
+              <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+            </label>
+
             <div className="flex gap-2 mb-3">
               <input value={urlInput} onChange={e => setUrlInput(e.target.value)}
                 placeholder="或粘贴图片 URL…"
@@ -190,7 +217,6 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
                   className="flex-1 accent-[var(--color-primary)]" />
               </label>
 
-              {/* Image position sliders — only when image bg is active */}
               {bg.type === 'image' && bg.imageData && (
                 <>
                   <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text)', opacity: 0.6 }}>
@@ -208,7 +234,7 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
                 </>
               )}
 
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text)', opacity: 0.6 }}>
+              <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-text)', opacity: 0.6 }}>
                 <span>尺寸</span>
                 {(['cover', 'contain', 'auto'] as const).map(s => (
                   <button key={s} onClick={() => updateBg({ size: s })}
@@ -223,8 +249,24 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
               </div>
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </div>
+    </>
+  )
+
+  return (
+    <div className="relative flex-shrink-0">
+      <button
+        ref={btnRef}
+        onClick={handleOpen}
+        className="p-1 rounded hover:opacity-70 transition-opacity"
+        style={{ color: 'var(--color-text)', opacity: (hasBg || hasFont) ? 0.8 : 0.3 }}
+        title="模块设置"
+      >
+        <Settings size={14} />
+      </button>
+
+      {open && createPortal(panel, document.body)}
     </div>
   )
 }

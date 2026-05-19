@@ -63,6 +63,9 @@ export function ImageResizeOverlay({ imgEl, onResizeEnd, onCrop, onRemove }: Ima
 
   const w = Math.round(rect.width)
   const h = Math.round(rect.height)
+  // Keep action bar visible within viewport
+  const barTop = Math.min(window.innerHeight - 52, Math.max(4, rect.bottom + 6))
+  const barLeft = Math.max(4, Math.min(window.innerWidth - 220, rect.left))
 
   return (
     <>
@@ -95,12 +98,12 @@ export function ImageResizeOverlay({ imgEl, onResizeEnd, onCrop, onRemove }: Ima
         />
       ))}
 
-      {/* Action bar below image */}
+      {/* Action bar — capped within viewport */}
       <div
         className="fixed z-50 flex items-center gap-3 px-3 py-1.5 rounded-xl text-xs shadow-lg"
         style={{
-          top: rect.bottom + 6,
-          left: Math.max(4, Math.min(window.innerWidth - 220, rect.left)),
+          top: barTop,
+          left: barLeft,
           backgroundColor: 'var(--color-card)',
           border: '1px solid var(--color-border)',
         }}
