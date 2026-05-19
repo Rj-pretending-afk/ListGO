@@ -69,7 +69,15 @@ export async function handleRegister(
   ])
 
   const token = await signJWT({ userId, username, isAdmin: false }, env.JWT_SECRET)
-  return json({ token, userId, username, displayName: username, inviteCodes: newCodes })
+  return json({
+    token,
+    id: userId,
+    username,
+    displayName: username,
+    avatarColor: '#10B981',
+    isAdmin: false,
+    inviteCodes: newCodes.map((code: string) => ({ code, used: false, usedAt: null, revoked: false })),
+  })
 }
 
 // ── POST /auth/login ──
@@ -103,11 +111,12 @@ export async function handleLogin(
   )
   return json({
     token,
-    userId: user.id,
+    id: user.id,
     username: user.username,
     displayName: user.display_name,
     avatarColor: user.avatar_color,
     isAdmin: Boolean(user.is_admin),
+    inviteCodes: [],
   })
 }
 
