@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -26,8 +27,25 @@ interface SortableModuleProps {
 
 function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModuleProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: module.id })
-  const { icon, label } = MODULE_META[module.type]
+  const { icon, label: defaultLabel } = MODULE_META[module.type]
   const bg = module.background
+
+  // Label editing state
+  const [editingLabel, setEditingLabel] = useState(false)
+  const [labelDraft, setLabelDraft] = useState('')
+
+  const displayLabel = module.customLabel || defaultLabel
+
+  const saveLabel = () => {
+    const trimmed = labelDraft.trim()
+    onUpdateModule({ ...module, customLabel: trimmed || undefined } as Module)
+    setEditingLabel(false)
+  }
+
+  const startEditLabel = () => {
+    setLabelDraft(module.customLabel ?? '')
+    setEditingLabel(true)
+  }
 
   const hasBg = bg && (bg.imageData || (bg.type === 'color' && bg.value))
 
@@ -35,8 +53,9 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
     ? bg.type === 'image'
       ? {
           backgroundImage: `url(${bg.imageData})`,
-          backgroundSize: bg.size,
+          backgroundSize: bg.sizePercent ? `${bg.sizePercent}%` : bg.size,
           backgroundPosition: `${bg.posX ?? 50}% ${bg.posY ?? 50}%`,
+          backgroundRepeat: bg.sizePercent ? 'no-repeat' : undefined,
           opacity: bg.opacity,
         }
       : { backgroundColor: bg.value, opacity: bg.opacity }
@@ -48,7 +67,6 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
   const updateFont = (font: ModuleFontSettings | undefined) =>
     onUpdateModule({ ...module, fontSettings: font } as Module)
 
-  // Font settings apply to the module label (left-top type text), not user content
   const labelStyle: React.CSSProperties = {
     color: module.fontSettings?.color || 'var(--color-text)',
     opacity: module.fontSettings?.color ? 1 : 0.4,
@@ -61,25 +79,44 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
     >
-      {/* Flex row: card content + right drag strip */}
       <div className="rounded-xl flex overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
 
         {/* ── Main card area ── */}
         <div className="flex-1 relative min-w-0">
-          {/* Base card color */}
           <div style={{ position: 'absolute', inset: 0, backgroundColor: 'var(--color-card)' }} />
-
-          {/* Module background layer */}
           {hasBg && <div style={{ position: 'absolute', inset: 0, ...bgLayerStyle }} />}
 
-          {/* Content */}
           <div style={{ position: 'relative', zIndex: 1, padding: '1rem' }}>
             {/* Header row */}
             <div className="flex items-center gap-1.5 mb-2">
               <span className="text-sm select-none">{icon}</span>
-              <span className="font-medium select-none flex-1" style={labelStyle}>
-                {label}
-              </span>
+
+              {editingLabel ? (
+                <input
+                  autoFocus
+                  value={labelDraft}
+                  onChange={e => setLabelDraft(e.target.value)}
+                  onBlur={saveLabel}
+                  onKeyDown={e => {
+                    if (e.nativeEvent.isComposing) return
+                    if (e.key === 'Enter') saveLabel()
+                    if (e.key === 'Escape') setEditingLabel(false)
+                  }}
+                  placeholder={defaultLabel}
+                  className="flex-1 bg-transparent outline-none font-medium min-w-0 text-xs"
+                  style={labelStyle}
+                />
+              ) : (
+                <span
+                  onClick={startEditLabel}
+                  className="font-medium select-none flex-1 cursor-text hover:opacity-70 transition-opacity truncate"
+                  style={labelStyle}
+                  title="点击编辑标签"
+                >
+                  {displayLabel}
+                </span>
+              )}
+
               <ModuleSettingsPicker
                 background={module.background}
                 fontSettings={module.fontSettings}
@@ -97,16 +134,12 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
           </div>
         </div>
 
-        {/* ── Right drag strip (theme-aware color) ── */}
+        {/* ── Right drag strip ── */}
         <div
           {...attributes}
           {...listeners}
           className="touch-none cursor-grab active:cursor-grabbing flex-shrink-0 flex items-center justify-center"
-          style={{
-            width: '28px',
-            backgroundColor: 'var(--color-drag)',
-            color: 'var(--color-drag-icon)',
-          }}
+          style={{ width: '28px', backgroundColor: 'var(--color-drag)', color: 'var(--color-drag-icon)' }}
           aria-label="拖拽排序"
         >
           <GripVertical size={14} />

@@ -224,6 +224,13 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
 
               {bg.type === 'image' && bg.imageData && (
                 <>
+                  {/* Image size slider — overrides cover/contain/auto */}
+                  <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text)', opacity: 0.6 }}>
+                    图片大小 <span style={{ color: 'var(--color-primary)' }}>{bg.sizePercent ?? 100}%</span>
+                    <input type="range" min={10} max={300} step={5} value={bg.sizePercent ?? 100}
+                      onChange={e => updateBg({ sizePercent: Number(e.target.value) })}
+                      className="flex-1 accent-[var(--color-primary)]" />
+                  </label>
                   <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text)', opacity: 0.6 }}>
                     位置 X <span style={{ color: 'var(--color-primary)' }}>{bg.posX ?? 50}%</span>
                     <input type="range" min={0} max={100} step={1} value={bg.posX ?? 50}
@@ -240,13 +247,14 @@ export function ModuleSettingsPicker({ background, fontSettings, onBgChange, onF
               )}
 
               <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-text)', opacity: 0.6 }}>
-                <span>尺寸</span>
+                <span>填充</span>
                 {(['cover', 'contain', 'auto'] as const).map(s => (
-                  <button key={s} onClick={() => updateBg({ size: s })}
+                  /* Selecting a preset clears the sizePercent override */
+                  <button key={s} onClick={() => updateBg({ size: s, sizePercent: undefined })}
                     className="px-2 py-0.5 rounded text-xs transition-colors"
                     style={{
-                      backgroundColor: bg.size === s ? 'var(--color-primary)' : 'var(--color-border)',
-                      color: bg.size === s ? 'white' : 'var(--color-text)',
+                      backgroundColor: bg.size === s && !bg.sizePercent ? 'var(--color-primary)' : 'var(--color-border)',
+                      color: bg.size === s && !bg.sizePercent ? 'white' : 'var(--color-text)',
                     }}>
                     {s === 'cover' ? '铺满' : s === 'contain' ? '适应' : '原始'}
                   </button>

@@ -26,8 +26,9 @@ export interface ModuleBackground {
   imageData?: string
   opacity: number
   size: 'cover' | 'contain' | 'auto'
-  posX?: number   // 0-100, background-position-x %
-  posY?: number   // 0-100, background-position-y %
+  posX?: number       // 0-100, background-position-x %
+  posY?: number       // 0-100, background-position-y %
+  sizePercent?: number // 10-300, overrides size enum when set
 }
 
 export interface ModuleFontSettings {
@@ -44,6 +45,7 @@ export interface TextModule {
   content: string
   background?: ModuleBackground
   fontSettings?: ModuleFontSettings
+  customLabel?: string
 }
 
 export interface TodoModule {
@@ -53,6 +55,7 @@ export interface TodoModule {
   items: TodoItem[]
   background?: ModuleBackground
   fontSettings?: ModuleFontSettings
+  customLabel?: string
 }
 
 export interface TodoItem {
@@ -72,6 +75,7 @@ export interface VoteModule {
   votes: Record<string, string[]>
   background?: ModuleBackground
   fontSettings?: ModuleFontSettings
+  customLabel?: string
 }
 
 export interface VoteOption {
