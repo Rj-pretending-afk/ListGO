@@ -45,7 +45,7 @@ export const zh = {
   // Image overlay
   cropAction: '✂ 裁剪', restoreImg: '↩ 原图', removeImg: '✕ 移除',
   // Crop modal
-  cropDragHint: '拖动选择裁剪区域', cropSelected: '已选择',
+  cropDragHint: '拖动选择裁剪区域', cropCircleHint: '拖动圆圈移位 · 拖边缘调整大小', cropSelected: '已选择',
   cropPxSuffix: 'px — 点击确认裁剪', cropConfirm: '确认裁剪', cropCancel: '取消',
   // Login
   loginTitle: '登录 ListGo', loginUsername: '用户名', loginPassword: '密码',
@@ -113,7 +113,7 @@ export const en: Record<I18nKey, string> = {
   fmtBold: 'Bold', fmtItalic: 'Italic', fmtUnderline: 'Underline', fmtStrike: 'Strikethrough',
   fmtSizeSmall: 'S', fmtSizeMedium: 'M', fmtSizeLarge: 'L',
   cropAction: '✂ Crop', restoreImg: '↩ Original', removeImg: '✕ Remove',
-  cropDragHint: 'Drag to select crop area', cropSelected: 'Selected',
+  cropDragHint: 'Drag to select crop area', cropCircleHint: 'Drag to move · drag edge to resize', cropSelected: 'Selected',
   cropPxSuffix: 'px — click to confirm', cropConfirm: 'Confirm Crop', cropCancel: 'Cancel',
   loginTitle: 'Login to ListGo', loginUsername: 'Username', loginPassword: 'Password',
   loginSubmit: 'Login', loginLoading: 'Logging in…',

@@ -155,20 +155,20 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div className="flex items-center gap-5">
-          {/* Avatar — larger */}
-          <AvatarDisplay user={user} size={64} />
+        <div className="flex items-center justify-center gap-6">
+          {/* Avatar — 76px */}
+          <AvatarDisplay user={user} size={76} />
 
-          {/* Button col + color col, equal share */}
-          <div className="flex flex-col gap-2 flex-1 min-w-0">
-            {/* Row 1 */}
+          {/* Button + color columns */}
+          <div className="flex flex-col gap-3">
+            {/* Row 1: upload + colors 0-3 */}
             <div className="flex items-center gap-4">
               <button onClick={() => fileRef.current?.click()} disabled={avatarLoading || !!pendingAvatar}
-                className="flex-shrink-0 w-28 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40 text-center"
+                className="w-28 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40 text-center flex-shrink-0"
                 style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
                 {t('profileUploadAvatar')}
               </button>
-              <div className="flex gap-2">
+              <div className="flex gap-2.5">
                 {AVATAR_COLORS.slice(0, 4).map(({ label, value }) => (
                   <button key={value} onClick={() => saveColor(value)} title={label}
                     className="w-8 h-8 rounded-full transition-transform hover:scale-110 flex-shrink-0"
@@ -177,33 +177,33 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Row 2 */}
+            {/* Row 2: remove (or spacer) + colors 4-6 + custom */}
             <div className="flex items-center gap-4">
               {user.avatarImage ? (
                 <button onClick={removeAvatar} disabled={avatarLoading}
-                  className="flex-shrink-0 w-28 py-1.5 rounded-lg text-xs hover:opacity-70 disabled:opacity-40 text-center"
+                  className="w-28 py-1.5 rounded-lg text-xs hover:opacity-70 disabled:opacity-40 text-center flex-shrink-0"
                   style={{ color: '#ef4444', border: '1px solid var(--color-border)' }}>
                   {t('profileRemoveAvatar')}
                 </button>
               ) : (
-                <div className="flex-shrink-0 w-28" />
+                <div className="w-28 flex-shrink-0" />
               )}
-              <div className="flex gap-2">
+              <div className="flex gap-2.5">
                 {AVATAR_COLORS.slice(4).map(({ label, value }) => (
                   <button key={value} onClick={() => saveColor(value)} title={label}
                     className="w-8 h-8 rounded-full transition-transform hover:scale-110 flex-shrink-0"
                     style={{ backgroundColor: value, outline: user.avatarColor === value ? '3px solid var(--color-text)' : 'none', outlineOffset: '2px' }} />
                 ))}
-                <label
-                  className="w-8 h-8 rounded-full border-2 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform flex-shrink-0 relative"
+                {/* Custom color — "+" centered via flex, no absolute */}
+                <label className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform relative"
                   style={{
                     borderColor: 'var(--color-border)',
                     backgroundColor: AVATAR_COLORS.some(c => c.value === user.avatarColor) ? 'transparent' : user.avatarColor,
                   }}
                   title="Custom">
                   {AVATAR_COLORS.some(c => c.value === user.avatarColor) && (
-                    <span className="text-sm font-light select-none pointer-events-none"
-                      style={{ color: 'var(--color-text)', opacity: 0.45, lineHeight: 1 }}>+</span>
+                    <span className="select-none pointer-events-none leading-none"
+                      style={{ color: 'var(--color-text)', opacity: 0.5, fontSize: 18, fontWeight: 300 }}>+</span>
                   )}
                   <input type="color" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     value={user.avatarColor} onChange={e => saveColor(e.target.value)} />
