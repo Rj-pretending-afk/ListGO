@@ -11,37 +11,49 @@ interface CropModalProps {
 export function CropModal({ src, onConfirm, onClose }: CropModalProps) {
   const imgRef = useRef<HTMLImageElement>(null)
   const [box, setBox] = useState<Box | null>(null)
-  // useRef so mousemove always reads fresh dragStart — no stale closure
   const dragStartRef = useRef<{ x: number; y: number } | null>(null)
 
-  const getPos = (e: React.MouseEvent) => {
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v))
+
+  const getPos = (clientX: number, clientY: number) => {
     const r = imgRef.current!.getBoundingClientRect()
     return {
-      x: Math.max(0, Math.min(e.clientX - r.left, r.width)),
-      y: Math.max(0, Math.min(e.clientY - r.top, r.height)),
+      x: clamp(clientX - r.left, 0, r.width),
+      y: clamp(clientY - r.top, 0, r.height),
     }
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
-    const pos = getPos(e)
+    if (!imgRef.current) return
+    const pos = getPos(e.clientX, e.clientY)
     dragStartRef.current = pos
     setBox({ x: pos.x, y: pos.y, w: 0, h: 0 })
-  }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!dragStartRef.current) return
-    const pos = getPos(e)
-    const ds = dragStartRef.current
-    setBox({
-      x: Math.min(ds.x, pos.x),
-      y: Math.min(ds.y, pos.y),
-      w: Math.abs(pos.x - ds.x),
-      h: Math.abs(pos.y - ds.y),
-    })
-  }
+    // Use document-level listeners so mousemove/mouseup fire even outside the container.
+    // This prevents the selection from being lost when the cursor leaves the image area.
+    const onMove = (me: MouseEvent) => {
+      if (!dragStartRef.current || !imgRef.current) return
+      const p = getPos(me.clientX, me.clientY)
+      const ds = dragStartRef.current
+      setBox({
+        x: Math.min(ds.x, p.x),
+        y: Math.min(ds.y, p.y),
+        w: Math.abs(p.x - ds.x),
+        h: Math.abs(p.y - ds.y),
+      })
+    }
 
-  const handleMouseUp = () => { dragStartRef.current = null }
+    const onUp = () => {
+      dragStartRef.current = null
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      // box is intentionally kept — user sees the selection until they start a new one or confirm
+    }
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
 
   const handleConfirm = () => {
     if (!box || box.w < 4 || box.h < 4 || !imgRef.current) return
@@ -62,7 +74,7 @@ export function CropModal({ src, onConfirm, onClose }: CropModalProps) {
       )
       onConfirm(canvas.toDataURL('image/jpeg', 0.92))
     } catch {
-      // Cross-origin restriction — close without crop
+      // e.g. cross-origin restriction
       onClose()
     }
   }
@@ -70,18 +82,11 @@ export function CropModal({ src, onConfirm, onClose }: CropModalProps) {
   const valid = !!(box && box.w >= 4 && box.h >= 4)
 
   return (
-    /*
-     * Structure:
-     *   outer fixed (z-[500]) — captures all events
-     *   ├─ backdrop absolute — onClick closes
-     *   └─ centering div absolute (pointer-events:none) — so clicks outside modal hit backdrop
-     *      └─ modal content (pointer-events:auto) — buttons work normally
-     */
     <div className="fixed inset-0 z-[500]">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
 
-      {/* Centering layer — pointer-events:none lets outside clicks reach backdrop */}
+      {/* Centering — pointer-events:none so clicks outside modal hit backdrop */}
       <div
         className="absolute inset-0 flex items-center justify-center p-4"
         style={{ pointerEvents: 'none' }}
@@ -89,18 +94,19 @@ export function CropModal({ src, onConfirm, onClose }: CropModalProps) {
         <div
           className="rounded-2xl overflow-hidden w-full max-w-2xl"
           style={{ pointerEvents: 'auto', backgroundColor: 'var(--color-card)' }}
+          onClick={e => e.stopPropagation()} // prevent bubbling to TextModule's dismiss handler
         >
           <div className="p-4">
             <p className="text-sm mb-3 font-medium" style={{ color: 'var(--color-text)' }}>
-              拖动选择裁剪区域
+              {valid
+                ? `已选择 ${Math.round(box!.w)} × ${Math.round(box!.h)} px — 点击确认裁剪`
+                : '拖动选择裁剪区域'}
             </p>
 
+            {/* Crop area — onMouseDown only, document handles move/up */}
             <div
-              className="relative select-none cursor-crosshair overflow-hidden rounded-lg"
+              className="relative select-none cursor-crosshair rounded-lg overflow-hidden"
               onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
             >
               <img
                 ref={imgRef}
@@ -109,22 +115,20 @@ export function CropModal({ src, onConfirm, onClose }: CropModalProps) {
                 style={{ maxWidth: '100%', maxHeight: '60vh', height: 'auto', display: 'block' }}
                 draggable={false}
               />
+
+              {/* Selection overlay: single div with box-shadow darkens area outside selection */}
               {valid && (
-                <>
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-                  />
-                  <div
-                    className="absolute pointer-events-none"
-                    style={{
-                      left: box!.x, top: box!.y, width: box!.w, height: box!.h,
-                      boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
-                      border: '2px solid white',
-                      backgroundColor: 'transparent',
-                    }}
-                  />
-                </>
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: box!.x,
+                    top: box!.y,
+                    width: box!.w,
+                    height: box!.h,
+                    outline: '2px solid white',
+                    boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
+                  }}
+                />
               )}
             </div>
 

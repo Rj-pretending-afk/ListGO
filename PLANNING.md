@@ -419,8 +419,8 @@ listgo/
 - [x] `GET /auth/me`：拉用户信息
 - [x] `PUT /auth/profile`：改昵称、头像色
 - [x] `PUT /auth/password`：改密码（需输入旧密码）
-- [ ] 前端：注册页、登录页、个人设置页
-- [ ] 邀请码面板：列出我的码、是否已用
+- [x] 前端：注册页、登录页、个人设置页
+- [x] 邀请码面板：列出我的码、是否已用
 
 **第 5 天：云端清单**
 - [ ] `lib/ownerToken.ts`：浏览器生成 16 位 token 存 localStorage
