@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Check, Trash2, Plus } from 'lucide-react'
 import { generateItemId } from '../../lib/shortid'
 import type { TodoModule as TodoModuleType, TodoItem } from '../../types/list.types'
+import { IMEInput } from '../ui/IMEInput'
 
 interface TodoModuleProps {
   module: TodoModuleType
@@ -33,9 +34,9 @@ export function TodoModule({ module, onChange }: TodoModuleProps) {
   return (
     <div className="space-y-1">
       {/* Optional subtitle */}
-      <input
+      <IMEInput
         value={module.subtitle ?? ''}
-        onChange={e => update({ subtitle: e.target.value })}
+        onChange={v => update({ subtitle: v })}
         placeholder="小标题（可选）"
         className="w-full bg-transparent outline-none text-xs font-medium mb-2"
         style={{ color: 'var(--color-text)', opacity: 0.5 }}
@@ -53,9 +54,9 @@ export function TodoModule({ module, onChange }: TodoModuleProps) {
           >
             {item.done && <Check size={11} color="white" strokeWidth={3} />}
           </button>
-          <input
+          <IMEInput
             value={item.text}
-            onChange={e => updateText(item.id, e.target.value)}
+            onChange={v => updateText(item.id, v)}
             onKeyDown={e => !e.nativeEvent.isComposing && e.key === 'Enter' && addItem()}
             className="flex-1 bg-transparent outline-none text-sm"
             style={{

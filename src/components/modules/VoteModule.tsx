@@ -2,6 +2,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { generateItemId } from '../../lib/shortid'
 import type { VoteModule as VoteModuleType, VoteOption } from '../../types/list.types'
 import { VoteResults } from './VoteResults'
+import { IMEInput } from '../ui/IMEInput'
 
 const LOCAL_VOTER = 'local'
 
@@ -47,9 +48,9 @@ export function VoteModule({ module, onChange }: VoteModuleProps) {
   return (
     <div className="space-y-3">
       {/* Question */}
-      <input
+      <IMEInput
         value={module.question}
-        onChange={e => update({ question: e.target.value })}
+        onChange={v => update({ question: v })}
         placeholder="投票问题…"
         className="w-full font-medium text-sm bg-transparent outline-none"
         style={{ color: 'var(--color-text)' }}
@@ -88,9 +89,9 @@ export function VoteModule({ module, onChange }: VoteModuleProps) {
                   borderRadius: module.multiSelect ? '3px' : '50%',
                 }}
               />
-              <input
+              <IMEInput
                 value={opt.text}
-                onChange={e => updateOption(opt.id, e.target.value)}
+                onChange={v => updateOption(opt.id, v)}
                 placeholder="选项…"
                 className="flex-1 bg-transparent outline-none text-sm"
                 style={{ color: 'var(--color-text)' }}

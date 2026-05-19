@@ -29,7 +29,7 @@ interface AppStore {
   updateListTitle: (id: string, title: string) => Promise<void>
   deleteList: (id: string) => Promise<void>
   addModule: (listId: string, type: Module['type']) => Promise<void>
-  updateModule: (listId: string, module: Module) => Promise<void>
+  updateModule: (listId: string, module: Module) => void
   deleteModule: (listId: string, moduleId: string) => Promise<void>
 }
 
@@ -113,14 +113,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set(s => ({ lists: s.lists.map(l => l.id === listId ? { ...l, modules, updatedAt: t } : l) }))
   },
 
-  updateModule: async (listId, updatedModule) => {
+  updateModule: (listId, updatedModule) => {
     const list = get().lists.find(l => l.id === listId)
     if (!list) return
 
     const t = ts()
     const modules = list.modules.map(m => m.id === updatedModule.id ? updatedModule : m)
-    await db.lists.update(listId, { modules, updatedAt: t })
+    // 先同步更新 Zustand（React 立即拿到正确值，不会在 IME 组合期间重置 DOM）
     set(s => ({ lists: s.lists.map(l => l.id === listId ? { ...l, modules, updatedAt: t } : l) }))
+    // 后台持久化，不阻塞 UI
+    void db.lists.update(listId, { modules, updatedAt: t })
   },
 
   deleteModule: async (listId, moduleId) => {
