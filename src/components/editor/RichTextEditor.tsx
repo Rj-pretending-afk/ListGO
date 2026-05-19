@@ -11,10 +11,12 @@ interface RichTextEditorProps {
   onChange: (html: string) => void
   onSelectionChange?: (rect: DOMRect | null) => void
   onImageClick?: (img: HTMLImageElement, rect: DOMRect) => void
+  onPasteImage?: (dataUrl: string) => void
+  editorStyle?: React.CSSProperties
 }
 
 export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
-  ({ content, onChange, onSelectionChange, onImageClick }, ref) => {
+  ({ content, onChange, onSelectionChange, onImageClick, onPasteImage, editorStyle }, ref) => {
     let el: HTMLDivElement | null = null
     const setRef = (node: HTMLDivElement | null) => { el = node }
 
@@ -53,10 +55,15 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       if (!blob) return
       const reader = new FileReader()
       reader.onload = ev => {
-        if (!ev.target?.result || !el) return
+        const dataUrl = ev.target?.result as string | undefined
+        if (!dataUrl) return
+        // Delegate to TextModule for resizing before insert
+        if (onPasteImage) { onPasteImage(dataUrl); return }
+        // Fallback: insert directly (no resize)
+        if (!el) return
         el.focus()
         const img = document.createElement('img')
-        img.src = ev.target.result as string
+        img.src = dataUrl
         img.style.cssText = 'max-width:100%;border-radius:6px;display:block;margin-top:6px'
         el.appendChild(img)
         emitChange()
@@ -84,7 +91,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
         onPaste={handlePaste}
         onClick={handleClick}
         className="outline-none min-h-[60px] text-sm leading-relaxed"
-        style={{ color: 'var(--color-text)' }}
+        style={{ color: 'var(--color-text)', ...editorStyle }}
         data-placeholder="输入文字…"
       />
     )

@@ -6,6 +6,8 @@
   --color-primary: #10B981;
   --color-text: #1F2937;
   --color-border: #E5E7EB;
+  --color-drag: #D1FAE5;
+  --color-drag-icon: #065F46;
 }
 
 /* 🌙 Dark (default) */
@@ -16,6 +18,8 @@
   --color-primary: #34D399;
   --color-text: #F1F5F9;
   --color-border: #334155;
+  --color-drag: #0B1E35;
+  --color-drag-icon: #64748B;
 }
 
 /* 🌸 Light Pink */
@@ -27,9 +31,11 @@
   --color-accent: #F472B6;
   --color-text: #831843;
   --color-border: #FCE7F3;
+  --color-drag: #FBCFE8;
+  --color-drag-icon: #9D174D;
 }
 
-/* 🥀 Dark Pink */
+/* 🌹 Dark Rose */
 [data-theme="dark-pink"] {
   --color-bg: #1F0A14;
   --color-card: #3D1428;
@@ -38,4 +44,6 @@
   --color-accent: #EC4899;
   --color-text: #FCE7F3;
   --color-border: #5B1E3D;
+  --color-drag: #4C0519;
+  --color-drag-icon: #FB7185;
 }

@@ -12,7 +12,7 @@ export function Header() {
         className="font-bold text-lg select-none"
         style={{ color: 'var(--color-text)' }}
       >
-        💌 ListGo
+        ListGo
       </Link>
       <ThemeSwitcher />
     </header>

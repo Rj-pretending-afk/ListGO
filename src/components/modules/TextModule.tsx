@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ImagePlus, Link } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import { BubbleToolbar } from '../editor/BubbleToolbar'
 import { RichTextEditor, type RichTextEditorRef } from '../editor/RichTextEditor'
-import { ImageControls } from '../editor/ImageControls'
+import { ImageResizeOverlay } from '../editor/ImageResizeOverlay'
 import { CropModal } from '../editor/CropModal'
+import { resizeDataUrl } from '../../lib/imageUtils'
 import type { TextModule as TextModuleType } from '../../types/list.types'
 
 interface TextModuleProps {
@@ -16,13 +18,18 @@ export function TextModule({ module, onChange }: TextModuleProps) {
   const editorRef = useRef<RichTextEditorRef>(null)
   const [selRect, setSelRect] = useState<DOMRect | null>(null)
   const [selectedImg, setSelectedImg] = useState<HTMLImageElement | null>(null)
-  const [imgRect, setImgRect] = useState<DOMRect | null>(null)
   const [showCrop, setShowCrop] = useState(false)
   const [urlOpen, setUrlOpen] = useState(false)
   const [urlInput, setUrlInput] = useState('')
 
   const applyFormat = (cmd: string, value?: string) => editorRef.current?.applyFormat(cmd, value)
   const handleContentChange = (html: string) => onChange({ ...module, content: html })
+
+  const editorStyle: React.CSSProperties = {
+    ...(module.fontSettings?.size ? { fontSize: module.fontSettings.size } : {}),
+    ...(module.fontSettings?.family ? { fontFamily: module.fontSettings.family } : {}),
+    ...(module.fontSettings?.color ? { color: module.fontSettings.color } : {}),
+  }
 
   const insertImageSrc = (src: string) => {
     const el = editorRef.current?.getEl()
@@ -39,9 +46,18 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = ev => { if (ev.target?.result) insertImageSrc(ev.target.result as string) }
+    reader.onload = async ev => {
+      if (!ev.target?.result) return
+      const resized = await resizeDataUrl(ev.target.result as string)
+      insertImageSrc(resized)
+    }
     reader.readAsDataURL(file)
     e.target.value = ''
+  }
+
+  const handlePasteImage = async (dataUrl: string) => {
+    const resized = await resizeDataUrl(dataUrl)
+    insertImageSrc(resized)
   }
 
   const handleUrlInsert = () => {
@@ -50,18 +66,9 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     setUrlOpen(false)
   }
 
-  const handleImageClick = (img: HTMLImageElement, rect: DOMRect) => {
+  const handleImageClick = (img: HTMLImageElement, _rect: DOMRect) => {
     setSelectedImg(img)
-    setImgRect(rect)
     setSelRect(null) // dismiss selection toolbar
-  }
-
-  const handleWidthChange = (w: number) => {
-    if (!selectedImg) return
-    selectedImg.style.width = `${w}px`
-    const el = editorRef.current?.getEl()
-    if (el) onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
-    setImgRect(selectedImg.getBoundingClientRect())
   }
 
   const handleRemoveImg = () => {
@@ -69,7 +76,6 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     const el = editorRef.current?.getEl()
     if (el) onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
     setSelectedImg(null)
-    setImgRect(null)
   }
 
   const handleCropConfirm = (dataUrl: string) => {
@@ -80,7 +86,6 @@ export function TextModule({ module, onChange }: TextModuleProps) {
     if (el) onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
     setShowCrop(false)
     setSelectedImg(null)
-    setImgRect(null)
   }
 
   // Floating toolbar: position:fixed with raw viewport coords (no scrollY offset needed)
@@ -96,13 +101,15 @@ export function TextModule({ module, onChange }: TextModuleProps) {
 
   return (
     // Clicking the outer div dismisses image controls (unless stopPropagation in child)
-    <div onClick={() => { setSelectedImg(null); setImgRect(null) }}>
+    <div onClick={() => setSelectedImg(null)}>
       <RichTextEditor
         ref={editorRef}
         content={module.content}
         onChange={handleContentChange}
         onSelectionChange={setSelRect}
         onImageClick={handleImageClick}
+        onPasteImage={handlePasteImage}
+        editorStyle={editorStyle}
       />
 
       {/* Floating selection toolbar — viewport-fixed */}
@@ -112,24 +119,25 @@ export function TextModule({ module, onChange }: TextModuleProps) {
         </div>
       )}
 
-      {/* Image controls (width + crop + remove) */}
-      {selectedImg && imgRect && (
-        <ImageControls
+      {/* Corner resize overlay — portal to body to bypass overflow:hidden clipping */}
+      {selectedImg && createPortal(
+        <ImageResizeOverlay
           imgEl={selectedImg}
-          rect={imgRect}
-          onWidthChange={handleWidthChange}
+          onResizeEnd={() => { /* rect updates internally in overlay */ }}
           onCrop={() => setShowCrop(true)}
           onRemove={handleRemoveImg}
-        />
+        />,
+        document.body
       )}
 
-      {/* Canvas crop modal */}
-      {showCrop && selectedImg && (
+      {/* Canvas crop modal — also via portal */}
+      {showCrop && selectedImg && createPortal(
         <CropModal
           src={selectedImg.src}
           onConfirm={handleCropConfirm}
           onClose={() => setShowCrop(false)}
-        />
+        />,
+        document.body
       )}
 
       {/* Insert image row */}

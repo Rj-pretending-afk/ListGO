@@ -8,7 +8,7 @@ export interface List {
   id: string
   title: string
   background: ListBackground
-  cardOpacity?: number  // 保留字段（已移至模块级别），可能存在于旧数据
+  cardOpacity?: number
   modules: Module[]
   ownerId?: string
   ownerToken?: string
@@ -22,10 +22,19 @@ export interface List {
 
 export interface ModuleBackground {
   type: 'color' | 'image'
-  value: string        // hex color; '' for image type
-  imageData?: string   // base64 data URL or https:// URL
-  opacity: number      // 0-1
+  value: string
+  imageData?: string
+  opacity: number
   size: 'cover' | 'contain' | 'auto'
+  posX?: number       // 0-100, background-position-x %
+  posY?: number       // 0-100, background-position-y %
+  sizePercent?: number // 10-300, overrides size enum when set
+}
+
+export interface ModuleFontSettings {
+  size?: string    // CSS font-size e.g. '0.875rem' | '1rem' | '1.25rem' | '1.5rem'
+  family?: string  // CSS font-family
+  color?: string   // hex color
 }
 
 export type Module = TextModule | TodoModule | VoteModule
@@ -35,6 +44,8 @@ export interface TextModule {
   type: 'text'
   content: string
   background?: ModuleBackground
+  fontSettings?: ModuleFontSettings
+  customLabel?: string
 }
 
 export interface TodoModule {
@@ -43,6 +54,8 @@ export interface TodoModule {
   subtitle?: string
   items: TodoItem[]
   background?: ModuleBackground
+  fontSettings?: ModuleFontSettings
+  customLabel?: string
 }
 
 export interface TodoItem {
@@ -61,6 +74,8 @@ export interface VoteModule {
   anonymous: boolean
   votes: Record<string, string[]>
   background?: ModuleBackground
+  fontSettings?: ModuleFontSettings
+  customLabel?: string
 }
 
 export interface VoteOption {
