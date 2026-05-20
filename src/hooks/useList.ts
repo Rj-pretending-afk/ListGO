@@ -8,7 +8,11 @@ export const useLists = () => {
   const user = useAuthStore(s => s.user)
   const allLists = useAppStore(s => s.lists)
   if (user) {
-    return allLists.filter(l => l.ownerId === user.id)
+    const token = getOwnerToken()
+    // Show owned lists + any anonymous lists from this browser not yet claimed
+    return allLists.filter(l =>
+      l.ownerId === user.id || (l.ownerToken === token && !l.ownerId)
+    )
   }
   const token = getOwnerToken()
   return allLists.filter(l => l.ownerToken === token)

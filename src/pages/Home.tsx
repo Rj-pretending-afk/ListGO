@@ -23,14 +23,20 @@ export default function Home() {
   const { createList, deleteList } = useListActions()
   const navigate = useNavigate()
   const uploadToCloud = useAppStore(s => s.uploadToCloud)
+  const claimLists = useAppStore(s => s.claimLists)
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
 
   const handleUpload = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
+    if (!currentUser) return
     setUploading(u => ({ ...u, [id]: true }))
-    try { await uploadToCloud(id) } catch { /* silent */ }
+    try {
+      await uploadToCloud(id)
+      // Claim locally: clear ownerToken, set ownerId to current user
+      await claimLists([id], currentUser.id)
+    } catch { /* silent */ }
     finally { setUploading(u => ({ ...u, [id]: false })) }
   }
 
