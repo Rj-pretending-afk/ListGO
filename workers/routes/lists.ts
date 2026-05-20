@@ -1,0 +1,154 @@
+/// <reference types="@cloudflare/workers-types" />
+
+import type { Env } from '../api'
+import type { AuthUser } from '../middleware/auth'
+
+type JsonFn = (data: unknown, status?: number) => Response
+type ErrFn  = (message: string, status: number) => Response
+
+interface ListRow {
+  id: string; title: string; data: string
+  owner_id: string | null; owner_token: string | null
+  permission: string; version: number
+  created_at: number; updated_at: number; last_accessed_at: number
+}
+
+function serialize(row: ListRow) {
+  const data = JSON.parse(row.data) as Record<string, unknown>
+  return {
+    id:            row.id,
+    title:         row.title,
+    ownerId:       row.owner_id ?? undefined,
+    ownerToken:    row.owner_token ?? undefined,
+    permission:    row.permission,
+    version:       row.version,
+    createdAt:     row.created_at,
+    updatedAt:     row.updated_at,
+    lastAccessedAt: row.last_accessed_at,
+    ...data,
+  }
+}
+
+// ── POST /lists ──
+export async function handleCreateList(
+  request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  let body: Record<string, unknown>
+  try { body = await request.json() as Record<string, unknown> } catch { return err('Invalid JSON', 400) }
+
+  const id          = body.id as string
+  const title       = body.title as string
+  const ownerToken  = body.ownerToken as string | undefined
+  const ownerId     = auth?.userId ?? null
+  const tokenValue  = ownerId ? null : (ownerToken ?? null)
+
+  if (!id || !title) return err('id and title required', 400)
+  if (!ownerId && !tokenValue) return err('Unauthorized', 401)
+
+  const { modules, background, cardOpacity, permission, invitedUsernames,
+          version, createdAt, updatedAt } = body
+
+  const data = JSON.stringify({ modules, background, cardOpacity, invitedUsernames })
+  const now  = Date.now()
+
+  await env.DB.prepare(`
+    INSERT OR REPLACE INTO lists
+      (id, title, data, owner_id, owner_token, permission, version, created_at, updated_at, last_accessed_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?)
+  `).bind(
+    id, title, data, ownerId, tokenValue,
+    permission ?? 'public',
+    version ?? 1,
+    createdAt ?? now, updatedAt ?? now, now
+  ).run()
+
+  return json({ ok: true })
+}
+
+// ── GET /lists (own lists index) ──
+export async function handleGetUserLists(
+  auth: AuthUser, env: Env, json: JsonFn
+): Promise<Response> {
+  const rows = await env.DB.prepare(
+    'SELECT id, title, permission, version, updated_at FROM lists WHERE owner_id = ? ORDER BY updated_at DESC'
+  ).bind(auth.userId).all<{ id: string; title: string; permission: string; version: number; updated_at: number }>()
+
+  return json(rows.results ?? [])
+}
+
+// ── GET /lists/:id ──
+export async function handleGetList(
+  id: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const row = await env.DB.prepare('SELECT * FROM lists WHERE id = ?').bind(id).first<ListRow>()
+  if (!row) return err('Not found', 404)
+
+  const url         = new URL(request.url)
+  const tokenParam  = url.searchParams.get('ownerToken')
+  const isOwner     = auth ? row.owner_id === auth.userId : row.owner_token === tokenParam
+
+  if (!isOwner && row.permission !== 'public') return err('Forbidden', 403)
+
+  // Update last_accessed_at (important for anonymous 30-day cleanup)
+  void env.DB.prepare('UPDATE lists SET last_accessed_at = ? WHERE id = ?').bind(Date.now(), id).run()
+
+  return json(serialize(row))
+}
+
+// ── PUT /lists/:id ──
+export async function handleUpdateList(
+  id: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const existing = await env.DB.prepare(
+    'SELECT owner_id, owner_token, version FROM lists WHERE id = ?'
+  ).bind(id).first<{ owner_id: string | null; owner_token: string | null; version: number }>()
+  if (!existing) return err('Not found', 404)
+
+  let body: Record<string, unknown>
+  try { body = await request.json() as Record<string, unknown> } catch { return err('Invalid JSON', 400) }
+
+  const ownerToken = body.ownerToken as string | undefined
+  const isOwner    = auth
+    ? existing.owner_id === auth.userId
+    : existing.owner_token === ownerToken
+
+  if (!isOwner) return err('Forbidden', 403)
+
+  // Optional optimistic-lock version check
+  if (body.version !== undefined && existing.version !== Number(body.version)) {
+    return err(`Version conflict: server=${existing.version} client=${body.version}`, 409)
+  }
+
+  const { title, modules, background, cardOpacity, permission, invitedUsernames } = body
+  const data = JSON.stringify({ modules, background, cardOpacity, invitedUsernames })
+  const now  = Date.now()
+
+  await env.DB.prepare(`
+    UPDATE lists SET title=?, data=?, permission=?, version=version+1, updated_at=?, last_accessed_at=?
+    WHERE id=?
+  `).bind(title, data, permission ?? 'public', now, now, id).run()
+
+  const updated = await env.DB.prepare('SELECT version FROM lists WHERE id=?').bind(id).first<{ version: number }>()
+  return json({ ok: true, version: updated?.version })
+}
+
+// ── DELETE /lists/:id ──
+export async function handleDeleteList(
+  id: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const existing = await env.DB.prepare(
+    'SELECT owner_id, owner_token FROM lists WHERE id = ?'
+  ).bind(id).first<{ owner_id: string | null; owner_token: string | null }>()
+  if (!existing) return err('Not found', 404)
+
+  const url        = new URL(request.url)
+  const ownerToken = url.searchParams.get('ownerToken')
+  const isOwner    = auth
+    ? existing.owner_id === auth.userId
+    : existing.owner_token === ownerToken
+
+  if (!isOwner) return err('Forbidden', 403)
+
+  await env.DB.prepare('DELETE FROM lists WHERE id=?').bind(id).run()
+  return json({ ok: true })
+}

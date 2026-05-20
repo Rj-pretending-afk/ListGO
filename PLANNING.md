@@ -345,26 +345,32 @@ listgo/
 
 ### Phase 0 · 项目搭建（预计 0.5 天）
 
-- [ ] Vite + React + TypeScript 初始化
-- [ ] Tailwind CSS + CSS 变量配置（4 主题占位）
-- [ ] 安装核心依赖
-- [ ] 创建 GitHub 仓库
-- [ ] .gitignore、README.md、PLANNING.md
-- [ ] 验证 `npm run dev` 跑通
+- [x] Vite + React + TypeScript 初始化
+- [x] Tailwind CSS + CSS 变量配置（4 主题占位）
+  - 使用 Tailwind v4 + `@tailwindcss/vite`（无需 postcss/tailwind.config.js）
+  - 主题通过 `data-theme` attribute + CSS 变量实现
+- [x] 安装核心依赖
+- [x] 创建 GitHub 仓库
+- [x] .gitignore、README.md、PLANNING.md
+- [x] 验证 `npm run dev` 跑通
+  - `npm run build` 验证：TS 零报错，产物 JS 46KB gzip（远低于 200KB 限制）
 
 ### Phase 1 · MVP 本地工具（预计 4-5 天）
 
 **目标：** 完整本地清单工具，三模块 + 四主题
 
-- [ ] IndexedDB schema
-- [ ] 主页：清单卡片网格
-- [ ] 创建清单（标题必填）
-- [ ] `+ 添加模块` → 选类型
-- [ ] **待办模块**：完整 CRUD
-- [ ] **文本模块**：纯文字编辑
-- [ ] **投票模块**：完整配置 + 投票交互 + 柱状图结果
-- [ ] **四主题**：Day / **Dark（默认）** / Light Pink / Dark Pink
-- [ ] 响应式布局
+- [x] IndexedDB schema（Dexie v4，`src/lib/db.ts`）
+- [x] 主页：清单卡片网格
+- [x] 创建清单（标题必填）
+- [x] `+ 添加模块` → 选类型
+- [x] **待办模块**：完整 CRUD（含小标题、勾选、删除）
+- [x] **文本模块**：纯文字编辑（contenteditable，Phase 2 升级富文本）
+- [x] **投票模块**：完整配置 + 投票交互 + 柱状图结果
+  - 本地用 `votes['local']` 记录投票，Phase 4 升级为多用户
+- [x] **四主题**：Day / Dark（默认）/ Light Pink / Dark Pink
+  - 通过 Zustand store + `data-theme` attribute 切换，localStorage 持久化
+- [x] 响应式布局（`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`）
+  - build 验证：TS 零报错，JS gzip 98KB
 
 **验收标准：**
 > 创建"今晚吃啥"清单，加投票模块（3 选项）。切换 Light Pink 后整体明亮温柔，切 Dark Pink 后是夜玫瑰氛围。手机能用。
@@ -375,12 +381,19 @@ listgo/
 
 **目标：** 富文本、图片 URL、背景、移动端打磨
 
-- [ ] 富文本工具栏（选区浮现）：粗体 / 斜体 / 下划线 / 删除线 / 字号
-- [ ] 文本模块插入图片（粘贴 URL，本地预览用 base64）
-- [ ] **清单背景**：色块 9 选 1 + 自定义颜色 + **背景图 URL**
-- [ ] 模块拖拽排序
-- [ ] 模块操作菜单
-- [ ] **移动端打磨**：触摸 ≥44px、底部弹层、长按拖拽（详见第 11 章）
+- [x] 富文本工具栏（选区浮现）：粗体 / 斜体 / 下划线 / 删除线 / 字号
+  - 选中文字时顶部弹出工具栏（BubbleToolbar），execCommand 实现
+- [x] 文本模块插入图片（粘贴 URL）
+  - ImageInsert 组件，图片追加到 contenteditable 末尾
+- [x] **清单背景**：色块 9 选 1 + 自定义颜色 + **背景图 URL**
+  - ListBackground 组件嵌入子标题栏
+- [x] 模块拖拽排序（桌面鼠标 + 移动端长按 500ms）
+  - dnd-kit PointerSensor + TouchSensor，GripVertical 拖拽手柄
+- [x] 模块操作菜单（⋯ 按钮替换 hover 删除）
+  - ModuleMenu 组件，点击外部关闭
+- [x] **移动端打磨**：触摸 ≥44px、底部弹层（AddModuleButton）、viewport-fit=cover
+  - 全局 touch-action: manipulation 防双击缩放
+  - CSS 基础字号设为 150%（24px）提升可读性
 
 **验收标准：**
 > 选中文字加粗变蓝；插入网络图片正确显示；背景换成樱花图整体协调；手机端拖拽顺滑。
@@ -394,40 +407,42 @@ listgo/
 **目标：** 注册登录、本地清单上云、匿名领取
 
 **第 1-2 天：基础设施**
-- [ ] Cloudflare Workers + D1 + R2 配置
-- [ ] D1 schema 部署
-- [ ] 密码哈希工具（PBKDF2）
-- [ ] JWT 工具（30 天有效）
-- [ ] auth middleware
+- [x] Cloudflare Workers + D1 + R2 配置（wrangler.toml，需填入 D1 ID）
+- [x] D1 schema 部署（workers/schema.sql）
+- [x] 密码哈希工具（PBKDF2，workers/lib/crypto.ts）
+- [x] JWT 工具（30 天有效，workers/lib/jwt.ts，含 signJWT + verifyJWT）
+- [x] auth middleware（workers/middleware/auth.ts + adminOnly.ts）
 
 **第 3-4 天：注册登录流程**
-- [ ] `POST /auth/register`：用户名 + 密码 + 邀请码
-- [ ] `POST /auth/login` → JWT
-- [ ] `GET /auth/me`：拉用户信息
-- [ ] `PUT /auth/profile`：改昵称、头像色
-- [ ] `PUT /auth/password`：改密码（需输入旧密码）
-- [ ] 前端：注册页、登录页、个人设置页
-- [ ] 邀请码面板：列出我的码、是否已用
+- [x] `POST /auth/register`：用户名 + 密码 + 邀请码
+- [x] `POST /auth/login` → JWT
+- [x] `GET /auth/me`：拉用户信息
+- [x] `PUT /auth/profile`：改昵称、头像色
+- [x] `PUT /auth/password`：改密码（需输入旧密码）
+- [x] 前端：注册页、登录页、个人设置页
+- [x] 邀请码面板：列出我的码、是否已用
 
 **第 5 天：云端清单**
-- [ ] `lib/ownerToken.ts`：浏览器生成 16 位 token 存 localStorage
-- [ ] `POST /lists`：创建（带 owner_id 或 owner_token）
-- [ ] `GET /lists/:id`：拉清单
-- [ ] `PUT /lists/:id`：更新（带版本号）
-- [ ] `DELETE /lists/:id`：删除
-- [ ] 前端：本地清单"上传到云"按钮（注册用户）
+- [x] `lib/ownerToken.ts`：浏览器生成 16 位 token 存 localStorage
+- [x] `POST /lists`：创建（带 owner_id 或 owner_token）
+- [x] `GET /lists/:id`：拉清单
+- [x] `PUT /lists/:id`：更新（带版本号）
+- [x] `DELETE /lists/:id`：删除
+- [x] 前端：本地清单"上传到云"按钮（注册用户）
+  - 登录用户新建清单时自动上传；编辑时 800ms debounce 同步到云端
+  - 匿名清单卡片 hover 时显示 CloudUpload 图标，点击手动上传
 
 **第 6 天：匿名领取**
-- [ ] `POST /claim`：把匿名清单转给注册用户
-- [ ] 注册成功后弹窗：浏览器扫描所有匿名 ownerToken 的清单 → 让用户勾选要领取的
-- [ ] 领取后：`owner_id` 改成 user.id，`owner_token` 设 null，移出 30 天清理
+- [x] `POST /claim`：把匿名清单转给注册用户（同时实现 GET /claim/preview）
+- [x] 注册成功后弹窗：浏览器扫描所有匿名 ownerToken 的清单 → 让用户勾选要领取的
+- [x] 领取后：`owner_id` 改成 user.id，`owner_token` 设 null，移出 30 天清理
 
 **第 7 天：管理员后台**
-- [ ] 标记某账号为 `is_admin = 1`（DB 直改）
-- [ ] `/admin` 路由 + adminOnly middleware
-- [ ] 批量生成邀请码（输入数量）
-- [ ] 查看所有邀请码（已用 / 未用）
-- [ ] 撤销未用邀请码
+- [x] 标记某账号为 `is_admin = 1`（DB 直改）
+- [x] `/admin` 路由 + adminOnly middleware
+- [x] 批量生成邀请码（输入数量）
+- [x] 查看所有邀请码（已用 / 未用）
+- [x] 撤销未用邀请码
 
 **验收标准：**
 > 用 wrangler 命令插入 5 个种子邀请码 → 用其中一个注册账号（同时收到 2 个新邀请码）→ 改昵称为"小李 🌸" → 把本地清单上传 → 注销登录、用同一邮箱无法重复注册（用户名唯一）→ 设管理员标志 → 进入 /admin 批量生成 10 个新邀请码。
@@ -1349,8 +1364,7 @@ node scripts/generate-seed-codes.ts 20    # 生成 20 个,打印到控制台
 - [Are.na](https://are.na) · 温柔小众的协作氛围
 
 ### 邀请码机制参考
-- 早期 Pinterest / Clubhouse 邀请制度
-- Mastodon 实例邀请码
+- 早期 论坛 邀请制度
 
 ---
 
