@@ -91,8 +91,17 @@ export async function handleGetList(
 
   if (!isOwner && row.permission !== 'public') return err('Forbidden', 403)
 
-  // Update last_accessed_at (important for anonymous 30-day cleanup)
+  // Always update last_accessed_at (30-day anonymous cleanup clock)
   void env.DB.prepare('UPDATE lists SET last_accessed_at = ? WHERE id = ?').bind(Date.now(), id).run()
+
+  // ?since=N → return { upToDate: true } if server version hasn't advanced
+  const since = url.searchParams.get('since')
+  if (since !== null) {
+    const sv = parseInt(since, 10)
+    if (!isNaN(sv) && row.version <= sv) {
+      return json({ upToDate: true, version: row.version })
+    }
+  }
 
   return json(serialize(row))
 }

@@ -11,14 +11,19 @@ const syncTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const syncErrors = new Map<string, string>()
 export const getSyncError = (id: string) => syncErrors.get(id)
 export const clearSyncError = (id: string) => syncErrors.delete(id)
+export const hasPendingSync = (id: string) => syncTimers.has(id)
+
+// Patched by store init; allows debouncedSync to update version in Zustand+DB after a successful push
+let _patchVersion: ((listId: string, version: number) => void) | null = null
 
 function debouncedSync(list: List) {
   clearTimeout(syncTimers.get(list.id))
   syncTimers.set(list.id, setTimeout(async () => {
     syncTimers.delete(list.id)
     try {
-      await listApi.update(list)
+      const result = await listApi.update(list)
       syncErrors.delete(list.id)
+      if (result.version) _patchVersion?.(list.id, result.version)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'sync failed'
       syncErrors.set(list.id, msg)
@@ -63,9 +68,18 @@ interface AppStore {
   uploadToCloud: (id: string) => Promise<void>
   claimLists: (listIds: string[], newOwnerId: string) => Promise<void>
   importList: (list: List) => Promise<void>
+  applyRemoteList: (list: List) => void
+  resolveConflict: (listId: string, choice: 'local' | 'remote', remoteList: List) => void
 }
 
-export const useAppStore = create<AppStore>((set, get) => ({
+export const useAppStore = create<AppStore>((set, get) => {
+  // Allow debouncedSync (module scope) to patch the version back into Zustand + DB
+  _patchVersion = (listId, version) => {
+    set(s => ({ lists: s.lists.map(l => l.id === listId ? { ...l, version } : l) }))
+    void db.lists.update(listId, { version })
+  }
+
+  return {
   theme: getInitialTheme(),
 
   cycleTheme: () => {
@@ -246,4 +260,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ),
     }))
   },
-}))
+
+  applyRemoteList: (list) => {
+    set(s => ({ lists: s.lists.map(l => l.id === list.id ? list : l) }))
+    void db.lists.put(list)
+  },
+
+  resolveConflict: (listId, choice, remoteList) => {
+    if (choice === 'remote') {
+      clearTimeout(syncTimers.get(listId))
+      syncTimers.delete(listId)
+      set(s => ({ lists: s.lists.map(l => l.id === listId ? remoteList : l) }))
+      void db.lists.put(remoteList)
+    } else {
+      // Local wins: bump our version to remote's so the next debounce sync passes optimistic lock
+      const list = get().lists.find(l => l.id === listId)
+      if (!list) return
+      const updated = { ...list, version: remoteList.version }
+      set(s => ({ lists: s.lists.map(l => l.id === listId ? updated : l) }))
+      void db.lists.update(listId, { version: remoteList.version })
+      if (updated.ownerId) debouncedSync(updated)
+    }
+  },
+  }
+})

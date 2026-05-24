@@ -77,4 +77,9 @@ export const listApi = {
     const qs = ownerToken ? `?ownerToken=${encodeURIComponent(ownerToken)}` : ''
     return api.delete<{ ok: boolean }>(`/lists/${id}${qs}`)
   },
+
+  poll: (id: string, since: number, ownerToken?: string) => {
+    const qs = `?since=${since}${ownerToken ? `&ownerToken=${encodeURIComponent(ownerToken)}` : ''}`
+    return api.get<Record<string, unknown>>(`/lists/${id}${qs}`)
+  },
 }
