@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Share2 } from 'lucide-react'
+import { ArrowLeft, Share2, RefreshCw } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { ListTitle } from './ListTitle'
 import { ModuleList } from './ModuleList'
 import { AddModuleButton } from './AddModuleButton'
 import { SharePanel } from '../ui/SharePanel'
+import { AvatarStack } from '../presence/AvatarStack'
 import { useListActions } from '../../hooks/useList'
 import { useAppStore, getSyncError, clearSyncError } from '../../lib/store'
 import { useListSync } from '../../hooks/useListSync'
+import { usePresence } from '../../hooks/usePresence'
+import { useAuthStore } from '../../hooks/useAuth'
+import { getAnonVoterId } from '../../lib/anonId'
 import { useT } from '../../hooks/useLang'
 import type { List, ListPermission, Module } from '../../types/list.types'
 
@@ -23,10 +27,14 @@ export function ListView({ list, canEdit = true }: ListViewProps) {
   const { updateListTitle, addModule, updateModule, deleteModule } = useListActions()
   const reorderModules = useAppStore(useShallow(s => s.reorderModules))
   const updateListPermission = useAppStore(s => s.updateListPermission)
+  const updateInvitedUsers = useAppStore(s => s.updateInvitedUsers)
   const [shareOpen, setShareOpen] = useState(false)
   const shareRef = useRef<HTMLDivElement>(null)
   const [syncErr, setSyncErr] = useState<string | null>(null)
-  const { conflict, resolveConflict } = useListSync(list, list.ownerToken)
+  const { conflict, resolveConflict, manualRefresh, refreshing } = useListSync(list, list.ownerToken)
+  const { user } = useAuthStore()
+  const { activeUsers } = usePresence(list.id)
+  const selfUserId = user?.id ?? `anon-${getAnonVoterId()}`
 
   // Poll for sync errors on this list (simple approach: check every 2s)
   useEffect(() => {
@@ -64,6 +72,23 @@ export function ListView({ list, canEdit = true }: ListViewProps) {
             {t('viewOnly')}
           </span>
         )}
+
+        {/* Online presence — only when list is cloud-synced */}
+        {list.ownerId && (
+          <AvatarStack users={activeUsers} selfUserId={selfUserId} />
+        )}
+
+        {list.ownerId && (
+          <button
+            onClick={manualRefresh}
+            disabled={refreshing}
+            className="p-1.5 rounded-lg hover:opacity-60 transition-opacity flex-shrink-0 disabled:opacity-30"
+            style={{ color: 'var(--color-text)' }}
+            title="刷新"
+          >
+            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+        )}
         {canEdit && (
           <div ref={shareRef} className="relative flex-shrink-0">
             <button
@@ -80,6 +105,7 @@ export function ListView({ list, canEdit = true }: ListViewProps) {
                 onPermissionChange={(permission: ListPermission) => {
                   void updateListPermission(list.id, permission)
                 }}
+                onInvitedUsersChange={(usernames) => updateInvitedUsers(list.id, usernames)}
                 onClose={() => setShareOpen(false)}
               />
             )}

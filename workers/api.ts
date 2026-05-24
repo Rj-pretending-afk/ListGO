@@ -1,11 +1,13 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { getAuth } from './middleware/auth'
-import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword } from './routes/auth'
+import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword, handleSearchUsers } from './routes/auth'
 import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList } from './routes/lists'
 import { handleCastVote } from './routes/votes'
 import { handleClaimPreview, handleClaim } from './routes/claim'
 import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode, handleAdminGetUsers, handleAdminGetUserLists } from './routes/admin'
+import { handleJoinPresence, handleGetPresence, handleLeavePresence } from './routes/presence'
+import { handleUploadImage, handleGetImage } from './routes/upload'
 
 export interface Env {
   DB: D1Database
@@ -58,6 +60,10 @@ export default {
     if (method === 'PUT' && pathname === '/auth/password') {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleChangePassword(request, auth, env, json, err)
+    }
+    if (method === 'GET' && pathname === '/users/search') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleSearchUsers(request, auth, env, json)
     }
 
     // ── Lists ──
@@ -124,6 +130,26 @@ export default {
     if (userListsMatch && method === 'GET') {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleAdminGetUserLists(userListsMatch[1], auth, env, json, err)
+    }
+
+    // ── Upload ──
+    if (method === 'POST' && pathname === '/upload/image') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleUploadImage(request, auth, env, json, err)
+    }
+    const imageKeyMatch = pathname.match(/^\/images\/(.+)$/)
+    if (imageKeyMatch && method === 'GET') {
+      return handleGetImage(imageKeyMatch[1], env)
+    }
+
+    // ── Presence ──
+    const presenceMatch = pathname.match(/^\/presence\/([^/]+)$/)
+    if (presenceMatch) {
+      const listId = presenceMatch[1]
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (method === 'POST')   return handleJoinPresence(listId, request, auth, env, json)
+      if (method === 'GET')    return handleGetPresence(listId, env, json)
+      if (method === 'DELETE') return handleLeavePresence(listId, request, auth, env, json)
     }
 
     return err('Not found', 404)

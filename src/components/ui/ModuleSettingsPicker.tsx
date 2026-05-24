@@ -2,6 +2,8 @@ import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Settings, X } from 'lucide-react'
 import { resizeDataUrl } from '../../lib/imageUtils'
+import { uploadApi } from '../../lib/api'
+import { useAuthStore } from '../../hooks/useAuth'
 import { useT } from '../../hooks/useLang'
 import { MODULE_PRESET_COLORS } from '../../lib/i18n'
 import type { ModuleBackground } from '../../types/list.types'
@@ -15,9 +17,11 @@ interface ModuleSettingsPickerProps {
 
 export function ModuleSettingsPicker({ background, onBgChange }: ModuleSettingsPickerProps) {
   const t = useT()
+  const { user } = useAuthStore()
   const [open, setOpen] = useState(false)
   const [panelPos, setPanelPos] = useState({ top: 0, left: 0 })
   const [urlInput, setUrlInput] = useState('')
+  const [bgUploading, setBgUploading] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   const bg = background ?? DEFAULT_BG
@@ -27,10 +31,11 @@ export function ModuleSettingsPicker({ background, onBgChange }: ModuleSettingsP
     e.stopPropagation()
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect()
-      const panelW = 288 + 32
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+      const panelW = 18 * rem
       const panelMaxH = Math.min(window.innerHeight * 0.82, 600)
       const top = Math.max(8, Math.min(r.bottom + 4, window.innerHeight - panelMaxH - 8))
-      const left = Math.max(4, Math.min(r.right - panelW, window.innerWidth - panelW - 4))
+      const left = Math.max(8, Math.min(r.right - panelW, window.innerWidth - panelW - 8))
       setPanelPos({ top, left })
     }
     setOpen(v => !v)
@@ -41,14 +46,26 @@ export function ModuleSettingsPicker({ background, onBgChange }: ModuleSettingsP
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = async ev => {
-      if (!ev.target?.result) return
-      const resized = await resizeDataUrl(ev.target.result as string)
-      updateBg({ type: 'image', imageData: resized })
-    }
-    reader.readAsDataURL(file)
     e.target.value = ''
+
+    if (user) {
+      // Registered user: upload to R2
+      setBgUploading(true)
+      try {
+        const { url } = await uploadApi.uploadImage(file)
+        updateBg({ type: 'image', imageData: url })
+      } catch { /* ignore */ }
+      finally { setBgUploading(false) }
+    } else {
+      // Anonymous: embed as base64
+      const reader = new FileReader()
+      reader.onload = async ev => {
+        if (!ev.target?.result) return
+        const resized = await resizeDataUrl(ev.target.result as string)
+        updateBg({ type: 'image', imageData: resized })
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const panel = (
@@ -90,10 +107,12 @@ export function ModuleSettingsPicker({ background, onBgChange }: ModuleSettingsP
               </label>
             </div>
 
-            <label className="block text-xs px-2 py-1.5 rounded-lg text-center cursor-pointer hover:opacity-80 mb-2"
-              style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-              {t('uploadBg')}
-              <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+            <label
+              className="block text-xs px-2 py-1.5 rounded-lg text-center cursor-pointer hover:opacity-80 mb-2"
+              style={{ backgroundColor: 'var(--color-primary)', color: 'white', opacity: bgUploading ? 0.6 : 1, pointerEvents: bgUploading ? 'none' : undefined }}
+            >
+              {bgUploading ? '上传中…' : t('uploadBg')}
+              <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={bgUploading} />
             </label>
 
             <div className="flex gap-2 mb-3">

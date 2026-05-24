@@ -11,6 +11,7 @@ import { voteApi } from '../../lib/api'
 import { useAuthStore } from '../../hooks/useAuth'
 import { useAppStore } from '../../lib/store'
 import { getAnonVoterId } from '../../lib/anonId'
+import { getAnonIdentity, getAnonDisplayName } from '../../lib/anonIdentity'
 
 interface VoteModuleProps {
   module: VoteModuleType
@@ -28,9 +29,11 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
   const isAnon = !user
   const voterId = user?.id ?? getAnonVoterId()
 
-  // Local votes state — updated optimistically; reset when module.votes changes from the store
+  // Local state — updated optimistically; reset when store updates (e.g. from polling)
   const [localVotes, setLocalVotes] = useState(module.votes)
+  const [localVoterNames, setLocalVoterNames] = useState(module.voterNames ?? {})
   useEffect(() => { setLocalVotes(module.votes) }, [module.votes])
+  useEffect(() => { setLocalVoterNames(module.voterNames ?? {}) }, [module.voterNames])
 
   const myVotes = localVotes[voterId] ?? []
   const totalVotes = Object.values(localVotes).reduce((sum, ids) => sum + ids.length, 0)
@@ -45,14 +48,16 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
     setLocalVotes(v => ({ ...v, [voterId]: next }))
 
     try {
-      const result = await voteApi.cast(module.id, listId, next, voterId, isAnon)
-      // Apply authoritative server votes and sync version into store so
-      // the next debouncedSync doesn't send a stale version → 409
+      const displayName = !isAnon
+        ? (user?.displayName ?? user?.username)
+        : getAnonDisplayName(getAnonIdentity())
+      const result = await voteApi.cast(module.id, listId, next, voterId, isAnon, displayName)
       setLocalVotes(result.votes)
-      patchModuleVotes(listId, module.id, result.votes, result.version)
+      setLocalVoterNames(result.voterNames ?? {})
+      patchModuleVotes(listId, module.id, result.votes, result.voterNames ?? {}, result.version)
     } catch {
-      // Revert on failure
       setLocalVotes(module.votes)
+      setLocalVoterNames(module.voterNames ?? {})
     }
   }
 
@@ -95,14 +100,19 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
           const voted = myVotes.includes(opt.id)
           return (
             <div key={opt.id} className="flex items-center gap-2 group">
+              {/* Touch target wrapper: visually 20×20 but tappable 44×44 */}
               <button onClick={() => castVote(opt.id)}
-                className="w-5 h-5 flex-shrink-0 border-2 transition-all"
-                style={{
-                  borderColor: voted ? 'var(--color-primary)' : 'var(--color-text)',
-                  backgroundColor: voted ? 'var(--color-primary)' : 'transparent',
-                  borderRadius: module.multiSelect ? '4px' : '50%',
-                  opacity: voted ? 1 : 0.55,
-                }} />
+                className="flex-shrink-0 flex items-center justify-center"
+                style={{ width: 44, height: 44, margin: -12 }}>
+                <span
+                  className="w-5 h-5 border-2 transition-all block"
+                  style={{
+                    borderColor: voted ? 'var(--color-primary)' : 'var(--color-text)',
+                    backgroundColor: voted ? 'var(--color-primary)' : 'transparent',
+                    borderRadius: module.multiSelect ? '4px' : '50%',
+                    opacity: voted ? 1 : 0.55,
+                  }} />
+              </button>
               <IMEInput value={opt.text}
                 onChange={v => canEdit && update({ options: module.options.map(o => o.id === opt.id ? { ...o, text: v } : o) })}
                 readOnly={!canEdit}
@@ -111,7 +121,7 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
                 style={{ ...cfStyle, color: cfStyle.color ?? 'var(--color-text)' }} />
               {canEdit && module.options.length > 2 && (
                 <button onClick={() => removeOption(opt.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                  className="opacity-20 group-hover:opacity-100 [@media(hover:none)]:opacity-50 transition-opacity flex-shrink-0 p-2 -m-2"
                   style={{ color: 'var(--color-text)' }}>
                   <Trash2 size={12} />
                 </button>
@@ -127,7 +137,15 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
         )}
       </div>
 
-      {totalVotes > 0 && <VoteResults options={module.options} votes={localVotes} myVotes={myVotes} />}
+      {totalVotes > 0 && (
+        <VoteResults
+          options={module.options}
+          votes={localVotes}
+          voterNames={localVoterNames}
+          myVotes={myVotes}
+          anonymous={module.anonymous}
+        />
+      )}
     </div>
   )
 }

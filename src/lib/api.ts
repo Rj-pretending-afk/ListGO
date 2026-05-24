@@ -5,6 +5,7 @@ const BASE = import.meta.env.VITE_API_URL ?? ''
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = authStorage.getToken()
+
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
@@ -43,6 +44,11 @@ function listPayload(list: List) {
   }
 }
 
+export const userApi = {
+  search: (q: string) =>
+    api.get<{ username: string; displayName: string }[]>(`/users/search?q=${encodeURIComponent(q)}`),
+}
+
 export const claimApi = {
   preview: (ownerToken: string) =>
     api.get<{ id: string; title: string; updated_at: number }[]>(
@@ -58,15 +64,52 @@ export const adminApi = {
 }
 
 export const voteApi = {
-  cast: (moduleId: string, listId: string, optionIds: string[], voterId: string, isAnon: boolean) =>
-    api.post<{ ok: boolean; votes: Record<string, string[]>; version: number }>(`/votes/${moduleId}`, {
+  cast: (moduleId: string, listId: string, optionIds: string[], voterId: string, isAnon: boolean, displayName?: string) =>
+    api.post<{ ok: boolean; votes: Record<string, string[]>; voterNames: Record<string, string>; version: number }>(`/votes/${moduleId}`, {
       listId,
       optionIds,
       ...(isAnon ? { anonymousId: voterId } : {}),
+      ...(displayName ? { displayName } : {}),
     }),
 }
 
+export const uploadApi = {
+  uploadImage: async (file: File): Promise<{ url: string }> => {
+    const token = authStorage.getToken()
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(`${BASE}/upload/image`, {
+      method: 'POST',
+      // No Content-Type header — browser sets multipart boundary automatically
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    })
+    const data = await res.json() as { url?: string; error?: string }
+    if (!res.ok) throw new Error(data.error ?? 'Upload failed')
+    return data as { url: string }
+  },
+}
+
+export interface PresenceUser {
+  userId:      string
+  color:       string
+  displayName?: string
+  isAnonymous: boolean
+}
+
+export const presenceApi = {
+  join: (listId: string, data: { color: string; displayName?: string; isAnonymous: boolean; anonId?: string }) =>
+    api.post<PresenceUser[]>(`/presence/${listId}`, data),
+  leave: (listId: string, anonId?: string) =>
+    api.delete<{ ok: boolean }>(`/presence/${listId}${anonId ? `?anonId=${encodeURIComponent(anonId)}` : ''}`),
+  get: (listId: string) =>
+    api.get<PresenceUser[]>(`/presence/${listId}`),
+}
+
 export const listApi = {
+  fetchOwned: () =>
+    api.get<List[]>('/lists'),
+
   create: (list: List) =>
     api.post<{ ok: boolean }>('/lists', listPayload(list)),
 

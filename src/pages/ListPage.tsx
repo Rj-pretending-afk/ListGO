@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { ListView } from '../components/List/ListView'
+import { AnonIdentitySheet } from '../components/ui/AnonIdentitySheet'
 import { useListById } from '../hooks/useList'
 import { useAuthStore } from '../hooks/useAuth'
 import { useAppStore } from '../lib/store'
 import { api } from '../lib/api'
 import { getOwnerToken } from '../lib/ownerToken'
+import { getAnonIdentity, hasSetAnonIdentity } from '../lib/anonIdentity'
 import type { List } from '../types/list.types'
 
 type FetchState = 'idle' | 'loading' | 'not_found' | 'forbidden'
@@ -17,6 +19,7 @@ export default function ListPage() {
   const importList = useAppStore(s => s.importList)
   const [fetchState, setFetchState] = useState<FetchState>('idle')
   const [remoteList, setRemoteList] = useState<List | null>(null)
+  const [showIdentitySheet, setShowIdentitySheet] = useState(false)
 
   useEffect(() => {
     if (!id || localList) return
@@ -25,16 +28,18 @@ export default function ListPage() {
     setFetchState('loading')
     api.get<List>(`/lists/${id}${qs}`)
       .then(async data => {
-        // Normalize: ensure background exists
         const list: List = { background: { type: 'color', value: '' }, ...data }
         const isOwner = user
           ? list.ownerId === user.id
           : !!list.ownerToken && list.ownerToken === ownerToken
         if (isOwner) {
-          // Save to local store so edits can be synced
           await importList(list)
         } else {
           setRemoteList(list)
+          // Prompt anonymous (non-logged-in) visitors to pick an identity
+          if (!user && !hasSetAnonIdentity()) {
+            setShowIdentitySheet(true)
+          }
         }
         setFetchState('idle')
       })
@@ -50,9 +55,7 @@ export default function ListPage() {
     ? (user ? list.ownerId === user.id : !!list.ownerToken && list.ownerToken === ownerToken)
     : false
 
-  if (!id) {
-    return <ListNotFound />
-  }
+  if (!id) return <ListNotFound />
 
   if (fetchState === 'loading') {
     return (
@@ -70,11 +73,19 @@ export default function ListPage() {
     )
   }
 
-  if (!list) {
-    return <ListNotFound />
-  }
+  if (!list) return <ListNotFound />
 
-  return <ListView list={list} canEdit={canEdit} />
+  return (
+    <>
+      {showIdentitySheet && (
+        <AnonIdentitySheet
+          initial={getAnonIdentity()}
+          onDone={() => setShowIdentitySheet(false)}
+        />
+      )}
+      <ListView list={list} canEdit={canEdit} />
+    </>
+  )
 }
 
 function ListNotFound() {
