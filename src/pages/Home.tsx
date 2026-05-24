@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X, Clock, CloudUpload } from 'lucide-react'
+import { Plus, X, Clock, CloudUpload, Trash2 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useLists, useLoaded, useListActions } from '../hooks/useList'
@@ -27,6 +27,7 @@ export default function Home() {
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
   const handleUpload = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
@@ -99,7 +100,7 @@ export default function Home() {
       {lists.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {lists.map(list => (
-            <div key={list.id} onClick={() => navigate(`/list/${list.id}`)}
+            <div key={list.id} onClick={() => { if (pendingDelete === list.id) { setPendingDelete(null); return } navigate(`/list/${list.id}`) }}
               className="p-4 rounded-xl cursor-pointer hover:opacity-90 transition-opacity relative group"
               style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
               <h3 className="font-semibold text-sm mb-1.5 pr-6 truncate" style={{ color: 'var(--color-text)' }}>
@@ -133,9 +134,37 @@ export default function Home() {
                   <CloudUpload size={14} />
                 </button>
               )}
-              <button onClick={e => { e.stopPropagation(); deleteList(list.id) }}
-                className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:opacity-70"
-                style={{ color: 'var(--color-text)' }}><X size={14} /></button>
+              {pendingDelete === list.id ? (
+                <div
+                  className="absolute top-2 right-2 flex items-center gap-2 rounded-lg px-2 py-1 text-xs"
+                  style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => { deleteList(list.id); setPendingDelete(null) }}
+                    className="font-medium hover:opacity-80"
+                    style={{ color: '#ef4444' }}
+                  >
+                    {t('confirmDelete')}
+                  </button>
+                  <span style={{ color: 'var(--color-text)', opacity: 0.3 }}>|</span>
+                  <button
+                    onClick={() => setPendingDelete(null)}
+                    className="hover:opacity-80"
+                    style={{ color: 'var(--color-text)', opacity: 0.5 }}
+                  >
+                    {t('cancel')}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={e => { e.stopPropagation(); setPendingDelete(list.id) }}
+                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:opacity-70"
+                  style={{ color: 'var(--color-text)' }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
           ))}
         </div>

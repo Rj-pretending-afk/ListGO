@@ -1,4 +1,5 @@
 export type ListPermission = 'public' | 'verified' | 'invite_only' | 'private'
+export type ModuleEditPermission = 'owner_only' | 'public'
 
 export type ListBackground =
   | { type: 'color'; value: string }
@@ -57,6 +58,7 @@ export interface TextModule {
   fontSettings?: ModuleFontSettings
   customLabel?: string
   contentFontSettings?: ContentFontSettings
+  editPermission?: ModuleEditPermission
   createdAt?: number
   updatedAt?: number
 }
@@ -70,6 +72,7 @@ export interface TodoModule {
   fontSettings?: ModuleFontSettings
   customLabel?: string
   contentFontSettings?: ContentFontSettings
+  editPermission?: ModuleEditPermission
   createdAt?: number
   updatedAt?: number
 }
@@ -93,6 +96,7 @@ export interface VoteModule {
   fontSettings?: ModuleFontSettings
   customLabel?: string
   contentFontSettings?: ContentFontSettings
+  editPermission?: ModuleEditPermission
   createdAt?: number
   updatedAt?: number
 }
