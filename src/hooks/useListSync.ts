@@ -3,13 +3,15 @@ import { listApi } from '../lib/api'
 import { useAppStore, hasPendingSync } from '../lib/store'
 import type { List } from '../types/list.types'
 
+const POLL_INTERVAL = 5000 // 5s — balances freshness vs. D1 read cost
+
 interface ConflictState {
   remoteList: List
 }
 
 export function useListSync(list: List, ownerToken?: string) {
-  const applyRemoteList   = useAppStore(s => s.applyRemoteList)
-  const resolveConflict   = useAppStore(s => s.resolveConflict)
+  const applyRemoteList = useAppStore(s => s.applyRemoteList)
+  const resolveConflict = useAppStore(s => s.resolveConflict)
   const [conflict, setConflict] = useState<ConflictState | null>(null)
 
   // Always read the latest list without restarting the interval on every keystroke
@@ -20,30 +22,57 @@ export function useListSync(list: List, ownerToken?: string) {
     // Only poll lists that are synced to the cloud (have an ownerId)
     if (!list.ownerId) return
 
-    const poll = async () => {
+    let timerId: ReturnType<typeof setTimeout> | null = null
+
+    const schedule = () => {
+      timerId = setTimeout(tick, POLL_INTERVAL)
+    }
+
+    const tick = async () => {
+      // Skip when tab is hidden — saves D1 reads and battery
+      if (document.visibilityState !== 'visible') {
+        schedule()
+        return
+      }
+
       const current = listRef.current
       try {
         const data = await listApi.poll(current.id, current.version, ownerToken)
-        if (data.upToDate === true) return
+        if (data.upToDate === true) {
+          schedule()
+          return
+        }
 
         const remote = data as unknown as List
-        if (remote.version <= current.version) return
-
-        if (hasPendingSync(current.id)) {
-          // Local edits haven't been pushed yet — ask the user
-          setConflict({ remoteList: remote })
-        } else {
-          // No local edits pending, silently adopt the remote version
-          applyRemoteList(remote)
+        if (remote.version > current.version) {
+          if (hasPendingSync(current.id)) {
+            setConflict({ remoteList: remote })
+          } else {
+            applyRemoteList(remote)
+          }
         }
       } catch {
         // Ignore transient network errors; next tick will retry
       }
+
+      schedule()
     }
 
-    const id = setInterval(poll, 3000)
-    return () => clearInterval(id)
-    // Intentionally excludes list.version so the interval doesn't restart on every sync
+    // Also resume immediately when tab becomes visible again
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        if (timerId !== null) clearTimeout(timerId)
+        void tick()
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisible)
+    schedule()
+
+    return () => {
+      if (timerId !== null) clearTimeout(timerId)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list.id, list.ownerId, ownerToken, applyRemoteList])
 
