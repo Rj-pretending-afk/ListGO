@@ -85,7 +85,9 @@ export async function handleGetList(
 
   const url         = new URL(request.url)
   const tokenParam  = url.searchParams.get('ownerToken')
-  const isOwner     = auth ? row.owner_id === auth.userId : row.owner_token === tokenParam
+  const isOwner     = auth
+    ? row.owner_id === auth.userId
+    : tokenParam !== null && row.owner_token === tokenParam
 
   if (!isOwner && row.permission !== 'public') return err('Forbidden', 403)
 
@@ -110,7 +112,7 @@ export async function handleUpdateList(
   const ownerToken = body.ownerToken as string | undefined
   const isOwner    = auth
     ? existing.owner_id === auth.userId
-    : existing.owner_token === ownerToken
+    : ownerToken !== undefined && existing.owner_token === ownerToken
 
   if (!isOwner) return err('Forbidden', 403)
 
@@ -145,7 +147,7 @@ export async function handleDeleteList(
   const ownerToken = url.searchParams.get('ownerToken')
   const isOwner    = auth
     ? existing.owner_id === auth.userId
-    : existing.owner_token === ownerToken
+    : ownerToken !== null && existing.owner_token === ownerToken
 
   if (!isOwner) return err('Forbidden', 403)
 
