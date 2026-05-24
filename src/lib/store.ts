@@ -3,7 +3,7 @@ import { db } from './db'
 import { generateListId, generateModuleId, generateItemId } from './shortid'
 import { getOwnerToken } from './ownerToken'
 import { listApi } from './api'
-import type { List, ListBackground, Module, TodoModule, VoteModule } from '../types/list.types'
+import type { List, ListBackground, ListPermission, Module, TodoModule, VoteModule } from '../types/list.types'
 
 const syncTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
@@ -47,8 +47,10 @@ interface AppStore {
   deleteModule: (listId: string, moduleId: string) => Promise<void>
   updateListBackground: (id: string, background: ListBackground) => Promise<void>
   reorderModules: (listId: string, fromIndex: number, toIndex: number) => void
+  updateListPermission: (id: string, permission: ListPermission) => Promise<void>
   uploadToCloud: (id: string) => Promise<void>
   claimLists: (listIds: string[], newOwnerId: string) => Promise<void>
+  importList: (list: List) => Promise<void>
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -198,10 +200,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (next.ownerId) debouncedSync(next)
   },
 
+  updateListPermission: async (id, permission) => {
+    await db.lists.update(id, { permission } as Partial<List>)
+    set(s => ({ lists: s.lists.map(l => l.id === id ? { ...l, permission } : l) }))
+    const next = get().lists.find(l => l.id === id)
+    if (next?.ownerId) debouncedSync({ ...next, permission })
+  },
+
   uploadToCloud: async (id) => {
     const list = get().lists.find(l => l.id === id)
     if (!list) return
     await listApi.create(list)
+  },
+
+  importList: async (list) => {
+    const existing = get().lists.find(l => l.id === list.id)
+    if (!existing) {
+      await db.lists.add(list)
+      set(s => ({ lists: [list, ...s.lists] }))
+    }
   },
 
   claimLists: async (listIds, newOwnerId) => {

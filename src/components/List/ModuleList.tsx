@@ -28,9 +28,10 @@ interface SortableModuleProps {
   module: Module
   onUpdateModule: (module: Module) => void
   onDeleteModule: (id: string) => void
+  canEdit?: boolean
 }
 
-function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModuleProps) {
+function SortableModule({ module, onUpdateModule, onDeleteModule, canEdit = true }: SortableModuleProps) {
   const t = useT()
   const lang = useLangStore(s => s.lang)
   const timeFormat = useAppStore(s => s.timeFormat)
@@ -105,7 +106,7 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
           <div style={{ position: 'relative', zIndex: 1, padding: '1rem' }}>
             {/* Header row — emoji is part of the editable label */}
             <div className="flex items-center gap-1.5 mb-2">
-              {editingLabel ? (
+              {canEdit && editingLabel ? (
                 <input
                   autoFocus
                   value={labelDraft}
@@ -122,40 +123,37 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
                 />
               ) : (
                 <span
-                  onClick={startEditLabel}
-                  className="font-medium select-none flex-1 cursor-text hover:opacity-60 transition-opacity truncate text-sm"
+                  onClick={canEdit ? startEditLabel : undefined}
+                  className={`font-medium select-none flex-1 truncate text-sm${canEdit ? ' cursor-text hover:opacity-60 transition-opacity' : ''}`}
                   style={module.customLabel
                     ? labelStyle
-                    : { ...labelStyle, opacity: 0.28 }  // ghost placeholder
+                    : { ...labelStyle, opacity: 0.28 }
                   }
-                  title={t('editLabelHint')}
+                  title={canEdit ? t('editLabelHint') : undefined}
                 >
                   {displayLabel}
                 </span>
               )}
 
-              <FontSettingsPicker
-                fontSettings={module.fontSettings}
-                onFontChange={updateFont}
-              />
-              <ModuleSettingsPicker
-                background={module.background}
-                onBgChange={updateBg}
-              />
-              <ModuleMenu onDelete={() => onDeleteModule(module.id)} />
+              {canEdit && (
+                <>
+                  <FontSettingsPicker fontSettings={module.fontSettings} onFontChange={updateFont} />
+                  <ModuleSettingsPicker background={module.background} onBgChange={updateBg} />
+                  <ModuleMenu onDelete={() => onDeleteModule(module.id)} />
+                </>
+              )}
             </div>
 
             <div style={{ borderTop: '1px solid var(--color-border)', opacity: 0.35 }} />
 
-            <ContentFormattingBar
-              settings={module.contentFontSettings}
-              onChange={updateContentFont}
-            />
+            {canEdit && (
+              <ContentFormattingBar settings={module.contentFontSettings} onChange={updateContentFont} />
+            )}
 
             <div className="pt-3">
-            {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} />}
-            {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} />}
-            {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} />}
+            {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={canEdit} />}
+            {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={canEdit} />}
+            {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={canEdit} />}
             </div>
 
             {/* Timestamps */}
@@ -185,16 +183,17 @@ function SortableModule({ module, onUpdateModule, onDeleteModule }: SortableModu
           </div>
         </div>
 
-        {/* ── Right drag strip ── */}
-        <div
-          {...attributes}
-          {...listeners}
-          className="touch-none cursor-grab active:cursor-grabbing flex-shrink-0 flex items-center justify-center"
-          style={{ width: '28px', backgroundColor: 'var(--color-drag)', color: 'var(--color-drag-icon)' }}
-          aria-label={t('editLabelHint')}
-        >
-          <GripVertical size={14} />
-        </div>
+        {/* ── Right drag strip (owner only) ── */}
+        {canEdit && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="touch-none cursor-grab active:cursor-grabbing flex-shrink-0 flex items-center justify-center"
+            style={{ width: '28px', backgroundColor: 'var(--color-drag)', color: 'var(--color-drag-icon)' }}
+          >
+            <GripVertical size={14} />
+          </div>
+        )}
       </div>
     </div>
   )
@@ -205,9 +204,10 @@ interface ModuleListProps {
   onUpdateModule: (module: Module) => void
   onDeleteModule: (moduleId: string) => void
   onReorder: (fromIndex: number, toIndex: number) => void
+  canEdit?: boolean
 }
 
-export function ModuleList({ list, onUpdateModule, onDeleteModule, onReorder }: ModuleListProps) {
+export function ModuleList({ list, onUpdateModule, onDeleteModule, onReorder, canEdit = true }: ModuleListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 500, tolerance: 5 } }),
@@ -239,6 +239,7 @@ export function ModuleList({ list, onUpdateModule, onDeleteModule, onReorder }: 
               module={module}
               onUpdateModule={onUpdateModule}
               onDeleteModule={onDeleteModule}
+              canEdit={canEdit}
             />
           ))}
         </div>

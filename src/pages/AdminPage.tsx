@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../lib/api'
+import { api, adminApi } from '../lib/api'
 import { useAuthStore } from '../hooks/useAuth'
 import { useT } from '../hooks/useLang'
 
@@ -16,6 +16,15 @@ interface AdminCode {
   usedAt: number | null; revoked: boolean; createdAt: number
 }
 
+interface AdminUser {
+  id: string; username: string; displayName: string | null
+  isAdmin: boolean; createdAt: number; listCount: number
+}
+
+interface UserList {
+  id: string; title: string; permission: string; version: number; updated_at: number
+}
+
 export default function AdminPage() {
   const t = useT()
   const navigate = useNavigate()
@@ -27,6 +36,10 @@ export default function AdminPage() {
   const [generating, setGenerating] = useState(false)
   const [newCodes, setNewCodes] = useState<string[]>([])
   const [revoking, setRevoking] = useState<string | null>(null)
+  const [users, setUsers]   = useState<AdminUser[]>([])
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
+  const [userLists, setUserLists] = useState<UserList[]>([])
+  const [loadingUserLists, setLoadingUserLists] = useState(false)
 
   useEffect(() => {
     if (!user?.isAdmin) { navigate('/'); return }
@@ -34,11 +47,24 @@ export default function AdminPage() {
   }, [user, navigate])
 
   const loadData = async () => {
-    const [s, c] = await Promise.all([
+    const [s, c, u] = await Promise.all([
       api.get<Stats>('/admin/stats'),
       api.get<AdminCode[]>('/admin/invite-codes'),
+      adminApi.getUsers(),
     ])
-    setStats(s); setCodes(c)
+    setStats(s); setCodes(c); setUsers(u)
+  }
+
+  const openUserLists = async (u: AdminUser) => {
+    setSelectedUser(u)
+    setUserLists([])
+    setLoadingUserLists(true)
+    try {
+      const lists = await adminApi.getUserLists(u.id)
+      setUserLists(lists)
+    } finally {
+      setLoadingUserLists(false)
+    }
   }
 
   const handleGenerate = async () => {
@@ -112,6 +138,97 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Users table */}
+      <div className="rounded-xl overflow-hidden" style={cardStyle}>
+        <div className="px-5 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>用户管理</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text)', opacity: 0.5 }}>
+                {['用户名', '昵称', '清单数', '管理员', '注册时间', '操作']
+                  .map(h => <th key={h} className="px-4 py-2 text-left font-medium">{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <td className="px-4 py-2 font-mono" style={{ color: 'var(--color-text)' }}>{u.username}</td>
+                  <td className="px-4 py-2" style={{ color: 'var(--color-text)', opacity: 0.6 }}>{u.displayName ?? '—'}</td>
+                  <td className="px-4 py-2" style={{ color: 'var(--color-text)', opacity: 0.6 }}>{u.listCount}</td>
+                  <td className="px-4 py-2" style={{ color: u.isAdmin ? 'var(--color-primary)' : 'var(--color-text)', opacity: u.isAdmin ? 1 : 0.35 }}>
+                    {u.isAdmin ? '✓' : '—'}
+                  </td>
+                  <td className="px-4 py-2" style={{ color: 'var(--color-text)', opacity: 0.5 }}>
+                    {new Date(u.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-2">
+                    <button
+                      onClick={() => openUserLists(u)}
+                      className="hover:opacity-70 transition-opacity"
+                      style={{ color: 'var(--color-primary)' }}
+                    >
+                      查看清单
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* User lists modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={cardStyle}>
+            <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-border)' }}>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                {selectedUser.username} 的清单
+              </h3>
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="text-xs hover:opacity-60"
+                style={{ color: 'var(--color-text)', opacity: 0.4 }}
+              >
+                关闭
+              </button>
+            </div>
+            <div className="overflow-y-auto max-h-96">
+              {loadingUserLists ? (
+                <p className="text-center py-8 text-xs" style={{ color: 'var(--color-text)', opacity: 0.4 }}>加载中…</p>
+              ) : userLists.length === 0 ? (
+                <p className="text-center py-8 text-xs" style={{ color: 'var(--color-text)', opacity: 0.4 }}>暂无清单</p>
+              ) : (
+                <table className="w-full text-xs">
+                  <tbody>
+                    {userLists.map(l => (
+                      <tr key={l.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                        <td className="px-5 py-3" style={{ color: 'var(--color-text)' }}>{l.title}</td>
+                        <td className="px-5 py-3" style={{ color: 'var(--color-text)', opacity: 0.4 }}>{l.permission}</td>
+                        <td className="px-5 py-3">
+                          <a
+                            href={`/l/${l.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="hover:opacity-70"
+                            style={{ color: 'var(--color-primary)' }}
+                          >
+                            打开
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Codes table */}
       <div className="rounded-xl overflow-hidden" style={cardStyle}>

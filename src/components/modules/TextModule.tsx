@@ -16,9 +16,10 @@ interface TextModuleProps {
   module: TextModuleType
   onChange: (module: TextModuleType) => void
   contentFontSettings?: ContentFontSettings
+  canEdit?: boolean
 }
 
-export function TextModule({ module, onChange, contentFontSettings }: TextModuleProps) {
+export function TextModule({ module, onChange, contentFontSettings, canEdit = true }: TextModuleProps) {
   const t = useT()
   const editorRef = useRef<RichTextEditorRef>(null)
   const [selRect, setSelRect] = useState<DOMRect | null>(null)
@@ -121,6 +122,17 @@ export function TextModule({ module, onChange, contentFontSettings }: TextModule
         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
       }
     : null
+
+  if (!canEdit) {
+    return (
+      <div
+        className="prose-sm max-w-none text-sm"
+        style={editorStyle}
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(module.content) }}
+      />
+    )
+  }
 
   return (
     // Clicking the outer div dismisses image controls (unless stopPropagation in child)
