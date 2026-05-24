@@ -453,19 +453,20 @@ listgo/
 
 **目标：** 清单可分享，朋友实时协作
 
-- [ ] 短链生成（nanoid 8 位）
-- [ ] 路由 `/l/{id}`
-- [ ] **4 级权限校验**（中间件）：
+- [x] 短链生成（nanoid 8 位）
+- [x] 路由 `/l/{id}`
+- [x] **4 级权限校验**（中间件）：
   - 公开 → 全部放行
-  - 验证账户 → 检查 JWT
-  - 仅邀请 → 检查 user.username ∈ invited_usernames
-  - 仅自己 → 检查 user.id == owner_id
+  - 验证账户 → 检查 JWT（已实现）
+  - 仅邀请 → 检查 user.username ∈ invited_usernames（已实现）
+  - 仅自己 → 检查 user.id == owner_id（已实现）
 - [ ] **匿名身份弹窗**（仅公开模式）：选色 + 输昵称
 - [x] **轮询同步**：3 秒拉取 + 版本号比对 + debounce 写入
-  - GET ?since=N → { upToDate: true } 或全量 list；useListSync hook 每 3s 轮询；成功同步后版本号写回 store
+  - GET ?since=N → { upToDate: true } 或全量 list；useListSync hook 每 5s 轮询；Tab 不可见时暂停；成功同步后版本号写回 store
 - [x] **冲突处理**：远程版本更新时弹"保留本地/采纳远程"
   - 有 pending sync 时检测到远端更新 → 顶部黄色条；保留本地=升版本号强推；采纳远程=覆盖本地
-- [ ] **投票独立 API**
+- [x] **投票独立 API**
+  - POST /votes/:moduleId；任意用户（JWT 或 anonymousId）；原子更新 D1；版本自增；PUT 时服务端 merge 保留已有投票
 - [ ] **在线状态**：心跳 + 头像组
 - [ ] **图片上传 R2**（仅注册用户）
 - [ ] **背景图上传 R2**（仅注册用户）

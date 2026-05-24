@@ -57,6 +57,15 @@ export const adminApi = {
   getUserLists: (userId: string) => api.get<{ id: string; title: string; permission: string; version: number; updated_at: number }[]>(`/admin/users/${userId}/lists`),
 }
 
+export const voteApi = {
+  cast: (moduleId: string, listId: string, optionIds: string[], voterId: string, isAnon: boolean) =>
+    api.post<{ ok: boolean; votes: Record<string, string[]> }>(`/votes/${moduleId}`, {
+      listId,
+      optionIds,
+      ...(isAnon ? { anonymousId: voterId } : {}),
+    }),
+}
+
 export const listApi = {
   create: (list: List) =>
     api.post<{ ok: boolean }>('/lists', listPayload(list)),

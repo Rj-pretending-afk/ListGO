@@ -89,7 +89,15 @@ export async function handleGetList(
     ? row.owner_id === auth.userId
     : tokenParam !== null && row.owner_token === tokenParam
 
-  if (!isOwner && row.permission !== 'public') return err('Forbidden', 403)
+  if (!isOwner) {
+    if (row.permission === 'private') return err('Forbidden', 403)
+    if (row.permission === 'verified' && !auth) return err('Login required', 401)
+    if (row.permission === 'invite_only') {
+      if (!auth) return err('Login required', 401)
+      const listData = JSON.parse(row.data) as { invitedUsernames?: string[] }
+      if (!(listData.invitedUsernames ?? []).includes(auth.username)) return err('Forbidden', 403)
+    }
+  }
 
   // Always update last_accessed_at (30-day anonymous cleanup clock)
   void env.DB.prepare('UPDATE lists SET last_accessed_at = ? WHERE id = ?').bind(Date.now(), id).run()
@@ -131,7 +139,19 @@ export async function handleUpdateList(
   }
 
   const { title, modules, background, cardOpacity, permission, invitedUsernames } = body
-  const data = JSON.stringify({ modules, background, cardOpacity, invitedUsernames })
+
+  // Preserve votes that were written via the vote API — don't let a full document sync overwrite them
+  const existingRow = await env.DB.prepare('SELECT data FROM lists WHERE id = ?').bind(id).first<{ data: string }>()
+  const existingData = existingRow ? JSON.parse(existingRow.data) as { modules?: { id: string; type: string; votes?: Record<string, string[]> }[] } : {}
+  const mergedModules = Array.isArray(modules)
+    ? (modules as { id: string; type: string; votes?: Record<string, string[]> }[]).map(m => {
+        if (m.type !== 'vote') return m
+        const serverVotes = existingData.modules?.find(em => em.id === m.id)?.votes
+        return serverVotes ? { ...m, votes: serverVotes } : m
+      })
+    : modules
+
+  const data = JSON.stringify({ modules: mergedModules, background, cardOpacity, invitedUsernames })
   const now  = Date.now()
 
   await env.DB.prepare(`

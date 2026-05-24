@@ -3,6 +3,7 @@
 import { getAuth } from './middleware/auth'
 import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword } from './routes/auth'
 import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList } from './routes/lists'
+import { handleCastVote } from './routes/votes'
 import { handleClaimPreview, handleClaim } from './routes/claim'
 import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode, handleAdminGetUsers, handleAdminGetUserLists } from './routes/admin'
 
@@ -76,6 +77,13 @@ export default {
       if (method === 'GET')    return handleGetList(id, request, auth, env, json, err)
       if (method === 'PUT')    return handleUpdateList(id, request, auth, env, json, err)
       if (method === 'DELETE') return handleDeleteList(id, request, auth, env, json, err)
+    }
+
+    // ── Votes ──
+    const voteMatch = pathname.match(/^\/votes\/([^/]+)$/)
+    if (voteMatch && method === 'POST') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleCastVote(voteMatch[1], request, auth, env, json, err)
     }
 
     // ── Claim ──

@@ -28,10 +28,11 @@ interface SortableModuleProps {
   module: Module
   onUpdateModule: (module: Module) => void
   onDeleteModule: (id: string) => void
+  listId: string
   canEdit?: boolean
 }
 
-function SortableModule({ module, onUpdateModule, onDeleteModule, canEdit = true }: SortableModuleProps) {
+function SortableModule({ module, onUpdateModule, onDeleteModule, listId, canEdit = true }: SortableModuleProps) {
   const t = useT()
   const lang = useLangStore(s => s.lang)
   const timeFormat = useAppStore(s => s.timeFormat)
@@ -161,7 +162,7 @@ function SortableModule({ module, onUpdateModule, onDeleteModule, canEdit = true
               return (
                 <>
                   {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={contentEditable} />}
-                  {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={contentEditable} />}
+                  {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} listId={listId} contentFontSettings={module.contentFontSettings} canEdit={contentEditable} />}
                   {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={contentEditable} />}
                 </>
               )
@@ -251,6 +252,7 @@ export function ModuleList({ list, onUpdateModule, onDeleteModule, onReorder, ca
               module={module}
               onUpdateModule={onUpdateModule}
               onDeleteModule={onDeleteModule}
+              listId={list.id}
               canEdit={canEdit}
             />
           ))}

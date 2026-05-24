@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { generateItemId } from '../../lib/shortid'
 import type { VoteModule as VoteModuleType, VoteOption } from '../../types/list.types'
@@ -6,28 +7,49 @@ import { IMEInput } from '../ui/IMEInput'
 import { useT } from '../../hooks/useLang'
 import { contentFontStyle } from '../ui/ContentFormattingBar'
 import type { ContentFontSettings } from '../../types/list.types'
-
-const LOCAL_VOTER = 'local'
+import { voteApi } from '../../lib/api'
+import { useAuthStore } from '../../hooks/useAuth'
+import { getAnonVoterId } from '../../lib/anonId'
 
 interface VoteModuleProps {
   module: VoteModuleType
   onChange: (module: VoteModuleType) => void
+  listId: string
   contentFontSettings?: ContentFontSettings
   canEdit?: boolean
 }
 
-export function VoteModule({ module, onChange, contentFontSettings, canEdit = true }: VoteModuleProps) {
+export function VoteModule({ module, onChange, listId, contentFontSettings, canEdit = true }: VoteModuleProps) {
   const t = useT()
   const cfStyle = contentFontStyle(contentFontSettings)
-  const myVotes = module.votes[LOCAL_VOTER] ?? []
-  const totalVotes = Object.values(module.votes).reduce((sum, ids) => sum + ids.length, 0)
+  const { user } = useAuthStore()
+  const isAnon = !user
+  const voterId = user?.id ?? getAnonVoterId()
+
+  // Local votes state — updated optimistically; reset when module.votes changes from the store
+  const [localVotes, setLocalVotes] = useState(module.votes)
+  useEffect(() => { setLocalVotes(module.votes) }, [module.votes])
+
+  const myVotes = localVotes[voterId] ?? []
+  const totalVotes = Object.values(localVotes).reduce((sum, ids) => sum + ids.length, 0)
   const update = (patch: Partial<VoteModuleType>) => onChange({ ...module, ...patch })
 
-  const castVote = (optionId: string) => {
+  const castVote = async (optionId: string) => {
     const next = module.multiSelect
       ? myVotes.includes(optionId) ? myVotes.filter(id => id !== optionId) : [...myVotes, optionId]
       : myVotes.includes(optionId) ? [] : [optionId]
-    update({ votes: { ...module.votes, [LOCAL_VOTER]: next } })
+
+    // Optimistic update so the UI feels instant
+    setLocalVotes(v => ({ ...v, [voterId]: next }))
+
+    try {
+      const result = await voteApi.cast(module.id, listId, next, voterId, isAnon)
+      // Apply authoritative server votes (may differ if concurrent votes happened)
+      setLocalVotes(result.votes)
+    } catch {
+      // Revert on failure
+      setLocalVotes(module.votes)
+    }
   }
 
   const addOption = () => update({ options: [...module.options, { id: generateItemId(), text: '' } as VoteOption] })
@@ -101,7 +123,7 @@ export function VoteModule({ module, onChange, contentFontSettings, canEdit = tr
         )}
       </div>
 
-      {totalVotes > 0 && <VoteResults options={module.options} votes={module.votes} myVotes={myVotes} />}
+      {totalVotes > 0 && <VoteResults options={module.options} votes={localVotes} myVotes={myVotes} />}
     </div>
   )
 }
