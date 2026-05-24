@@ -96,6 +96,43 @@ export async function handleAdminGenerateCodes(
   return json({ ok: true, codes })
 }
 
+// ── GET /admin/users ──
+export async function handleAdminGetUsers(
+  auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const guard = adminGuard(auth)
+  if (guard) return guard
+
+  const rows = await env.DB.prepare(`
+    SELECT u.id, u.username, u.display_name, u.is_admin, u.created_at,
+           (SELECT COUNT(*) FROM lists WHERE owner_id = u.id) as list_count
+    FROM users u ORDER BY u.created_at DESC
+  `).all<{ id: string; username: string; display_name: string | null; is_admin: number; created_at: number; list_count: number }>()
+
+  return json((rows.results ?? []).map(r => ({
+    id:          r.id,
+    username:    r.username,
+    displayName: r.display_name,
+    isAdmin:     Boolean(r.is_admin),
+    createdAt:   r.created_at,
+    listCount:   r.list_count,
+  })))
+}
+
+// ── GET /admin/users/:userId/lists ──
+export async function handleAdminGetUserLists(
+  userId: string, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const guard = adminGuard(auth)
+  if (guard) return guard
+
+  const rows = await env.DB.prepare(
+    'SELECT id, title, permission, version, updated_at FROM lists WHERE owner_id = ? ORDER BY updated_at DESC'
+  ).bind(userId).all<{ id: string; title: string; permission: string; version: number; updated_at: number }>()
+
+  return json(rows.results ?? [])
+}
+
 // ── DELETE /admin/invite-codes/:code ──
 export async function handleAdminRevokeCode(
   code: string, auth: AuthUser | null, env: Env, json: JsonFn

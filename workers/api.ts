@@ -4,7 +4,7 @@ import { getAuth } from './middleware/auth'
 import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword } from './routes/auth'
 import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList } from './routes/lists'
 import { handleClaimPreview, handleClaim } from './routes/claim'
-import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode } from './routes/admin'
+import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode, handleAdminGetUsers, handleAdminGetUserLists } from './routes/admin'
 
 export interface Env {
   DB: D1Database
@@ -107,6 +107,15 @@ export default {
     if (revokeMatch && method === 'DELETE') {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleAdminRevokeCode(revokeMatch[1], auth, env, json)
+    }
+    if (method === 'GET' && pathname === '/admin/users') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminGetUsers(auth, env, json, err)
+    }
+    const userListsMatch = pathname.match(/^\/admin\/users\/([^/]+)\/lists$/)
+    if (userListsMatch && method === 'GET') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminGetUserLists(userListsMatch[1], auth, env, json, err)
     }
 
     return err('Not found', 404)

@@ -52,6 +52,11 @@ export const claimApi = {
     api.post<{ ok: boolean }>('/claim', { ownerToken, listIds }),
 }
 
+export const adminApi = {
+  getUsers: () => api.get<{ id: string; username: string; displayName: string | null; isAdmin: boolean; createdAt: number; listCount: number }[]>('/admin/users'),
+  getUserLists: (userId: string) => api.get<{ id: string; title: string; permission: string; version: number; updated_at: number }[]>(`/admin/users/${userId}/lists`),
+}
+
 export const listApi = {
   create: (list: List) =>
     api.post<{ ok: boolean }>('/lists', listPayload(list)),

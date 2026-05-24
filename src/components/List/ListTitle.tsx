@@ -3,9 +3,10 @@ import { useState } from 'react'
 interface ListTitleProps {
   title: string
   onSave: (title: string) => void
+  canEdit?: boolean
 }
 
-export function ListTitle({ title, onSave }: ListTitleProps) {
+export function ListTitle({ title, onSave, canEdit = true }: ListTitleProps) {
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState(title)
 
@@ -14,6 +15,14 @@ export function ListTitle({ title, onSave }: ListTitleProps) {
     if (trimmed) onSave(trimmed)
     else setValue(title)
     setEditing(false)
+  }
+
+  if (!canEdit) {
+    return (
+      <h1 className="text-xl font-bold truncate flex-1 min-w-0" style={{ color: 'var(--color-text)' }}>
+        {title || '无标题'}
+      </h1>
+    )
   }
 
   if (editing) {

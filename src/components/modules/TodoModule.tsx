@@ -11,9 +11,10 @@ interface TodoModuleProps {
   module: TodoModuleType
   onChange: (module: TodoModuleType) => void
   contentFontSettings?: ContentFontSettings
+  canEdit?: boolean
 }
 
-export function TodoModule({ module, onChange, contentFontSettings }: TodoModuleProps) {
+export function TodoModule({ module, onChange, contentFontSettings, canEdit = true }: TodoModuleProps) {
   const t = useT()
   const [newText, setNewText] = useState('')
   const update = (patch: Partial<TodoModuleType>) => onChange({ ...module, ...patch })
@@ -36,31 +37,36 @@ export function TodoModule({ module, onChange, contentFontSettings }: TodoModule
             {item.done && <Check size={11} color="white" strokeWidth={3} />}
           </button>
           <IMEInput value={item.text}
-            onChange={v => update({ items: module.items.map(it => it.id === item.id ? { ...it, text: v } : it) })}
-            onKeyDown={e => !e.nativeEvent.isComposing && e.key === 'Enter' && addItem()}
+            onChange={canEdit ? (v => update({ items: module.items.map(it => it.id === item.id ? { ...it, text: v } : it) })) : (() => undefined)}
+            onKeyDown={canEdit ? (e => !e.nativeEvent.isComposing && e.key === 'Enter' && addItem()) : undefined}
+            readOnly={!canEdit}
             className="flex-1 bg-transparent outline-none text-sm"
             style={{ ...cfStyle, color: cfStyle.color ?? 'var(--color-text)', opacity: item.done ? 0.45 : 1, textDecoration: item.done ? 'line-through' : cfStyle.textDecoration }} />
-          <button onClick={() => update({ items: module.items.filter(it => it.id !== item.id) })}
-            className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-            style={{ color: 'var(--color-text)' }}>
-            <Trash2 size={13} />
-          </button>
+          {canEdit && (
+            <button onClick={() => update({ items: module.items.filter(it => it.id !== item.id) })}
+              className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+              style={{ color: 'var(--color-text)' }}>
+              <Trash2 size={13} />
+            </button>
+          )}
         </div>
       ))}
 
-      <div className="flex items-center gap-2 pt-1">
-        <div className="w-5 h-5 flex-shrink-0" />
-        <input value={newText} onChange={e => setNewText(e.target.value)}
-          onKeyDown={e => !e.nativeEvent.isComposing && e.key === 'Enter' && addItem()}
-          placeholder={t('todoNewItem')}
-          className="flex-1 bg-transparent outline-none text-sm"
-          style={{ color: 'var(--color-text)', opacity: 0.4 }} />
-        {newText.trim() && (
-          <button onClick={addItem} className="flex-shrink-0" style={{ color: 'var(--color-primary)' }}>
-            <Plus size={15} />
-          </button>
-        )}
-      </div>
+      {canEdit && (
+        <div className="flex items-center gap-2 pt-1">
+          <div className="w-5 h-5 flex-shrink-0" />
+          <input value={newText} onChange={e => setNewText(e.target.value)}
+            onKeyDown={e => !e.nativeEvent.isComposing && e.key === 'Enter' && addItem()}
+            placeholder={t('todoNewItem')}
+            className="flex-1 bg-transparent outline-none text-sm"
+            style={{ color: 'var(--color-text)', opacity: 0.4 }} />
+          {newText.trim() && (
+            <button onClick={addItem} className="flex-shrink-0" style={{ color: 'var(--color-primary)' }}>
+              <Plus size={15} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
