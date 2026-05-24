@@ -27,7 +27,7 @@ export function TextModule({ module, onChange, contentFontSettings, canEdit = tr
   const [showCrop, setShowCrop] = useState(false)
   const [urlOpen, setUrlOpen] = useState(false)
   const [urlInput, setUrlInput] = useState('')
-  const [originalQuality, setOriginalQuality] = useState(false)
+  const originalQuality = module.originalQuality ?? false
 
   const applyFormat = (cmd: string, value?: string) => editorRef.current?.applyFormat(cmd, value)
   const handleContentChange = (html: string) => onChange({ ...module, content: html })
@@ -204,7 +204,7 @@ export function TextModule({ module, onChange, contentFontSettings, canEdit = tr
         </button>
         {/* Quality toggle */}
         <button
-          onClick={() => setOriginalQuality(v => !v)}
+          onClick={() => onChange({ ...module, originalQuality: !originalQuality })}
           className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-all hover:opacity-80 ml-auto"
           style={{
             color: originalQuality ? 'var(--color-primary)' : 'var(--color-text)',
