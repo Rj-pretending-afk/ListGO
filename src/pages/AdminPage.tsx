@@ -29,6 +29,7 @@ export default function AdminPage() {
   const t = useT()
   const navigate = useNavigate()
   const user = useAuthStore(s => s.user)
+  const authLoading = useAuthStore(s => s.authLoading)
 
   const [stats, setStats]   = useState<Stats | null>(null)
   const [codes, setCodes]   = useState<AdminCode[]>([])
@@ -42,9 +43,10 @@ export default function AdminPage() {
   const [loadingUserLists, setLoadingUserLists] = useState(false)
 
   useEffect(() => {
+    if (authLoading) return
     if (!user?.isAdmin) { navigate('/'); return }
     void loadData()
-  }, [user, navigate])
+  }, [user, authLoading, navigate])
 
   const loadData = async () => {
     const [s, c, u] = await Promise.all([
@@ -84,6 +86,7 @@ export default function AdminPage() {
     } finally { setRevoking(null) }
   }
 
+  if (authLoading) return null
   if (!user?.isAdmin) return null
 
   const cardStyle = { backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }
