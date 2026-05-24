@@ -7,11 +7,23 @@ import type { List, ListBackground, ListPermission, Module, TodoModule, VoteModu
 
 const syncTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
+// Track per-list sync error so UI can surface it
+const syncErrors = new Map<string, string>()
+export const getSyncError = (id: string) => syncErrors.get(id)
+export const clearSyncError = (id: string) => syncErrors.delete(id)
+
 function debouncedSync(list: List) {
   clearTimeout(syncTimers.get(list.id))
-  syncTimers.set(list.id, setTimeout(() => {
+  syncTimers.set(list.id, setTimeout(async () => {
     syncTimers.delete(list.id)
-    listApi.update(list).catch(console.error)
+    try {
+      await listApi.update(list)
+      syncErrors.delete(list.id)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'sync failed'
+      syncErrors.set(list.id, msg)
+      console.error('[sync]', list.id, msg)
+    }
   }, 800))
 }
 

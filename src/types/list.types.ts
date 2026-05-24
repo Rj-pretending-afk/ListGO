@@ -59,6 +59,7 @@ export interface TextModule {
   customLabel?: string
   contentFontSettings?: ContentFontSettings
   editPermission?: ModuleEditPermission
+  originalQuality?: boolean
   createdAt?: number
   updatedAt?: number
 }
