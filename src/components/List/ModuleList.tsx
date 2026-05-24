@@ -139,7 +139,11 @@ function SortableModule({ module, onUpdateModule, onDeleteModule, canEdit = true
                 <>
                   <FontSettingsPicker fontSettings={module.fontSettings} onFontChange={updateFont} />
                   <ModuleSettingsPicker background={module.background} onBgChange={updateBg} />
-                  <ModuleMenu onDelete={() => onDeleteModule(module.id)} />
+                  <ModuleMenu
+                    editPermission={module.editPermission}
+                    onEditPermChange={perm => onUpdateModule({ ...module, editPermission: perm } as Module)}
+                    onDelete={() => onDeleteModule(module.id)}
+                  />
                 </>
               )}
             </div>
@@ -151,9 +155,17 @@ function SortableModule({ module, onUpdateModule, onDeleteModule, canEdit = true
             )}
 
             <div className="pt-3">
-            {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={canEdit} />}
-            {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={canEdit} />}
-            {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={canEdit} />}
+            {(() => {
+              // Owner can always edit; non-owners can edit if module allows public editing
+              const contentEditable = canEdit || module.editPermission === 'public'
+              return (
+                <>
+                  {module.type === 'todo' && <TodoModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={contentEditable} />}
+                  {module.type === 'vote' && <VoteModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={contentEditable} />}
+                  {module.type === 'text' && <TextModule module={module} onChange={onUpdateModule} contentFontSettings={module.contentFontSettings} canEdit={contentEditable} />}
+                </>
+              )
+            })()}
             </div>
 
             {/* Timestamps */}

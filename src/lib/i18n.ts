@@ -10,6 +10,8 @@ export const zh = {
   moduleTypeTodo: '待办列表', moduleTypeVote: '投票', moduleTypeText: '文本',
   moduleLabelTodo: '待办', moduleLabelVote: '投票', moduleLabelText: '文本',
   editLabelHint: '点击编辑标签', deleteModule: '删除模块',
+  moduleEditPermPublic: '🌐 任何人可编辑内容', moduleEditPermOwner: '🔒 仅所有者编辑',
+  confirmDelete: '确认删除', confirmDeleteList: '确认删除此清单？',
   // Font picker
   titleFont: '标题字体',
   fontS: '小', fontM: '中', fontL: '大', fontXL: '特大',
@@ -165,6 +167,8 @@ export const en: Record<I18nKey, string> = {
   claimTitle: 'Claim your previous lists', claimSubtitle: 'These lists were created before you signed in. Associate them with your account?',
   claimConfirm: 'Claim selected', claimSkip: 'Skip', claimLoading: 'Claiming…',
   claimEmpty: 'No local lists to claim',
+  moduleEditPermPublic: '🌐 Anyone can edit content', moduleEditPermOwner: '🔒 Owner only',
+  confirmDelete: 'Confirm delete', confirmDeleteList: 'Delete this list?',
   shareSettings: 'Share Settings', shareCopyLink: 'Copy Link', shareLinkCopied: 'Copied!',
   sharePermission: 'Access Permission',
   permPublic: '🌐 Public (anyone)', permLoggedIn: '🔐 Logged-in only',
