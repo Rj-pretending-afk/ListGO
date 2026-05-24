@@ -59,7 +59,7 @@ export const adminApi = {
 
 export const voteApi = {
   cast: (moduleId: string, listId: string, optionIds: string[], voterId: string, isAnon: boolean) =>
-    api.post<{ ok: boolean; votes: Record<string, string[]> }>(`/votes/${moduleId}`, {
+    api.post<{ ok: boolean; votes: Record<string, string[]>; version: number }>(`/votes/${moduleId}`, {
       listId,
       optionIds,
       ...(isAnon ? { anonymousId: voterId } : {}),

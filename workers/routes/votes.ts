@@ -68,5 +68,6 @@ export async function handleCastVote(
     'UPDATE lists SET data = ?, version = version + 1, updated_at = ? WHERE id = ?'
   ).bind(JSON.stringify(listData), now, listId).run()
 
-  return json({ ok: true, votes })
+  const updated = await env.DB.prepare('SELECT version FROM lists WHERE id = ?').bind(listId).first<{ version: number }>()
+  return json({ ok: true, votes, version: updated?.version ?? row.version + 1 })
 }

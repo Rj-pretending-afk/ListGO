@@ -9,6 +9,7 @@ import { contentFontStyle } from '../ui/ContentFormattingBar'
 import type { ContentFontSettings } from '../../types/list.types'
 import { voteApi } from '../../lib/api'
 import { useAuthStore } from '../../hooks/useAuth'
+import { useAppStore } from '../../lib/store'
 import { getAnonVoterId } from '../../lib/anonId'
 
 interface VoteModuleProps {
@@ -23,6 +24,7 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
   const t = useT()
   const cfStyle = contentFontStyle(contentFontSettings)
   const { user } = useAuthStore()
+  const patchModuleVotes = useAppStore(s => s.patchModuleVotes)
   const isAnon = !user
   const voterId = user?.id ?? getAnonVoterId()
 
@@ -44,8 +46,10 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
 
     try {
       const result = await voteApi.cast(module.id, listId, next, voterId, isAnon)
-      // Apply authoritative server votes (may differ if concurrent votes happened)
+      // Apply authoritative server votes and sync version into store so
+      // the next debouncedSync doesn't send a stale version → 409
       setLocalVotes(result.votes)
+      patchModuleVotes(listId, module.id, result.votes, result.version)
     } catch {
       // Revert on failure
       setLocalVotes(module.votes)

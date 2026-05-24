@@ -70,6 +70,7 @@ interface AppStore {
   importList: (list: List) => Promise<void>
   applyRemoteList: (list: List) => void
   resolveConflict: (listId: string, choice: 'local' | 'remote', remoteList: List) => void
+  patchModuleVotes: (listId: string, moduleId: string, votes: Record<string, string[]>, version: number) => void
 }
 
 export const useAppStore = create<AppStore>((set, get) => {
@@ -264,6 +265,21 @@ export const useAppStore = create<AppStore>((set, get) => {
   applyRemoteList: (list) => {
     set(s => ({ lists: s.lists.map(l => l.id === list.id ? list : l) }))
     void db.lists.put(list)
+  },
+
+  patchModuleVotes: (listId, moduleId, votes, version) => {
+    set(s => ({
+      lists: s.lists.map(l => {
+        if (l.id !== listId) return l
+        const modules = l.modules.map(m =>
+          m.id === moduleId && m.type === 'vote' ? { ...m, votes } : m
+        )
+        return { ...l, modules, version }
+      }),
+    }))
+    // Write to IndexedDB so a page reload doesn't restore the stale version
+    const list = get().lists.find(l => l.id === listId)
+    if (list) void db.lists.put(list)
   },
 
   resolveConflict: (listId, choice, remoteList) => {
