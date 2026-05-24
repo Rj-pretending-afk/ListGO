@@ -29,7 +29,7 @@ export async function handleUploadImage(
   if (blob.size > MAX_BYTES) return err('File too large (max 5 MB)', 413)
 
   const ext = blob.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg'
-  const key = `images/${auth.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const key = `${auth.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
   await env.IMAGES.put(key, blob.stream(), {
     httpMetadata: { contentType: blob.type },
