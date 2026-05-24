@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Share2 } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
@@ -7,7 +7,7 @@ import { ModuleList } from './ModuleList'
 import { AddModuleButton } from './AddModuleButton'
 import { SharePanel } from '../ui/SharePanel'
 import { useListActions } from '../../hooks/useList'
-import { useAppStore } from '../../lib/store'
+import { useAppStore, getSyncError, clearSyncError } from '../../lib/store'
 import { useT } from '../../hooks/useLang'
 import type { List, ListPermission, Module } from '../../types/list.types'
 
@@ -24,6 +24,17 @@ export function ListView({ list, canEdit = true }: ListViewProps) {
   const updateListPermission = useAppStore(s => s.updateListPermission)
   const [shareOpen, setShareOpen] = useState(false)
   const shareRef = useRef<HTMLDivElement>(null)
+  const [syncErr, setSyncErr] = useState<string | null>(null)
+
+  // Poll for sync errors on this list (simple approach: check every 2s)
+  useEffect(() => {
+    if (!canEdit) return
+    const id = setInterval(() => {
+      const e = getSyncError(list.id)
+      if (e) { setSyncErr(e); clearSyncError(list.id) }
+    }, 2000)
+    return () => clearInterval(id)
+  }, [list.id, canEdit])
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -73,6 +84,17 @@ export function ListView({ list, canEdit = true }: ListViewProps) {
           </div>
         )}
       </div>
+
+      {/* Sync error banner */}
+      {syncErr && (
+        <div
+          className="px-4 py-2 text-xs flex items-center justify-between"
+          style={{ backgroundColor: '#fef2f2', color: '#dc2626', borderBottom: '1px solid #fecaca' }}
+        >
+          <span>☁ 云端同步失败：{syncErr}（本地已保存）</span>
+          <button onClick={() => setSyncErr(null)} className="ml-4 hover:opacity-70">✕</button>
+        </div>
+      )}
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">
