@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Copy, Check, Plus } from 'lucide-react'
+import { Copy, Check, Plus, ShieldCheck } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../hooks/useAuth'
@@ -132,9 +132,21 @@ export default function ProfilePage() {
             <p className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.4 }}>@{user.username}</p>
           </div>
         </div>
-        <button onClick={() => { logout(); navigate('/') }} className="text-sm hover:opacity-70" style={{ color: '#ef4444' }}>
-          {t('profileLogout')}
-        </button>
+        <div className="flex items-center gap-3">
+          {user.isAdmin && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
+              style={{ color: 'var(--color-primary)' }}
+            >
+              <ShieldCheck size={15} />
+              Admin
+            </button>
+          )}
+          <button onClick={() => { logout(); navigate('/') }} className="text-sm hover:opacity-70" style={{ color: '#ef4444' }}>
+            {t('profileLogout')}
+          </button>
+        </div>
       </div>
 
       {/* Avatar + color */}

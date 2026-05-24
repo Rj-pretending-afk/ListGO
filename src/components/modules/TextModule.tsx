@@ -27,6 +27,7 @@ export function TextModule({ module, onChange, contentFontSettings, canEdit = tr
   const [showCrop, setShowCrop] = useState(false)
   const [urlOpen, setUrlOpen] = useState(false)
   const [urlInput, setUrlInput] = useState('')
+  const [originalQuality, setOriginalQuality] = useState(false)
 
   const applyFormat = (cmd: string, value?: string) => editorRef.current?.applyFormat(cmd, value)
   const handleContentChange = (html: string) => onChange({ ...module, content: html })
@@ -55,8 +56,10 @@ export function TextModule({ module, onChange, contentFontSettings, canEdit = tr
     const reader = new FileReader()
     reader.onload = async ev => {
       if (!ev.target?.result) return
-      const resized = await resizeDataUrl(ev.target.result as string)
-      insertImageSrc(resized)
+      const src = originalQuality
+        ? (ev.target.result as string)
+        : await resizeDataUrl(ev.target.result as string)
+      insertImageSrc(src)
     }
     reader.readAsDataURL(file)
     e.target.value = ''
@@ -181,7 +184,7 @@ export function TextModule({ module, onChange, contentFontSettings, canEdit = tr
 
       {/* Insert image row */}
       <div
-        className="flex items-center gap-2 mt-2 pt-2"
+        className="flex items-center gap-2 mt-2 pt-2 flex-wrap"
         style={{ borderTop: '1px solid var(--color-border)', opacity: 0.75 }}
         onClick={e => e.stopPropagation()}
       >
@@ -198,6 +201,20 @@ export function TextModule({ module, onChange, contentFontSettings, canEdit = tr
           style={{ color: 'var(--color-text)', opacity: 0.55 }}
         >
           <Link size={13} /> URL
+        </button>
+        {/* Quality toggle */}
+        <button
+          onClick={() => setOriginalQuality(v => !v)}
+          className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-all hover:opacity-80 ml-auto"
+          style={{
+            color: originalQuality ? 'var(--color-primary)' : 'var(--color-text)',
+            opacity: originalQuality ? 1 : 0.4,
+            border: `1px solid ${originalQuality ? 'var(--color-primary)' : 'transparent'}`,
+            backgroundColor: originalQuality ? 'color-mix(in srgb, var(--color-primary) 12%, transparent)' : 'transparent',
+          }}
+          title={originalQuality ? '原图模式（体积大，可能无法同步到云端）' : '压缩模式（默认）'}
+        >
+          {originalQuality ? '原图' : '压缩'}
         </button>
         {urlOpen && (
           <div className="flex items-center gap-2 flex-1">
