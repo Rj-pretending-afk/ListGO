@@ -18,41 +18,52 @@ export default function ListPage() {
   const location = useLocation()
   const adminView = (location.state as { fromAdmin?: boolean } | null)?.fromAdmin === true
   const user = useAuthStore(s => s.user)
+  const authLoading = useAuthStore(s => s.authLoading)
   const localList = useListById(id ?? '')
   const importList = useAppStore(s => s.importList)
   const [fetchState, setFetchState] = useState<FetchState>('idle')
   const [remoteList, setRemoteList] = useState<List | null>(null)
   const [showIdentitySheet, setShowIdentitySheet] = useState(false)
 
+  // Dismiss identity sheet immediately if user logs in
+  useEffect(() => { if (user) setShowIdentitySheet(false) }, [user])
+
   useEffect(() => {
-    if (!id || localList) return
+    // Wait for auth to resolve so we know the real user identity before fetching
+    if (!id || localList || authLoading) return
+    let cancelled = false
     const ownerToken = getOwnerToken()
     const qs = ownerToken ? `?ownerToken=${encodeURIComponent(ownerToken)}` : ''
     setFetchState('loading')
     api.get<List>(`/lists/${id}${qs}`)
       .then(async data => {
+        if (cancelled) return
+        // Read fresh user from store (avoids stale closure if auth completed mid-flight)
+        const currentUser = useAuthStore.getState().user
         const list: List = { ...data, background: data.background ?? { type: 'color', value: '' } }
-        const isOwner = user
-          ? list.ownerId === user.id
+        const isOwner = currentUser
+          ? list.ownerId === currentUser.id
           : !!list.ownerToken && list.ownerToken === ownerToken
         if (isOwner) {
           await importList(list)
         } else {
           setRemoteList(list)
-          if (user) {
+          if (currentUser) {
             recordRecentList({ id: list.id, title: list.title, ownerUsername: list.ownerUsername, updatedAt: list.updatedAt })
           }
-          if (!user && !hasSetAnonIdentity()) {
+          if (!currentUser && !hasSetAnonIdentity()) {
             setShowIdentitySheet(true)
           }
         }
         setFetchState('idle')
       })
       .catch((e: Error) => {
+        if (cancelled) return
         const msg = e.message.toLowerCase()
         setFetchState(msg.includes('forbidden') || msg.includes('403') ? 'forbidden' : 'not_found')
       })
-  }, [id, localList, user, importList])
+    return () => { cancelled = true }
+  }, [id, localList, user, importList, authLoading])
 
   const list = localList ?? remoteList
   const ownerToken = getOwnerToken()
