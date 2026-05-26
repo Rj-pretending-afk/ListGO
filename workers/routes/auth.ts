@@ -150,7 +150,14 @@ export async function handleMe(
     ).bind(auth.userId, 'pending').first(),
   ])
 
+  // Always return a fresh token so DB role changes take effect on next page load
+  const freshToken = await signJWT(
+    { userId: user.id, username: user.username, isAdmin: user.is_admin >= 1, isSuperAdmin: user.is_admin >= 2 },
+    env.JWT_SECRET
+  )
+
   return json({
+    token: freshToken,
     id: user.id,
     username: user.username,
     displayName: user.display_name,
