@@ -37,6 +37,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [codes, setCodes] = useState<AdminCode[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (authLoading) return
@@ -45,12 +46,17 @@ export default function AdminPage() {
   }, [user, authLoading, navigate])
 
   const loadAll = async () => {
-    const [s, u, c] = await Promise.all([
-      api.get<Stats>('/admin/stats'),
-      adminApi.getUsers(),
-      api.get<AdminCode[]>('/admin/invite-codes'),
-    ])
-    setStats(s); setUsers(u); setCodes(c)
+    setLoadError(null)
+    try {
+      const [s, u, c] = await Promise.all([
+        api.get<Stats>('/admin/stats'),
+        adminApi.getUsers(),
+        api.get<AdminCode[]>('/admin/invite-codes'),
+      ])
+      setStats(s); setUsers(u); setCodes(c)
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : 'Unknown error')
+    }
   }
 
   if (authLoading || !user?.isAdmin) return null
@@ -73,6 +79,12 @@ export default function AdminPage() {
           </button>
         ))}
       </div>
+
+      {loadError && (
+        <div className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+          加载失败：{loadError}
+        </div>
+      )}
 
       {tab === 'overview' && <AdminOverview stats={stats} />}
       {tab === 'users'    && <AdminUsers users={users} onRefresh={loadAll} expandUserId={expandUserId} />}

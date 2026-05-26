@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Plus, Trash2, ImagePlus, Link, X } from 'lucide-react'
 import { generateItemId } from '../../lib/shortid'
 import type { VoteModule as VoteModuleType, VoteOption } from '../../types/list.types'
 import { VoteResults } from './VoteResults'
@@ -7,11 +7,12 @@ import { IMEInput } from '../ui/IMEInput'
 import { useT } from '../../hooks/useLang'
 import { contentFontStyle } from '../ui/ContentFormattingBar'
 import type { ContentFontSettings } from '../../types/list.types'
-import { voteApi } from '../../lib/api'
+import { voteApi, uploadApi } from '../../lib/api'
 import { useAuthStore } from '../../hooks/useAuth'
 import { useAppStore } from '../../lib/store'
 import { getAnonVoterId } from '../../lib/anonId'
 import { getAnonIdentity, getAnonDisplayName } from '../../lib/anonIdentity'
+import { resizeDataUrl } from '../../lib/imageUtils'
 
 interface VoteModuleProps {
   module: VoteModuleType
@@ -29,22 +30,29 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
   const isAnon = !user
   const voterId = user?.id ?? getAnonVoterId()
 
-  // Local state — updated optimistically; reset when store updates (e.g. from polling)
   const [localVotes, setLocalVotes] = useState(module.votes)
   const [localVoterNames, setLocalVoterNames] = useState(module.voterNames ?? {})
   useEffect(() => { setLocalVotes(module.votes) }, [module.votes])
   useEffect(() => { setLocalVoterNames(module.voterNames ?? {}) }, [module.voterNames])
 
+  // Per-option image picker state
+  const [imgPickerOpen, setImgPickerOpen] = useState<string | null>(null)
+  const [urlInputs, setUrlInputs] = useState<Record<string, string>>({})
+  const [uploading, setUploading] = useState<Record<string, boolean>>({})
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
   const myVotes = localVotes[voterId] ?? []
   const totalVotes = Object.values(localVotes).reduce((sum, ids) => sum + ids.length, 0)
   const update = (patch: Partial<VoteModuleType>) => onChange({ ...module, ...patch })
+
+  const updateOption = (id: string, patch: Partial<VoteOption>) =>
+    update({ options: module.options.map(o => o.id === id ? { ...o, ...patch } : o) })
 
   const castVote = async (optionId: string) => {
     const next = module.multiSelect
       ? myVotes.includes(optionId) ? myVotes.filter(id => id !== optionId) : [...myVotes, optionId]
       : myVotes.includes(optionId) ? [] : [optionId]
 
-    // Optimistic update so the UI feels instant
     setLocalVotes(v => ({ ...v, [voterId]: next }))
 
     try {
@@ -68,6 +76,40 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
       options: module.options.filter(o => o.id !== id),
       votes: Object.fromEntries(Object.entries(module.votes).map(([k, v]) => [k, v.filter(oid => oid !== id)])),
     })
+  }
+
+  const handleFileUpload = async (optId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+
+    if (user) {
+      setUploading(u => ({ ...u, [optId]: true }))
+      try {
+        const { url } = await uploadApi.uploadImage(file)
+        updateOption(optId, { image: url })
+        setImgPickerOpen(null)
+      } catch { /* silent */ }
+      finally { setUploading(u => ({ ...u, [optId]: false })) }
+    } else {
+      const reader = new FileReader()
+      reader.onload = async ev => {
+        if (!ev.target?.result) return
+        const src = await resizeDataUrl(ev.target.result as string)
+        updateOption(optId, { image: src })
+        setImgPickerOpen(null)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleUrlInsert = (optId: string) => {
+    const url = urlInputs[optId]?.trim()
+    if (url) {
+      updateOption(optId, { image: url })
+      setUrlInputs(u => ({ ...u, [optId]: '' }))
+      setImgPickerOpen(null)
+    }
   }
 
   return (
@@ -98,33 +140,120 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
       <div className="space-y-2">
         {module.options.map(opt => {
           const voted = myVotes.includes(opt.id)
+          const pickerOpen = imgPickerOpen === opt.id
+          const isUploading = uploading[opt.id]
+
           return (
-            <div key={opt.id} className="flex items-center gap-2 group">
-              {/* Touch target wrapper: visually 20×20 but tappable 44×44 */}
-              <button onClick={() => castVote(opt.id)}
-                className="flex-shrink-0 flex items-center justify-center"
-                style={{ width: 44, height: 44, margin: -12 }}>
-                <span
-                  className="w-5 h-5 border-2 transition-all block"
-                  style={{
-                    borderColor: voted ? 'var(--color-primary)' : 'var(--color-text)',
-                    backgroundColor: voted ? 'var(--color-primary)' : 'transparent',
-                    borderRadius: module.multiSelect ? '4px' : '50%',
-                    opacity: voted ? 1 : 0.55,
-                  }} />
-              </button>
-              <IMEInput value={opt.text}
-                onChange={v => canEdit && update({ options: module.options.map(o => o.id === opt.id ? { ...o, text: v } : o) })}
-                readOnly={!canEdit}
-                placeholder={t('voteOption')}
-                className="flex-1 bg-transparent outline-none text-sm"
-                style={{ ...cfStyle, color: cfStyle.color ?? 'var(--color-text)' }} />
-              {canEdit && module.options.length > 2 && (
-                <button onClick={() => removeOption(opt.id)}
-                  className="opacity-20 group-hover:opacity-100 [@media(hover:none)]:opacity-50 transition-opacity flex-shrink-0 p-2 -m-2"
-                  style={{ color: 'var(--color-text)' }}>
-                  <Trash2 size={12} />
+            <div key={opt.id} className="space-y-1">
+              <div className="flex items-center gap-2 group">
+                {/* Vote button */}
+                <button onClick={() => castVote(opt.id)}
+                  className="flex-shrink-0 flex items-center justify-center"
+                  style={{ width: 44, height: 44, margin: -12 }}>
+                  <span
+                    className="w-5 h-5 border-2 transition-all block"
+                    style={{
+                      borderColor: voted ? 'var(--color-primary)' : 'var(--color-text)',
+                      backgroundColor: voted ? 'var(--color-primary)' : 'transparent',
+                      borderRadius: module.multiSelect ? '4px' : '50%',
+                      opacity: voted ? 1 : 0.55,
+                    }} />
                 </button>
+
+                <IMEInput value={opt.text}
+                  onChange={v => canEdit && updateOption(opt.id, { text: v })}
+                  readOnly={!canEdit}
+                  placeholder={t('voteOption')}
+                  className="flex-1 bg-transparent outline-none text-sm"
+                  style={{ ...cfStyle, color: cfStyle.color ?? 'var(--color-text)' }} />
+
+                {/* Image button — only in edit mode */}
+                {canEdit && (
+                  <button
+                    onClick={() => setImgPickerOpen(pickerOpen ? null : opt.id)}
+                    className="opacity-20 group-hover:opacity-70 [@media(hover:none)]:opacity-50 transition-opacity flex-shrink-0 p-1.5 -m-1.5"
+                    style={{ color: pickerOpen ? 'var(--color-primary)' : 'var(--color-text)' }}
+                    title="插入图片"
+                  >
+                    <ImagePlus size={13} />
+                  </button>
+                )}
+
+                {canEdit && module.options.length > 2 && (
+                  <button onClick={() => removeOption(opt.id)}
+                    className="opacity-20 group-hover:opacity-100 [@media(hover:none)]:opacity-50 transition-opacity flex-shrink-0 p-2 -m-2"
+                    style={{ color: 'var(--color-text)' }}>
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </div>
+
+              {/* Option image display */}
+              {opt.image && (
+                <div className="relative ml-8 group/img">
+                  <img
+                    src={opt.image}
+                    alt=""
+                    style={{ maxWidth: '100%', borderRadius: 6, display: 'block' }}
+                  />
+                  {canEdit && (
+                    <button
+                      onClick={() => updateOption(opt.id, { image: undefined })}
+                      className="absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover/img:opacity-100 [@media(hover:none)]:opacity-70 transition-opacity"
+                      style={{ backgroundColor: 'rgba(0,0,0,0.55)', color: 'white' }}
+                      title="移除图片"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Image picker */}
+              {canEdit && pickerOpen && (
+                <div
+                  className="ml-8 flex items-center gap-2 flex-wrap py-1.5 px-2 rounded-lg"
+                  style={{ backgroundColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}
+                >
+                  <label
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer hover:opacity-70 transition-opacity"
+                    style={{ color: 'var(--color-text)', opacity: isUploading ? 0.35 : 0.65, pointerEvents: isUploading ? 'none' : undefined }}
+                  >
+                    <ImagePlus size={12} /> {isUploading ? '上传中…' : '上传'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      ref={el => { fileInputRefs.current[opt.id] = el }}
+                      onChange={e => handleFileUpload(opt.id, e)}
+                      disabled={isUploading}
+                    />
+                  </label>
+                  <div className="flex items-center gap-1 flex-1 min-w-0">
+                    <Link size={12} style={{ color: 'var(--color-text)', opacity: 0.5, flexShrink: 0 }} />
+                    <input
+                      value={urlInputs[opt.id] ?? ''}
+                      onChange={e => setUrlInputs(u => ({ ...u, [opt.id]: e.target.value }))}
+                      onKeyDown={e => {
+                        if (e.nativeEvent.isComposing) return
+                        if (e.key === 'Enter') handleUrlInsert(opt.id)
+                        if (e.key === 'Escape') setImgPickerOpen(null)
+                      }}
+                      placeholder="https://..."
+                      className="flex-1 min-w-0 text-xs bg-transparent outline-none px-1"
+                      style={{ color: 'var(--color-text)' }}
+                    />
+                    {urlInputs[opt.id]?.trim() && (
+                      <button
+                        onClick={() => handleUrlInsert(opt.id)}
+                        className="text-xs px-2 py-0.5 rounded font-medium hover:opacity-80 flex-shrink-0"
+                        style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
+                      >
+                        插入
+                      </button>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           )

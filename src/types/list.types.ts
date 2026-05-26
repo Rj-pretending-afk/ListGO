@@ -107,4 +107,5 @@ export interface VoteModule {
 export interface VoteOption {
   id: string
   text: string
+  image?: string
 }
