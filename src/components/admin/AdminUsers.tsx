@@ -160,8 +160,8 @@ function UserRow({ user, onRefresh, initialExpanded = false }: {
             const colors = ['var(--color-text)', 'var(--color-primary)', '#ef4444']
             return (
               <button onClick={() => void cycleAdmin()} disabled={busy || isSelf} title={isSelf ? '不能修改自己的权限' : titles[lvl]}
-                className="p-1.5 rounded-lg hover:opacity-70 transition-opacity disabled:opacity-20"
-                style={{ color: isSelf ? 'var(--color-text)' : colors[lvl] }}>
+                className="p-1.5 rounded-lg transition-opacity disabled:cursor-not-allowed"
+                style={{ color: colors[lvl], opacity: busy ? 0.3 : 1 }}>
                 {icons[lvl]}
               </button>
             )
