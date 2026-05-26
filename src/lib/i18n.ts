@@ -109,6 +109,10 @@ export const zh = {
   saved: '已保存', saveFailed: '保存失败',
   pwChanged: '密码已修改', pwMismatch: '两次密码不一致',
   pwTooShort: '新密码须至少 8 字符', changeFailed: '修改失败',
+  // User profile page
+  profileBioLabel: '个人简介', profileBioPlaceholder: '一句话介绍自己…（至多 120 字）',
+  userPokeBtn: '戳一下', userPokeSent: '已戳！', userPokeError: '戳失败了',
+  userIsSelf: '这是你的主页',
   // Notifications
   notifTitle: '通知', notifEmpty: '暂无通知',
   notifPokes: '被戳', notifInvites: '清单邀请',
@@ -210,6 +214,9 @@ export const en: Record<I18nKey, string> = {
   saved: 'Saved', saveFailed: 'Save failed',
   pwChanged: 'Password changed', pwMismatch: 'Passwords do not match',
   pwTooShort: 'New password must be at least 8 characters', changeFailed: 'Failed to change',
+  profileBioLabel: 'Bio', profileBioPlaceholder: 'Tell people about yourself… (max 120 chars)',
+  userPokeBtn: 'Poke', userPokeSent: 'Poked!', userPokeError: 'Failed to poke',
+  userIsSelf: 'This is your profile',
   notifTitle: 'Notifications', notifEmpty: 'No notifications',
   notifPokes: 'Pokes', notifInvites: 'List Invites',
   notifPokedBy: '@{name} poked you', notifInvitedBy: '@{name} invited you to "{title}"',

@@ -47,6 +47,8 @@ function listPayload(list: List) {
 export const userApi = {
   search: (q: string) =>
     api.get<{ username: string; displayName: string }[]>(`/users/search?q=${encodeURIComponent(q)}`),
+  getProfile: (username: string) =>
+    api.get<import('../types/user.types').PublicProfile>(`/users/${encodeURIComponent(username)}/profile`),
 }
 
 export const claimApi = {
@@ -122,6 +124,7 @@ export interface PresenceUser {
   displayName?: string
   isAnonymous: boolean
   avatarImage?: string
+  username?:   string
 }
 
 export const presenceApi = {

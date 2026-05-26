@@ -8,8 +8,20 @@ export interface User {
   isAdmin: boolean
   isSuperAdmin: boolean
   pokeMessage?: string
+  bio?: string
   hasRequestedInvite?: boolean
   inviteCodes: InviteCodeInfo[]
+}
+
+export interface PublicProfile {
+  id: string
+  username: string
+  displayName: string
+  avatarColor: string
+  avatarImage?: string
+  bio?: string
+  pokeMessage?: string
+  isSelf: boolean
 }
 
 export interface InviteCodeInfo {

@@ -31,6 +31,10 @@ export default function ProfilePage() {
   const [pokeMessage, setPokeMessage] = useState(user?.pokeMessage ?? '')
   const [pokeMsgLoading, setPokeMsgLoading] = useState(false)
   const [pokeMsgSaved, setPokeMsgSaved] = useState(false)
+
+  const [bio, setBio] = useState(user?.bio ?? '')
+  const [bioLoading, setBioLoading] = useState(false)
+  const [bioSaved, setBioSaved] = useState(false)
   const [pendingRequests, setPendingRequests] = useState(0)
 
   const fileRef = useRef<HTMLInputElement>(null)
@@ -138,6 +142,17 @@ export default function ProfilePage() {
       setRequestMsg(e instanceof Error ? e.message : t('saveFailed'))
       setTimeout(() => setRequestMsg(''), 3000)
     } finally { setRequestLoading(false) }
+  }
+
+  const saveBio = async () => {
+    setBioLoading(true)
+    try {
+      await api.put('/auth/profile', { bio: bio.trim() || null })
+      updateUser({ bio: bio.trim() || undefined })
+      setBioSaved(true)
+      setTimeout(() => setBioSaved(false), 2000)
+    } catch { /* ignore */ }
+    finally { setBioLoading(false) }
   }
 
   const savePokeMessage = async () => {
@@ -335,6 +350,21 @@ export default function ProfilePage() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Bio */}
+      <div className="rounded-xl p-5 mb-4" style={card}>
+        <p className="text-xs font-medium mb-3" style={secLabel}>{t('profileBioLabel')}</p>
+        <div className="flex gap-2">
+          <input value={bio} onChange={e => setBio(e.target.value)}
+            className={inputCls} style={inputStyle} maxLength={120}
+            placeholder={t('profileBioPlaceholder')} />
+          <button onClick={saveBio} disabled={bioLoading}
+            className="px-4 py-2 rounded-lg text-sm font-medium btn-primary hover:opacity-80 disabled:opacity-40 whitespace-nowrap flex-shrink-0"
+            style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+            {bioSaved ? <Check size={14} /> : bioLoading ? '…' : t('profileSave')}
+          </button>
+        </div>
       </div>
 
       {/* Poke message */}

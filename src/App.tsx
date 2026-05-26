@@ -10,6 +10,7 @@ import RegisterPage from './pages/RegisterPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 import AdminListPage from './pages/AdminListPage'
+import UserProfilePage from './pages/UserProfilePage'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/list/:id" element={<AdminListPage />} />
+            <Route path="/u/:username" element={<UserProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

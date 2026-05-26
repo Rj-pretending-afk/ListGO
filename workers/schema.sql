@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   theme TEXT DEFAULT 'day',
   invite_codes_remaining INTEGER DEFAULT 1,
   poke_message TEXT,
+  bio TEXT,
   is_admin INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL
 );

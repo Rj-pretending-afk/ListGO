@@ -91,7 +91,10 @@ export function ListView({ list, canEdit = true, adminView = false, onModuleUpda
 
         {/* Creator badge for viewers */}
         {!canEdit && !adminView && list.ownerUsername && (
-          <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+          <div
+            className="flex items-center gap-1.5 flex-shrink-0 ml-1 cursor-pointer hover:opacity-70 transition-opacity"
+            onClick={() => navigate(`/u/${list.ownerUsername}`)}
+          >
             <AvatarDisplay
               user={{
                 username: list.ownerUsername,

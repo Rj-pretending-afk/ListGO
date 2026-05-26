@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { getAuth } from './middleware/auth'
-import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword, handleSearchUsers } from './routes/auth'
+import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword, handleSearchUsers, handleGetUserProfile } from './routes/auth'
 import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList, handleCollabUpdateModule } from './routes/lists'
 import { handleCastVote } from './routes/votes'
 import { handleClaimPreview, handleClaim } from './routes/claim'
@@ -67,6 +67,11 @@ export default {
     if (method === 'GET' && pathname === '/users/search') {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleSearchUsers(request, auth, env, json)
+    }
+    const userProfileMatch = pathname.match(/^\/users\/([^/]+)\/profile$/)
+    if (userProfileMatch && method === 'GET') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleGetUserProfile(userProfileMatch[1], auth, env, json, err)
     }
 
     // ── Lists ──
