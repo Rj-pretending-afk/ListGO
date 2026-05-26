@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { adminGuard } from '../middleware/adminOnly'
+import { adminGuard, superAdminGuard } from '../middleware/adminOnly'
 import { hashPassword } from '../lib/crypto'
 import type { Env } from '../api'
 import type { AuthUser } from '../middleware/auth'
@@ -46,7 +46,7 @@ export async function handleAdminStats(
 export async function handleAdminGetCodes(
   auth: AuthUser | null, env: Env, json: JsonFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
 
   const rows = await env.DB.prepare(`
@@ -79,7 +79,7 @@ export async function handleAdminGetCodes(
 export async function handleAdminGenerateCodes(
   request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
 
   let body: { count?: number }
@@ -103,7 +103,7 @@ export async function handleAdminGenerateCodes(
 export async function handleAdminGetList(
   listId: string, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
   const row = await env.DB.prepare(
     `SELECT l.*, u.username AS owner_username
@@ -135,7 +135,7 @@ export async function handleAdminGetList(
 export async function handleAdminGetUsers(
   auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
 
   const rows = await env.DB.prepare(`
@@ -150,7 +150,8 @@ export async function handleAdminGetUsers(
     displayName: r.display_name,
     avatarColor: r.avatar_color ?? '#10B981',
     avatarImage: r.avatar_image ?? undefined,
-    isAdmin:     Boolean(r.is_admin),
+    isAdmin:     r.is_admin >= 1,
+    adminLevel:  r.is_admin,
     createdAt:   r.created_at,
     listCount:   r.list_count,
   })))
@@ -160,7 +161,7 @@ export async function handleAdminGetUsers(
 export async function handleAdminGetUserLists(
   userId: string, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
 
   const rows = await env.DB.prepare(
@@ -174,7 +175,7 @@ export async function handleAdminGetUserLists(
 export async function handleAdminSetDisplayName(
   userId: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
   let body: { displayName?: string }
   try { body = await request.json() } catch { return err('Invalid JSON', 400) }
@@ -187,13 +188,14 @@ export async function handleAdminSetDisplayName(
 export async function handleAdminSetAdmin(
   userId: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
   if (auth!.userId === userId) return err('Cannot change own admin status', 400)
-  let body: { isAdmin?: boolean }
+  let body: { adminLevel?: number }
   try { body = await request.json() } catch { return err('Invalid JSON', 400) }
+  const level = Math.min(2, Math.max(0, Number(body.adminLevel ?? 0)))
   await env.DB.prepare('UPDATE users SET is_admin = ? WHERE id = ?')
-    .bind(body.isAdmin ? 1 : 0, userId).run()
+    .bind(level, userId).run()
   return json({ ok: true })
 }
 
@@ -201,7 +203,7 @@ export async function handleAdminSetAdmin(
 export async function handleAdminResetPassword(
   userId: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
   let body: { password?: string }
   try { body = await request.json() } catch { return err('Invalid JSON', 400) }
@@ -217,7 +219,7 @@ export async function handleAdminResetPassword(
 export async function handleAdminDeleteUser(
   userId: string, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
   if (auth!.userId === userId) return err('Cannot delete yourself', 400)
   await env.DB.batch([
@@ -233,7 +235,7 @@ export async function handleAdminDeleteUser(
 export async function handleAdminDeleteList(
   listId: string, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
   await env.DB.prepare('DELETE FROM lists WHERE id = ?').bind(listId).run()
   return json({ ok: true })
@@ -243,7 +245,7 @@ export async function handleAdminDeleteList(
 export async function handleAdminRevokeCode(
   code: string, auth: AuthUser | null, env: Env, json: JsonFn
 ): Promise<Response> {
-  const guard = adminGuard(auth)
+  const guard = superAdminGuard(auth)
   if (guard) return guard
 
   await env.DB.prepare(

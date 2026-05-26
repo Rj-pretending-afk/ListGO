@@ -30,12 +30,14 @@ export default function AdminPage() {
   const expandUserId = (location.state as { expandUserId?: string } | null)?.expandUserId
   const user = useAuthStore(s => s.user)
   const authLoading = useAuthStore(s => s.authLoading)
-  const [tab, setTab] = useState<Tab>(expandUserId ? 'users' : 'overview')
+  const [tab, setTab] = useState<Tab>(expandUserId ? 'users' : 'requests')
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [codes, setCodes] = useState<AdminCode[]>([])
   const [requests, setRequests] = useState<InviteRequestInfo[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
+
+  const isSuperAdmin = user?.isSuperAdmin ?? false
 
   useEffect(() => {
     if (authLoading) return
@@ -46,13 +48,19 @@ export default function AdminPage() {
   const loadAll = async () => {
     setLoadError(null)
     try {
-      const [s, u, c, r] = await Promise.all([
+      const [s, r] = await Promise.all([
         api.get<Stats>('/admin/stats'),
-        adminApi.getUsers(),
-        api.get<AdminCode[]>('/admin/invite-codes'),
         adminApi.getInviteRequests(),
       ])
-      setStats(s); setUsers(u); setCodes(c); setRequests(r)
+      setStats(s); setRequests(r)
+
+      if (isSuperAdmin) {
+        const [u, c] = await Promise.all([
+          adminApi.getUsers(),
+          api.get<AdminCode[]>('/admin/invite-codes'),
+        ])
+        setUsers(u); setCodes(c)
+      }
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : 'Unknown error')
     }
@@ -62,12 +70,13 @@ export default function AdminPage() {
 
   const cardStyle = { backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }
 
-  const tabs: { id: Tab; label: string; badge?: number }[] = [
-    { id: 'overview', label: '概览' },
-    { id: 'users',    label: '用户' },
-    { id: 'codes',    label: '邀请码' },
+  const allTabs: { id: Tab; label: string; badge?: number; superOnly?: boolean }[] = [
     { id: 'requests', label: '邀请申请', badge: stats?.pendingInviteRequests },
+    { id: 'overview', label: '概览', superOnly: true },
+    { id: 'users',    label: '用户', superOnly: true },
+    { id: 'codes',    label: '邀请码', superOnly: true },
   ]
+  const tabs = allTabs.filter(t => !t.superOnly || isSuperAdmin)
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
@@ -98,10 +107,10 @@ export default function AdminPage() {
         </div>
       )}
 
-      {tab === 'overview' && <AdminOverview stats={stats} />}
-      {tab === 'users'    && <AdminUsers users={users} onRefresh={loadAll} expandUserId={expandUserId} />}
-      {tab === 'codes'    && <AdminCodes codes={codes} onRefresh={loadAll} />}
       {tab === 'requests' && <AdminInviteRequests requests={requests} onRefresh={loadAll} />}
+      {tab === 'overview' && isSuperAdmin && <AdminOverview stats={stats} />}
+      {tab === 'users'    && isSuperAdmin && <AdminUsers users={users} onRefresh={loadAll} expandUserId={expandUserId} />}
+      {tab === 'codes'    && isSuperAdmin && <AdminCodes codes={codes} onRefresh={loadAll} />}
     </div>
   )
 }

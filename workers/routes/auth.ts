@@ -65,7 +65,7 @@ export async function handleRegister(
     ).bind(newCode, userId, now),
   ])
 
-  const token = await signJWT({ userId, username, isAdmin: false }, env.JWT_SECRET)
+  const token = await signJWT({ userId, username, isAdmin: false, isSuperAdmin: false }, env.JWT_SECRET)
   return json({
     token,
     id: userId,
@@ -74,6 +74,7 @@ export async function handleRegister(
     avatarColor: '#10B981',
     theme: 'day',
     isAdmin: false,
+    isSuperAdmin: false,
     hasRequestedInvite: false,
     inviteCodes: [{ code: newCode, used: false, usedAt: null, usedByUsername: undefined, revoked: false }],
   })
@@ -105,7 +106,7 @@ export async function handleLogin(
   if (!ok) return err('用户名或密码错误', 401)
 
   const token = await signJWT(
-    { userId: user.id, username: user.username, isAdmin: Boolean(user.is_admin) },
+    { userId: user.id, username: user.username, isAdmin: user.is_admin >= 1, isSuperAdmin: user.is_admin >= 2 },
     env.JWT_SECRET
   )
   return json({
@@ -116,7 +117,8 @@ export async function handleLogin(
     avatarColor: user.avatar_color,
     avatarImage: user.avatar_image ?? undefined,
     theme: user.theme ?? 'day',
-    isAdmin: Boolean(user.is_admin),
+    isAdmin: user.is_admin >= 1,
+    isSuperAdmin: user.is_admin >= 2,
     inviteCodes: [],
   })
 }
@@ -155,7 +157,8 @@ export async function handleMe(
     avatarColor: user.avatar_color,
     avatarImage: user.avatar_image ?? undefined,
     theme: user.theme ?? 'day',
-    isAdmin: Boolean(user.is_admin),
+    isAdmin: user.is_admin >= 1,
+    isSuperAdmin: user.is_admin >= 2,
     pokeMessage: user.poke_message ?? undefined,
     hasRequestedInvite: !!pendingRequest,
     inviteCodes: (codesResult.results ?? []).map(c => ({

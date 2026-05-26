@@ -6,6 +6,7 @@ export interface User {
   avatarImage?: string
   theme?: string
   isAdmin: boolean
+  isSuperAdmin: boolean
   pokeMessage?: string
   hasRequestedInvite?: boolean
   inviteCodes: InviteCodeInfo[]

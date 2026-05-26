@@ -8,6 +8,7 @@ export interface AdminUser {
   id: string; username: string; displayName: string | null
   avatarColor: string; avatarImage?: string
   isAdmin: boolean; createdAt: number; listCount: number
+  adminLevel?: number
 }
 
 export interface UserList {
@@ -69,9 +70,11 @@ function UserRow({ user, onRefresh, initialExpanded = false }: {
     onRefresh()
   }
 
-  const toggleAdmin = async () => {
+  const cycleAdmin = async () => {
+    const current = user.adminLevel ?? (user.isAdmin ? 1 : 0)
+    const next = (current + 1) % 3
     setBusy(true)
-    try { await adminApi.setAdmin(user.id, !user.isAdmin); onRefresh() }
+    try { await adminApi.setAdmin(user.id, next); onRefresh() }
     finally { setBusy(false) }
   }
 
@@ -110,7 +113,13 @@ function UserRow({ user, onRefresh, initialExpanded = false }: {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-mono font-medium" style={{ color: 'var(--color-text)' }}>{user.username}</span>
-            {user.isAdmin && (
+            {(user.adminLevel ?? (user.isAdmin ? 1 : 0)) >= 2 && (
+              <span className="text-xs px-1.5 py-0.5 rounded font-medium"
+                style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>
+                超管
+              </span>
+            )}
+            {(user.adminLevel ?? (user.isAdmin ? 1 : 0)) === 1 && (
               <span className="text-xs px-1.5 py-0.5 rounded font-medium"
                 style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 15%, transparent)', color: 'var(--color-primary)' }}>
                 管理员
@@ -141,11 +150,19 @@ function UserRow({ user, onRefresh, initialExpanded = false }: {
         </span>
 
         <div className="flex items-center gap-1">
-          <button onClick={() => void toggleAdmin()} disabled={busy} title={user.isAdmin ? '撤销管理员' : '设为管理员'}
-            className="p-1.5 rounded-lg hover:opacity-70 transition-opacity disabled:opacity-30"
-            style={{ color: user.isAdmin ? 'var(--color-primary)' : 'var(--color-text)' }}>
-            {user.isAdmin ? <ShieldCheck size={15} /> : <ShieldOff size={15} />}
-          </button>
+          {(() => {
+            const lvl = user.adminLevel ?? (user.isAdmin ? 1 : 0)
+            const titles = ['设为管理员', '升为超管', '撤销权限']
+            const icons = [<ShieldOff size={15} />, <ShieldCheck size={15} />, <ShieldCheck size={15} />]
+            const colors = ['var(--color-text)', 'var(--color-primary)', '#ef4444']
+            return (
+              <button onClick={() => void cycleAdmin()} disabled={busy} title={titles[lvl]}
+                className="p-1.5 rounded-lg hover:opacity-70 transition-opacity disabled:opacity-30"
+                style={{ color: colors[lvl] }}>
+                {icons[lvl]}
+              </button>
+            )
+          })()}
           <button onClick={() => { setPwOpen(v => !v); setPwDraft('') }} title="重置密码"
             className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
             style={{ color: 'var(--color-text)', opacity: 0.6 }}>

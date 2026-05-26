@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Copy, Check, Plus, ShieldCheck, Mail } from 'lucide-react'
 import { createPortal } from 'react-dom'
-import { api } from '../lib/api'
-import { inviteRequestApi } from '../lib/api'
+import { api, inviteRequestApi } from '../lib/api'
 import { useAuthStore } from '../hooks/useAuth'
 import { useT } from '../hooks/useLang'
 import { AVATAR_COLORS } from '../lib/colors'
@@ -32,16 +31,23 @@ export default function ProfilePage() {
   const [pokeMessage, setPokeMessage] = useState(user?.pokeMessage ?? '')
   const [pokeMsgLoading, setPokeMsgLoading] = useState(false)
   const [pokeMsgSaved, setPokeMsgSaved] = useState(false)
+  const [pendingRequests, setPendingRequests] = useState(0)
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [cropSrc, setCropSrc] = useState<string | null>(null)
   const [pendingAvatar, setPendingAvatar] = useState<string | null>(null)
   const [avatarLoading, setAvatarLoading] = useState(false)
 
-  // Redirect in effect to avoid calling navigate during render
   useEffect(() => {
     if (!user) navigate('/login')
   }, [user, navigate])
+
+  useEffect(() => {
+    if (!user?.isAdmin) return
+    api.get<{ pendingInviteRequests?: number }>('/admin/stats')
+      .then(s => setPendingRequests(s.pendingInviteRequests ?? 0))
+      .catch(() => {})
+  }, [user?.isAdmin])
 
   if (!user) return null
 
@@ -168,11 +174,17 @@ export default function ProfilePage() {
           {user.isAdmin && (
             <button
               onClick={() => navigate('/admin')}
-              className="flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
+              className="relative flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
               style={{ color: 'var(--color-primary)' }}
             >
               <ShieldCheck size={15} />
-              Admin
+              {user.isSuperAdmin ? 'Super Admin' : 'Admin'}
+              {pendingRequests > 0 && (
+                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full text-[9px] flex items-center justify-center font-bold"
+                  style={{ backgroundColor: '#ef4444', color: 'white' }}>
+                  {pendingRequests}
+                </span>
+              )}
             </button>
           )}
           <button onClick={() => { logout(); navigate('/') }} className="text-sm hover:opacity-70" style={{ color: '#ef4444' }}>

@@ -1,12 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
-import { ShieldCheck } from 'lucide-react'
 import { ThemeSwitcher } from '../theme/ThemeSwitcher'
 import { useAuthStore } from '../../hooks/useAuth'
 import { useLangStore, useT } from '../../hooks/useLang'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
-import { api } from '../../lib/api'
 
 function LangToggle() {
   const { lang, toggle } = useLangStore()
@@ -87,15 +85,6 @@ export function Header() {
   const t = useT()
   const user = useAuthStore(s => s.user)
   const authLoading = useAuthStore(s => s.authLoading)
-  const [pendingRequests, setPendingRequests] = useState(0)
-
-  useEffect(() => {
-    if (!user?.isAdmin) return
-    api.get<{ pendingInviteRequests?: number }>('/admin/stats')
-      .then(s => setPendingRequests(s.pendingInviteRequests ?? 0))
-      .catch(() => {})
-  }, [user?.isAdmin])
-
   return (
     <header
       className="h-14 flex items-center justify-between px-4 border-b sticky top-0 z-10"
@@ -109,18 +98,6 @@ export function Header() {
         <LangToggle />
         <ThemeSwitcher />
 
-        {!authLoading && user?.isAdmin && (
-          <Link to="/admin" className="relative flex items-center p-1.5 rounded-lg hover:opacity-70 transition-opacity"
-            style={{ color: 'var(--color-primary)' }} title="Admin">
-            <ShieldCheck size={18} />
-            {pendingRequests > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full text-[9px] flex items-center justify-center font-bold"
-                style={{ backgroundColor: '#ef4444', color: 'white' }}>
-                {pendingRequests}
-              </span>
-            )}
-          </Link>
-        )}
         {!authLoading && (
           user
             ? <UserMenu />
