@@ -61,6 +61,12 @@ export const claimApi = {
 export const adminApi = {
   getUsers: () => api.get<{ id: string; username: string; displayName: string | null; isAdmin: boolean; createdAt: number; listCount: number }[]>('/admin/users'),
   getUserLists: (userId: string) => api.get<{ id: string; title: string; permission: string; version: number; updated_at: number }[]>(`/admin/users/${userId}/lists`),
+  setDisplayName: (userId: string, displayName: string) => api.put<{ ok: boolean }>(`/admin/users/${userId}/displayname`, { displayName }),
+  setAdmin: (userId: string, isAdmin: boolean) => api.put<{ ok: boolean }>(`/admin/users/${userId}/admin`, { isAdmin }),
+  resetPassword: (userId: string, password: string) => api.put<{ ok: boolean }>(`/admin/users/${userId}/password`, { password }),
+  deleteUser: (userId: string) => api.delete<{ ok: boolean }>(`/admin/users/${userId}`),
+  getList: (listId: string) => api.get<Record<string, unknown>>(`/admin/lists/${listId}`),
+  deleteList: (listId: string) => api.delete<{ ok: boolean }>(`/admin/lists/${listId}`),
 }
 
 export const voteApi = {
@@ -95,6 +101,7 @@ export interface PresenceUser {
   color:       string
   displayName?: string
   isAnonymous: boolean
+  avatarImage?: string
 }
 
 export const presenceApi = {
@@ -124,6 +131,14 @@ export const listApi = {
       permission:       list.permission ?? 'public',
       version:          list.version,
     }),
+
+  patchModule: (listId: string, module: unknown) => {
+    const m = module as { id: string }
+    return request<{ ok: boolean }>(`/lists/${listId}/modules/${m.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(module),
+    })
+  },
 
   delete: (id: string, ownerToken?: string) => {
     const qs = ownerToken ? `?ownerToken=${encodeURIComponent(ownerToken)}` : ''

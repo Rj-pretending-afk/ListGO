@@ -7,14 +7,14 @@ import { getAnonIdentity, getAnonDisplayName } from '../lib/anonIdentity'
 
 const HEARTBEAT_INTERVAL = 10_000
 
-export function usePresence(listId: string) {
+export function usePresence(listId: string, enabled = true) {
   const { user } = useAuthStore()
   const [activeUsers, setActiveUsers] = useState<PresenceUser[]>([])
   const listIdRef = useRef(listId)
   useEffect(() => { listIdRef.current = listId }, [listId])
 
   useEffect(() => {
-    if (!listId) return
+    if (!listId || !enabled) return
 
     const isAnon = !user
     const anonId = isAnon ? getAnonVoterId() : undefined
@@ -50,7 +50,7 @@ export function usePresence(listId: string) {
       // Best-effort leave; fire and forget
       void presenceApi.leave(listId, anonId).catch(() => undefined)
     }
-  }, [listId, user])
+  }, [listId, user, enabled])
 
   return { activeUsers }
 }

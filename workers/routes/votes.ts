@@ -10,7 +10,9 @@ interface VoteModuleData {
   id: string
   type: string
   votes?: Record<string, string[]>
+  voterNames?: Record<string, string>
   multiSelect?: boolean
+  anonymous?: boolean
 }
 
 interface ListData {
@@ -28,10 +30,10 @@ export async function handleCastVote(
   json: JsonFn,
   err: ErrFn
 ): Promise<Response> {
-  let body: { listId?: string; optionIds?: unknown; anonymousId?: string }
+  let body: { listId?: string; optionIds?: unknown; anonymousId?: string; displayName?: string }
   try { body = await request.json() as typeof body } catch { return err('Invalid JSON', 400) }
 
-  const { listId, optionIds, anonymousId } = body
+  const { listId, optionIds, anonymousId, displayName } = body
   if (!listId || !Array.isArray(optionIds)) return err('listId and optionIds required', 400)
 
   const voterId = auth?.userId ?? anonymousId
@@ -55,13 +57,19 @@ export async function handleCastVote(
 
   // Update votes atomically
   const votes: Record<string, string[]> = { ...(module.votes ?? {}) }
+  const voterNames: Record<string, string> = { ...(module.voterNames ?? {}) }
   const ids = optionIds as string[]
   if (ids.length === 0) {
     delete votes[voterId]
+    delete voterNames[voterId]
   } else {
     votes[voterId] = module.multiSelect ? ids : [ids[0]]
+    // Store display name for real-name mode; omit for anonymous voters
+    if (displayName) voterNames[voterId] = displayName
+    else delete voterNames[voterId]
   }
   module.votes = votes
+  module.voterNames = voterNames
 
   const now = Date.now()
   await env.DB.prepare(
@@ -69,5 +77,5 @@ export async function handleCastVote(
   ).bind(JSON.stringify(listData), now, listId).run()
 
   const updated = await env.DB.prepare('SELECT version FROM lists WHERE id = ?').bind(listId).first<{ version: number }>()
-  return json({ ok: true, votes, version: updated?.version ?? row.version + 1 })
+  return json({ ok: true, votes, voterNames, version: updated?.version ?? row.version + 1 })
 }

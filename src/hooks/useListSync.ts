@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { listApi } from '../lib/api'
 import { useAppStore, hasPendingSync } from '../lib/store'
 import type { List } from '../types/list.types'
@@ -10,9 +11,12 @@ interface ConflictState {
 }
 
 export function useListSync(list: List, ownerToken?: string) {
+  const navigate = useNavigate()
   const applyRemoteList = useAppStore(s => s.applyRemoteList)
   const resolveConflict = useAppStore(s => s.resolveConflict)
+  const syncFromCloud = useAppStore(s => s.syncFromCloud)
   const [conflict, setConflict] = useState<ConflictState | null>(null)
+  const [refreshing, startRefresh] = useTransition()
 
   // Always read the latest list without restarting the interval on every keystroke
   const listRef = useRef(list)
@@ -51,8 +55,14 @@ export function useListSync(list: List, ownerToken?: string) {
             applyRemoteList(remote)
           }
         }
-      } catch {
-        // Ignore transient network errors; next tick will retry
+      } catch (e) {
+        // If the list was deleted on another device, navigate away and clean up
+        if (e instanceof Error && (e.message.includes('Not found') || e.message.includes('404'))) {
+          void syncFromCloud()
+          navigate('/')
+          return
+        }
+        // Ignore other transient network errors; next tick will retry
       }
 
       schedule()
@@ -74,7 +84,7 @@ export function useListSync(list: List, ownerToken?: string) {
       document.removeEventListener('visibilitychange', onVisible)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list.id, list.ownerId, ownerToken, applyRemoteList])
+  }, [list.id, list.ownerId, ownerToken, applyRemoteList, syncFromCloud, navigate])
 
   const handleResolve = useCallback((choice: 'local' | 'remote') => {
     if (!conflict) return
@@ -82,5 +92,20 @@ export function useListSync(list: List, ownerToken?: string) {
     setConflict(null)
   }, [conflict, resolveConflict])
 
-  return { conflict, resolveConflict: handleResolve }
+  const manualRefresh = useCallback(() => {
+    const current = listRef.current
+    if (!current.ownerId) return
+    startRefresh(async () => {
+      try {
+        const data = await listApi.poll(current.id, 0, ownerToken)
+        if (data.upToDate !== true) applyRemoteList(data as unknown as List)
+      } catch (e) {
+        if (e instanceof Error && (e.message.includes('Not found') || e.message.includes('404'))) {
+          void syncFromCloud(); navigate('/')
+        }
+      }
+    })
+  }, [ownerToken, applyRemoteList, syncFromCloud, navigate])
+
+  return { conflict, resolveConflict: handleResolve, manualRefresh, refreshing }
 }

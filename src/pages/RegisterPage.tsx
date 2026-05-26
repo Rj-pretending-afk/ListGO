@@ -76,7 +76,7 @@ export default function RegisterPage() {
           </div>
           {error && <p className="text-sm px-3 py-2 rounded-lg" style={{ backgroundColor: '#fef2f2', color: '#dc2626' }}>{error}</p>}
           <button type="submit" disabled={loading}
-            className="w-full py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
+            className="w-full py-2 rounded-lg text-sm font-medium btn-primary hover:opacity-80 disabled:opacity-40"
             style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
             {loading ? t('registerLoading') : t('registerSubmit')}
           </button>

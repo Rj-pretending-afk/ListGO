@@ -15,7 +15,9 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  background-color: var(--color-bg);
+  /* Gradient themes (e.g. glass, retro) define --color-bg-gradient; others fall back to solid --color-bg */
+  background: var(--color-bg-gradient, var(--color-bg));
+  background-attachment: fixed;
   color: var(--color-text);
   transition: background-color 0.2s, color 0.2s;
 }
@@ -35,4 +37,93 @@ body {
 /* 避免移动端双击缩放 */
 button, input, [contenteditable] {
   touch-action: manipulation;
+}
+
+/* Hide scrollbar in overflow-x:auto containers (webkit + Firefox via scrollbar-width:none) */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* ── Claymorphism ── */
+
+/* Card / panel surfaces: chunky bottom shadow + smooth transition */
+[data-theme] .rounded-xl,
+[data-theme] .rounded-2xl {
+  box-shadow: var(--shadow-card, none);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+/* Smaller pill / badge shapes */
+[data-theme] .rounded-full,
+[data-theme] .rounded-lg {
+  box-shadow: var(--shadow-sm, none);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+/* Text inputs / textareas: pressed-in inset depth */
+[data-theme] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+[data-theme] textarea {
+  box-shadow: var(--shadow-inset, none);
+}
+
+/* Primary CTA buttons: raised clay shadow */
+[data-theme] .btn-primary {
+  box-shadow: var(--shadow-btn, none);
+  transition: box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+
+/* Buttons: clay press on active — shadow squashes, element sinks */
+[data-theme] button:not(:disabled):active {
+  transform: translateY(3px);
+  box-shadow: none !important;
+}
+
+/* ── Glassmorphism (both light and dark) ── */
+
+/* Frosted-glass effect on card surfaces */
+[data-theme^="glass"] .rounded-xl,
+[data-theme^="glass"] .rounded-2xl {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+
+/* ── Neo-Brutalism ── */
+
+/* Sharper corners for the angular brutalist look */
+[data-theme^="brutal"] .rounded-xl  { border-radius: 6px; }
+[data-theme^="brutal"] .rounded-2xl { border-radius: 8px; }
+[data-theme^="brutal"] .rounded-lg  { border-radius: 3px; }
+[data-theme^="brutal"] .rounded-full { border-radius: 4px; }
+
+/* ── Minimalism ── */
+
+/* No press animation — minimalism is static */
+[data-theme^="minimal"] button:not(:disabled):active {
+  transform: none;
+}
+
+/* ── Bauhaus ── */
+
+/* Angular corners — Bauhaus is geometric */
+[data-theme^="bauhaus"] .rounded-xl  { border-radius: 0; }
+[data-theme^="bauhaus"] .rounded-2xl { border-radius: 0; }
+[data-theme^="bauhaus"] .rounded-lg  { border-radius: 0; }
+[data-theme^="bauhaus"] .rounded-full { border-radius: 0; }
+
+/* Colored left-border strip on cards (the Bauhaus block-color accent) */
+[data-theme^="bauhaus"] .rounded-xl,
+[data-theme^="bauhaus"] .rounded-2xl {
+  border-left: 5px solid var(--color-primary) !important;
+}
+
+/* ── Material Design ── */
+
+/* Slightly rounder cards than default */
+[data-theme^="material"] .rounded-xl  { border-radius: 16px; }
+[data-theme^="material"] .rounded-2xl { border-radius: 20px; }
+[data-theme^="material"] .rounded-lg  { border-radius: 12px; }
+
+/* ── Retrofuturism ── */
+
+/* No press animation — the glow effect is the affordance */
+[data-theme^="retro"] button:not(:disabled):active {
+  transform: none;
 }

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X, Clock, CloudUpload, Trash2 } from 'lucide-react'
+import { Plus, X, Clock, CloudUpload, Trash2, RefreshCw } from 'lucide-react'
+import { StylePicker } from '../components/theme/StylePicker'
 import { formatDistanceToNow, format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useLists, useLoaded, useListActions } from '../hooks/useList'
@@ -24,6 +25,27 @@ export default function Home() {
   const navigate = useNavigate()
   const uploadToCloud = useAppStore(s => s.uploadToCloud)
   const claimLists = useAppStore(s => s.claimLists)
+  const syncFromCloud = useAppStore(s => s.syncFromCloud)
+
+  // Periodically sync list index when user is logged in and tab is visible
+  const syncRef = useRef(syncFromCloud)
+  useEffect(() => { syncRef.current = syncFromCloud }, [syncFromCloud])
+  useEffect(() => {
+    if (!currentUser) return
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') void syncRef.current()
+    }, 15000)
+    return () => clearInterval(id)
+  }, [currentUser])
+
+  const [syncing, setSyncing] = useState(false)
+
+  const handleSync = async () => {
+    if (syncing) return
+    setSyncing(true)
+    try { await syncFromCloud() } finally { setSyncing(false) }
+  }
+
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
@@ -62,11 +84,25 @@ export default function Home() {
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>{t('myLists')}</h2>
-        <button onClick={() => { setCreating(true); setNewTitle('') }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium hover:opacity-80 transition-opacity"
-          style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-          <Plus size={15} /> {t('newList')}
-        </button>
+        <div className="flex items-center gap-2">
+          <StylePicker />
+          {currentUser && (
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="p-1.5 rounded-lg hover:opacity-60 transition-opacity disabled:opacity-30"
+              style={{ color: 'var(--color-text)' }}
+              title="刷新"
+            >
+              <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+            </button>
+          )}
+          <button onClick={() => { setCreating(true); setNewTitle('') }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium btn-primary hover:opacity-80"
+            style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+            <Plus size={15} /> {t('newList')}
+          </button>
+        </div>
       </div>
 
       {creating && (
@@ -84,7 +120,7 @@ export default function Home() {
             <button onClick={() => setCreating(false)} className="px-3 py-1.5 rounded text-sm hover:opacity-70"
               style={{ color: 'var(--color-text)', opacity: 0.6 }}>{t('cancel')}</button>
             <button onClick={handleCreate} disabled={!newTitle.trim()}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-35 hover:opacity-80"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium btn-primary disabled:opacity-35 hover:opacity-80"
               style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>{t('create')}</button>
           </div>
         </div>
@@ -129,7 +165,7 @@ export default function Home() {
                   onClick={e => handleUpload(e, list.id)}
                   disabled={uploading[list.id]}
                   title={uploading[list.id] ? t('syncing') : t('syncToCloud')}
-                  className="absolute top-3 right-8 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:opacity-70 disabled:opacity-30"
+                  className="absolute top-3 right-8 opacity-20 group-hover:opacity-100 [@media(hover:none)]:opacity-50 transition-opacity p-0.5 rounded hover:opacity-70 disabled:opacity-30"
                   style={{ color: 'var(--color-primary)' }}>
                   <CloudUpload size={14} />
                 </button>
@@ -159,7 +195,7 @@ export default function Home() {
               ) : (
                 <button
                   onClick={e => { e.stopPropagation(); setPendingDelete(list.id) }}
-                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:opacity-70"
+                  className="absolute top-3 right-3 opacity-20 group-hover:opacity-100 [@media(hover:none)]:opacity-50 transition-opacity p-0.5 rounded hover:opacity-70"
                   style={{ color: 'var(--color-text)' }}
                 >
                   <Trash2 size={14} />

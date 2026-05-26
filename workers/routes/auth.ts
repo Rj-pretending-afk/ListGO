@@ -75,6 +75,7 @@ export async function handleRegister(
     username,
     displayName: username,
     avatarColor: '#10B981',
+    theme: 'day',
     isAdmin: false,
     inviteCodes: newCodes.map((code: string) => ({ code, used: false, usedAt: null, revoked: false })),
   })
@@ -91,9 +92,9 @@ export async function handleLogin(
   if (!username || !password) return err('用户名和密码不能为空', 400)
 
   const user = await env.DB.prepare(
-    'SELECT id, username, display_name, avatar_color, is_admin FROM users WHERE username = ?'
+    'SELECT id, username, display_name, avatar_color, is_admin, theme FROM users WHERE username = ?'
   ).bind(username).first<{
-    id: string; username: string; display_name: string; avatar_color: string; is_admin: number
+    id: string; username: string; display_name: string; avatar_color: string; is_admin: number; theme: string | null
   }>()
   if (!user) return err('用户名或密码错误', 401)
 
@@ -115,6 +116,7 @@ export async function handleLogin(
     username: user.username,
     displayName: user.display_name,
     avatarColor: user.avatar_color,
+    theme: user.theme ?? 'day',
     isAdmin: Boolean(user.is_admin),
     inviteCodes: [],
   })
@@ -127,10 +129,10 @@ export async function handleMe(
   if (!auth) return err('Unauthorized', 401)
 
   const user = await env.DB.prepare(
-    'SELECT id, username, display_name, avatar_color, avatar_image, invite_codes_remaining, is_admin FROM users WHERE id = ?'
+    'SELECT id, username, display_name, avatar_color, avatar_image, theme, invite_codes_remaining, is_admin FROM users WHERE id = ?'
   ).bind(auth.userId).first<{
     id: string; username: string; display_name: string
-    avatar_color: string; avatar_image: string | null
+    avatar_color: string; avatar_image: string | null; theme: string | null
     invite_codes_remaining: number; is_admin: number
   }>()
   if (!user) return err('User not found', 404)
@@ -145,6 +147,7 @@ export async function handleMe(
     displayName: user.display_name,
     avatarColor: user.avatar_color,
     avatarImage: user.avatar_image ?? undefined,
+    theme: user.theme ?? 'day',
     isAdmin: Boolean(user.is_admin),
     inviteCodes: (codes.results ?? []).map(c => ({
       code: c.code,
@@ -161,7 +164,7 @@ export async function handleUpdateProfile(
 ): Promise<Response> {
   if (!auth) return err('Unauthorized', 401)
 
-  let body: { displayName?: string; avatarColor?: string; avatarImage?: string | null }
+  let body: { displayName?: string; avatarColor?: string; avatarImage?: string | null; theme?: string }
   try { body = await request.json() } catch { return err('Invalid JSON', 400) }
 
   const updates: string[] = []
@@ -185,6 +188,12 @@ export async function handleUpdateProfile(
     }
     updates.push('avatar_image = ?')
     values.push(body.avatarImage ?? null)
+  }
+  if (body.theme !== undefined) {
+    const VALID_THEMES = ['clay-light','clay-dark','glass-light','glass-dark','minimal-light','minimal-dark','brutal-light','brutal-dark','material-light','material-dark','bauhaus-light','bauhaus-dark','retro-light','retro-dark']
+    if (!VALID_THEMES.includes(body.theme)) return err('无效主题', 400)
+    updates.push('theme = ?')
+    values.push(body.theme)
   }
   if (updates.length === 0) return err('无可更新字段', 400)
 
@@ -222,3 +231,17 @@ export async function handleChangePassword(
 
   return json({ ok: true })
 }
+
+// ── GET /users/search?q= ──
+export async function handleSearchUsers(
+  request: Request, auth: AuthUser | null, env: Env, json: JsonFn
+): Promise<Response> {
+  if (!auth) return json([])
+  const q = new URL(request.url).searchParams.get('q') ?? ''
+  if (q.length < 1) return json([])
+  const rows = await env.DB.prepare(
+    'SELECT username, display_name FROM users WHERE username LIKE ? AND id != ? LIMIT 8'
+  ).bind(`${q}%`, auth.userId).all<{ username: string; display_name: string | null }>()
+  return json((rows.results ?? []).map(r => ({ username: r.username, displayName: r.display_name ?? r.username })))
+}
+

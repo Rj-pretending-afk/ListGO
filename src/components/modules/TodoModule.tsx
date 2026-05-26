@@ -31,10 +31,16 @@ export function TodoModule({ module, onChange, contentFontSettings, canEdit = tr
     <div className="space-y-1">
       {module.items.map(item => (
         <div key={item.id} className="flex items-center gap-2 group py-0.5">
-          <button onClick={() => update({ items: module.items.map(it => it.id === item.id ? { ...it, done: !it.done } : it) })}
-            className="w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors"
-            style={{ borderColor: item.done ? 'var(--color-primary)' : 'var(--color-border)', backgroundColor: item.done ? 'var(--color-primary)' : 'transparent' }}>
-            {item.done && <Check size={11} color="white" strokeWidth={3} />}
+          {/* 44×44 touch target, visually 20×20 */}
+          <button
+            onClick={() => update({ items: module.items.map(it => it.id === item.id ? { ...it, done: !it.done } : it) })}
+            className="flex-shrink-0 flex items-center justify-center"
+            style={{ width: 44, height: 44, margin: -12 }}>
+            <span
+              className="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+              style={{ borderColor: item.done ? 'var(--color-primary)' : 'var(--color-border)', backgroundColor: item.done ? 'var(--color-primary)' : 'transparent' }}>
+              {item.done && <Check size={11} color="white" strokeWidth={3} />}
+            </span>
           </button>
           <IMEInput value={item.text}
             onChange={canEdit ? (v => update({ items: module.items.map(it => it.id === item.id ? { ...it, text: v } : it) })) : (() => undefined)}
@@ -44,7 +50,7 @@ export function TodoModule({ module, onChange, contentFontSettings, canEdit = tr
             style={{ ...cfStyle, color: cfStyle.color ?? 'var(--color-text)', opacity: item.done ? 0.45 : 1, textDecoration: item.done ? 'line-through' : cfStyle.textDecoration }} />
           {canEdit && (
             <button onClick={() => update({ items: module.items.filter(it => it.id !== item.id) })}
-              className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+              className="opacity-20 group-hover:opacity-100 [@media(hover:none)]:opacity-50 transition-opacity flex-shrink-0 p-2 -m-2"
               style={{ color: 'var(--color-text)' }}>
               <Trash2 size={13} />
             </button>

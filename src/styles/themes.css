@@ -1,49 +1,261 @@
-/* ☀ Day */
-[data-theme="day"] {
-  --color-bg: #FAFAF8;
-  --color-card: #FFFFFF;
-  --color-card-rgb: 255, 255, 255;
-  --color-primary: #10B981;
-  --color-text: #1F2937;
-  --color-border: #E5E7EB;
-  --color-drag: #D1FAE5;
+/* ═══ CLAYMORPHISM ══════════════════════════════════════════════════════════ */
+
+/* ☀ Clay Light */
+[data-theme="clay-light"] {
+  --color-bg:        #E8EEF5;
+  --color-card:      #FFFFFF;
+  --color-card-rgb:  255, 255, 255;
+  --color-primary:   #10B981;
+  --color-text:      #1F2937;
+  --color-border:    #D4DDE8;
+  --color-drag:      #D1FAE5;
   --color-drag-icon: #065F46;
+
+  --shadow-card:  0 6px 0 #BFD0DF, 0 2px 10px rgba(0,0,0,0.06);
+  --shadow-inset: inset 0 2px 5px rgba(163,177,198,0.28);
+  --shadow-btn:   0 5px 0 #0d9668;
+  --shadow-sm:    0 4px 0 #C8D5E2, 0 1px 6px rgba(0,0,0,0.05);
 }
 
-/* 🌙 Dark (default) */
-[data-theme="dark"] {
-  --color-bg: #0F172A;
-  --color-card: #1E293B;
-  --color-card-rgb: 30, 41, 59;
-  --color-primary: #34D399;
-  --color-text: #F1F5F9;
-  --color-border: #334155;
-  --color-drag: #0B1E35;
-  --color-drag-icon: #64748B;
+/* 🌙 Clay Dark */
+[data-theme="clay-dark"] {
+  --color-bg:        #18181B;
+  --color-card:      #27272A;
+  --color-card-rgb:  39, 39, 42;
+  --color-primary:   #34D399;
+  --color-text:      #F4F4F5;
+  --color-border:    #3F3F46;
+  --color-drag:      #1C1C1F;
+  --color-drag-icon: #71717A;
+
+  --shadow-card:  0 6px 0 rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+  --shadow-inset: inset 0 2px 5px rgba(0,0,0,0.35);
+  --shadow-btn:   0 5px 0 #059669;
+  --shadow-sm:    0 4px 0 rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-/* 🌸 Light Pink */
-[data-theme="light-pink"] {
-  --color-bg: #FFF1F5;
-  --color-card: #FFFFFF;
-  --color-card-rgb: 255, 255, 255;
-  --color-primary: #EC4899;
-  --color-accent: #F472B6;
-  --color-text: #831843;
-  --color-border: #FCE7F3;
-  --color-drag: #FBCFE8;
-  --color-drag-icon: #9D174D;
+/* ═══ GLASSMORPHISM ═════════════════════════════════════════════════════════ */
+
+/* 🔮 Glass Light */
+[data-theme="glass-light"] {
+  --color-bg:          #C7D2FE;
+  --color-bg-gradient: linear-gradient(135deg, #A5B4FC 0%, #C4B5FD 45%, #F9A8D4 100%);
+  --color-card:        rgba(255, 255, 255, 0.22);
+  --color-card-rgb:    255, 255, 255;
+  --color-primary:     #7C3AED;
+  --color-text:        #1E1B4B;
+  --color-border:      rgba(255, 255, 255, 0.45);
+  --color-drag:        rgba(124, 58, 237, 0.1);
+  --color-drag-icon:   #7C3AED;
+
+  --shadow-card:  0 8px 32px rgba(124,58,237,0.18), inset 0 1px 0 rgba(255,255,255,0.55);
+  --shadow-inset: inset 0 2px 6px rgba(0,0,0,0.08);
+  --shadow-btn:   0 5px 0 #5b21b6;
+  --shadow-sm:    0 4px 16px rgba(124,58,237,0.14), inset 0 1px 0 rgba(255,255,255,0.4);
 }
 
-/* 🌹 Dark Rose */
-[data-theme="dark-pink"] {
-  --color-bg: #1F0A14;
-  --color-card: #3D1428;
-  --color-card-rgb: 61, 20, 40;
-  --color-primary: #F472B6;
-  --color-accent: #EC4899;
-  --color-text: #FCE7F3;
-  --color-border: #5B1E3D;
-  --color-drag: #4C0519;
-  --color-drag-icon: #FB7185;
+/* 🌌 Glass Dark */
+[data-theme="glass-dark"] {
+  --color-bg:          #0F0F1A;
+  --color-bg-gradient: linear-gradient(135deg, #1a1040 0%, #2d1b69 45%, #4a0e2e 100%);
+  --color-card:        rgba(255, 255, 255, 0.08);
+  --color-card-rgb:    255, 255, 255;
+  --color-primary:     #A78BFA;
+  --color-text:        #EDE9FE;
+  --color-border:      rgba(255, 255, 255, 0.15);
+  --color-drag:        rgba(167, 139, 250, 0.12);
+  --color-drag-icon:   #A78BFA;
+
+  --shadow-card:  0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12);
+  --shadow-inset: inset 0 2px 6px rgba(0,0,0,0.25);
+  --shadow-btn:   0 5px 0 #6d28d9;
+  --shadow-sm:    0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* ═══ MINIMALISM ════════════════════════════════════════════════════════════ */
+
+/* ◻ Minimal Light */
+[data-theme="minimal-light"] {
+  --color-bg:        #FAFAFA;
+  --color-card:      #FFFFFF;
+  --color-card-rgb:  255, 255, 255;
+  --color-primary:   #10B981;
+  --color-text:      #111111;
+  --color-border:    #E4E4E7;
+  --color-drag:      #F4F4F5;
+  --color-drag-icon: #A1A1AA;
+
+  --shadow-card:  none;
+  --shadow-inset: none;
+  --shadow-btn:   none;
+  --shadow-sm:    none;
+}
+
+/* ◼ Minimal Dark */
+[data-theme="minimal-dark"] {
+  --color-bg:        #0A0A0A;
+  --color-card:      #141414;
+  --color-card-rgb:  20, 20, 20;
+  --color-primary:   #10B981;
+  --color-text:      #EEEEEE;
+  --color-border:    #2A2A2A;
+  --color-drag:      #1A1A1A;
+  --color-drag-icon: #555555;
+
+  --shadow-card:  none;
+  --shadow-inset: none;
+  --shadow-btn:   none;
+  --shadow-sm:    none;
+}
+
+/* ═══ NEO-BRUTALISM ═════════════════════════════════════════════════════════ */
+
+/* ⬛ Brutal Light */
+[data-theme="brutal-light"] {
+  --color-bg:        #FFFFFF;
+  --color-card:      #FFFFFF;
+  --color-card-rgb:  255, 255, 255;
+  --color-primary:   #10B981;
+  --color-text:      #000000;
+  --color-border:    #000000;
+  --color-drag:      #F0F0F0;
+  --color-drag-icon: #000000;
+
+  --shadow-card:  4px 4px 0 #000000;
+  --shadow-inset: inset 1px 1px 0 rgba(0,0,0,0.2);
+  --shadow-btn:   3px 3px 0 #000000;
+  --shadow-sm:    2px 2px 0 #000000;
+}
+
+/* 🖤 Brutal Dark */
+[data-theme="brutal-dark"] {
+  --color-bg:        #111111;
+  --color-card:      #1A1A1A;
+  --color-card-rgb:  26, 26, 26;
+  --color-primary:   #FF3F3F;
+  --color-text:      #FFFFFF;
+  --color-border:    #FFFFFF;
+  --color-drag:      #222222;
+  --color-drag-icon: #FFFFFF;
+
+  --shadow-card:  4px 4px 0 #FFFFFF;
+  --shadow-inset: inset 1px 1px 0 rgba(255,255,255,0.15);
+  --shadow-btn:   3px 3px 0 #FFFFFF;
+  --shadow-sm:    2px 2px 0 #FFFFFF;
+}
+
+/* ═══ MATERIAL DESIGN ═══════════════════════════════════════════════════════ */
+
+/* 💎 Material Light */
+[data-theme="material-light"] {
+  --color-bg:        #FFFBFE;
+  --color-card:      #FFFFFF;
+  --color-card-rgb:  255, 255, 255;
+  --color-primary:   #6750A4;
+  --color-text:      #1C1B1F;
+  --color-border:    #E6E0E9;
+  --color-drag:      #F3EDF7;
+  --color-drag-icon: #6750A4;
+
+  --shadow-card:  0 1px 2px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.10);
+  --shadow-inset: inset 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-btn:   0 2px 6px rgba(103,80,164,0.28), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-sm:    0 1px 2px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* 🌙💎 Material Dark */
+[data-theme="material-dark"] {
+  --color-bg:        #1C1B1F;
+  --color-card:      #2B2930;
+  --color-card-rgb:  43, 41, 48;
+  --color-primary:   #D0BCFF;
+  --color-text:      #E6E1E5;
+  --color-border:    #49454F;
+  --color-drag:      #261E35;
+  --color-drag-icon: #D0BCFF;
+
+  --shadow-card:  0 1px 2px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.4);
+  --shadow-inset: inset 0 1px 3px rgba(0,0,0,0.25);
+  --shadow-btn:   0 2px 6px rgba(208,188,255,0.25), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-sm:    0 1px 2px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* ═══ BAUHAUS ═══════════════════════════════════════════════════════════════ */
+
+/* ◼ Bauhaus Light */
+[data-theme="bauhaus-light"] {
+  --color-bg:        #FFFFF8;
+  --color-card:      #FFFFFF;
+  --color-card-rgb:  255, 255, 255;
+  --color-primary:   #D62828;
+  --color-text:      #000000;
+  --color-border:    #000000;
+  --color-drag:      #FFF5F5;
+  --color-drag-icon: #D62828;
+
+  --shadow-card:  none;
+  --shadow-inset: none;
+  --shadow-btn:   none;
+  --shadow-sm:    none;
+}
+
+/* 🌑◼ Bauhaus Dark */
+[data-theme="bauhaus-dark"] {
+  --color-bg:        #0F0F00;
+  --color-card:      #1C1C08;
+  --color-card-rgb:  28, 28, 8;
+  --color-primary:   #FF3333;
+  --color-text:      #F5F5E0;
+  --color-border:    #F5F5E0;
+  --color-drag:      #262610;
+  --color-drag-icon: #FF3333;
+
+  --shadow-card:  none;
+  --shadow-inset: none;
+  --shadow-btn:   none;
+  --shadow-sm:    none;
+}
+
+/* ═══ RETROFUTURISM ══════════════════════════════════════════════════════════ */
+
+/* 📺 Retro Light */
+[data-theme="retro-light"] {
+  --color-bg: #F0EAD6;
+  --color-bg-gradient:
+    repeating-linear-gradient(0deg, transparent, transparent 29px, rgba(0,140,200,0.14) 29px, rgba(0,140,200,0.14) 30px),
+    repeating-linear-gradient(90deg, transparent, transparent 29px, rgba(0,140,200,0.14) 29px, rgba(0,140,200,0.14) 30px),
+    #F0EAD6;
+  --color-card:      #F5F0E4;
+  --color-card-rgb:  245, 240, 228;
+  --color-primary:   #00BFFF;
+  --color-text:      #1A1A3E;
+  --color-border:    rgba(0, 180, 220, 0.35);
+  --color-drag:      rgba(0, 191, 255, 0.12);
+  --color-drag-icon: #00BFFF;
+
+  --shadow-card:  0 0 0 1px rgba(0,180,220,0.3), 0 4px 16px rgba(0,100,150,0.12);
+  --shadow-inset: inset 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-btn:   0 0 0 1px rgba(0,180,220,0.5), 0 0 10px rgba(0,191,255,0.4);
+  --shadow-sm:    0 0 0 1px rgba(0,180,220,0.2), 0 2px 8px rgba(0,100,150,0.08);
+}
+
+/* 🌃📺 Retro Dark */
+[data-theme="retro-dark"] {
+  --color-bg: #05050F;
+  --color-bg-gradient:
+    repeating-linear-gradient(0deg, transparent, transparent 29px, rgba(0,255,200,0.07) 29px, rgba(0,255,200,0.07) 30px),
+    repeating-linear-gradient(90deg, transparent, transparent 29px, rgba(0,255,200,0.07) 29px, rgba(0,255,200,0.07) 30px),
+    #05050F;
+  --color-card:      #0D0D1A;
+  --color-card-rgb:  13, 13, 26;
+  --color-primary:   #00FFCC;
+  --color-text:      #CCF5FF;
+  --color-border:    rgba(0, 255, 200, 0.25);
+  --color-drag:      rgba(0, 255, 200, 0.08);
+  --color-drag-icon: #00FFCC;
+
+  --shadow-card:  0 0 0 1px rgba(0,255,200,0.2), 0 4px 16px rgba(0,100,100,0.3);
+  --shadow-inset: inset 0 2px 4px rgba(0,0,0,0.3);
+  --shadow-btn:   0 0 0 1px rgba(0,255,200,0.4), 0 0 14px rgba(0,255,200,0.35);
+  --shadow-sm:    0 0 0 1px rgba(0,255,200,0.15), 0 2px 8px rgba(0,100,100,0.2);
 }

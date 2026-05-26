@@ -159,7 +159,7 @@ export default function ProfilePage() {
               style={{ width: 52, height: 52, border: `2px solid ${user.avatarColor}` }} />
             <div className="flex flex-col gap-2 flex-1">
               <button onClick={savePendingAvatar} disabled={avatarLoading}
-                className="w-full py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40"
+                className="w-full py-1.5 rounded-lg text-xs font-medium btn-primary hover:opacity-80 disabled:opacity-40"
                 style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
                 {avatarLoading ? t('profileProcessing') : t('profileSave')}
               </button>
@@ -178,7 +178,7 @@ export default function ProfilePage() {
           {/* Upload / remove buttons */}
           <div className="flex gap-2 w-full">
             <button onClick={() => fileRef.current?.click()} disabled={avatarLoading || !!pendingAvatar}
-              className="flex-1 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40 text-center"
+              className="flex-1 py-1.5 rounded-lg text-xs font-medium btn-primary hover:opacity-80 disabled:opacity-40 text-center"
               style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
               {t('profileUploadAvatar')}
             </button>
@@ -223,7 +223,7 @@ export default function ProfilePage() {
           <input value={displayName} onChange={e => setDisplayName(e.target.value)}
             className={inputCls} style={inputStyle} maxLength={40} />
           <button onClick={saveName} disabled={nameLoading || !displayName.trim()}
-            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-40 whitespace-nowrap flex-shrink-0"
+            className="px-4 py-2 rounded-lg text-sm font-medium btn-primary hover:opacity-80 disabled:opacity-40 whitespace-nowrap flex-shrink-0"
             style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
             {nameLoading ? t('profileSaving') : t('profileSave')}
           </button>
@@ -278,7 +278,7 @@ export default function ProfilePage() {
           {pwError && <p className="text-xs" style={{ color: '#ef4444' }}>{pwError}</p>}
           {pwMsg  && <p className="text-xs" style={{ color: 'var(--color-primary)' }}>{pwMsg}</p>}
           <button type="submit" disabled={pwLoading}
-            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-40"
+            className="px-4 py-2 rounded-lg text-sm font-medium btn-primary hover:opacity-80 disabled:opacity-40"
             style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
             {pwLoading ? t('profileChangingPw') : t('profileChangePw')}
           </button>

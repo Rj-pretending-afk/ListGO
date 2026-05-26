@@ -19,9 +19,11 @@ import type { List, ListPermission, Module } from '../../types/list.types'
 interface ListViewProps {
   list: List
   canEdit?: boolean
+  adminView?: boolean
+  onModuleUpdate?: (module: Module) => void
 }
 
-export function ListView({ list, canEdit = true }: ListViewProps) {
+export function ListView({ list, canEdit = true, adminView = false, onModuleUpdate }: ListViewProps) {
   const t = useT()
   const navigate = useNavigate()
   const { updateListTitle, addModule, updateModule, deleteModule } = useListActions()
@@ -31,9 +33,11 @@ export function ListView({ list, canEdit = true }: ListViewProps) {
   const [shareOpen, setShareOpen] = useState(false)
   const shareRef = useRef<HTMLDivElement>(null)
   const [syncErr, setSyncErr] = useState<string | null>(null)
-  const { conflict, resolveConflict, manualRefresh, refreshing } = useListSync(list, list.ownerToken)
+  // Strip ownerId for admin view so useListSync is a no-op (avoids polluting admin's local store)
+  const syncList = adminView ? { ...list, ownerId: undefined } : list
+  const { conflict, resolveConflict, manualRefresh, refreshing } = useListSync(syncList, list.ownerToken)
   const { user } = useAuthStore()
-  const { activeUsers } = usePresence(list.id)
+  const { activeUsers } = usePresence(list.id, !adminView)
   const selfUserId = user?.id ?? `anon-${getAnonVoterId()}`
 
   // Poll for sync errors on this list (simple approach: check every 2s)
@@ -54,7 +58,10 @@ export function ListView({ list, canEdit = true }: ListViewProps) {
         style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)' }}
       >
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(
+            adminView ? '/admin' : '/',
+            adminView && list.ownerId ? { state: { expandUserId: list.ownerId } } : undefined
+          )}
           className="p-1 rounded flex-shrink-0 hover:opacity-60 transition-opacity"
           style={{ color: 'var(--color-text)' }}
           aria-label="返回"
@@ -66,23 +73,29 @@ export function ListView({ list, canEdit = true }: ListViewProps) {
           onSave={title => updateListTitle(list.id, title)}
           canEdit={canEdit}
         />
-        {!canEdit && (
+        {adminView && (
+          <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 12%, transparent)', color: 'var(--color-primary)' }}>
+            管理视图
+          </span>
+        )}
+        {!canEdit && !adminView && !list.modules.some(m => m.editPermission === 'public') && (
           <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
             style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)', opacity: 0.5 }}>
             {t('viewOnly')}
           </span>
         )}
 
-        {/* Online presence — only when list is cloud-synced */}
-        {list.ownerId && (
+        {/* Online presence — only when list is cloud-synced and not admin inspection */}
+        {list.ownerId && !adminView && (
           <AvatarStack users={activeUsers} selfUserId={selfUserId} />
         )}
 
-        {list.ownerId && (
+        {list.ownerId && !adminView && (
           <button
             onClick={manualRefresh}
             disabled={refreshing}
-            className="p-1.5 rounded-lg hover:opacity-60 transition-opacity flex-shrink-0 disabled:opacity-30"
+            className="p-1.5 rounded-lg hover:opacity-60 active:scale-75 transition-all flex-shrink-0 disabled:opacity-30"
             style={{ color: 'var(--color-text)' }}
             title="刷新"
           >
@@ -154,7 +167,7 @@ export function ListView({ list, canEdit = true }: ListViewProps) {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">
         <ModuleList
           list={list}
-          onUpdateModule={(module: Module) => updateModule(list.id, module)}
+          onUpdateModule={(module: Module) => onModuleUpdate ? onModuleUpdate(module) : updateModule(list.id, module)}
           onDeleteModule={moduleId => deleteModule(list.id, moduleId)}
           onReorder={(from, to) => reorderModules(list.id, from, to)}
           canEdit={canEdit}

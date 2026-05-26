@@ -2,10 +2,10 @@
 
 import { getAuth } from './middleware/auth'
 import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword, handleSearchUsers } from './routes/auth'
-import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList } from './routes/lists'
+import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList, handleCollabUpdateModule } from './routes/lists'
 import { handleCastVote } from './routes/votes'
 import { handleClaimPreview, handleClaim } from './routes/claim'
-import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode, handleAdminGetUsers, handleAdminGetUserLists } from './routes/admin'
+import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode, handleAdminGetUsers, handleAdminGetUserLists, handleAdminSetDisplayName, handleAdminSetAdmin, handleAdminResetPassword, handleAdminDeleteUser, handleAdminDeleteList, handleAdminGetList } from './routes/admin'
 import { handleJoinPresence, handleGetPresence, handleLeavePresence } from './routes/presence'
 import { handleUploadImage, handleGetImage } from './routes/upload'
 
@@ -17,7 +17,7 @@ export interface Env {
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 }
 
@@ -84,6 +84,11 @@ export default {
       if (method === 'PUT')    return handleUpdateList(id, request, auth, env, json, err)
       if (method === 'DELETE') return handleDeleteList(id, request, auth, env, json, err)
     }
+    const collabModuleMatch = pathname.match(/^\/lists\/([^/]+)\/modules\/([^/]+)$/)
+    if (collabModuleMatch && method === 'PATCH') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleCollabUpdateModule(collabModuleMatch[1], collabModuleMatch[2], request, auth, env, json, err)
+    }
 
     // ── Votes ──
     const voteMatch = pathname.match(/^\/votes\/([^/]+)$/)
@@ -130,6 +135,32 @@ export default {
     if (userListsMatch && method === 'GET') {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleAdminGetUserLists(userListsMatch[1], auth, env, json, err)
+    }
+    const adminUserMatch = pathname.match(/^\/admin\/users\/([^/]+)$/)
+    if (adminUserMatch && method === 'DELETE') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminDeleteUser(adminUserMatch[1], auth, env, json, err)
+    }
+    const adminDisplayNameMatch = pathname.match(/^\/admin\/users\/([^/]+)\/displayname$/)
+    if (adminDisplayNameMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminSetDisplayName(adminDisplayNameMatch[1], request, auth, env, json, err)
+    }
+    const adminAdminMatch = pathname.match(/^\/admin\/users\/([^/]+)\/admin$/)
+    if (adminAdminMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminSetAdmin(adminAdminMatch[1], request, auth, env, json, err)
+    }
+    const adminPasswordMatch = pathname.match(/^\/admin\/users\/([^/]+)\/password$/)
+    if (adminPasswordMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminResetPassword(adminPasswordMatch[1], request, auth, env, json, err)
+    }
+const adminListMatch = pathname.match(/^\/admin\/lists\/([^/]+)$/)
+    if (adminListMatch) {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (method === 'GET')    return handleAdminGetList(adminListMatch[1], auth, env, json, err)
+      if (method === 'DELETE') return handleAdminDeleteList(adminListMatch[1], auth, env, json, err)
     }
 
     // ── Upload ──

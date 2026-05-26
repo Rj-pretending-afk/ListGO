@@ -13,6 +13,7 @@ export interface List {
   modules: Module[]
   ownerId?: string
   ownerToken?: string
+  ownerTheme?: string
   permission: ListPermission
   invitedUsernames?: string[]
   createdAt: number
@@ -93,6 +94,7 @@ export interface VoteModule {
   multiSelect: boolean
   anonymous: boolean
   votes: Record<string, string[]>
+  voterNames?: Record<string, string>  // voterId → displayName, populated in real-name mode
   background?: ModuleBackground
   fontSettings?: ModuleFontSettings
   customLabel?: string

@@ -1,6 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { adminGuard } from '../middleware/adminOnly'
+import { hashPassword } from '../lib/crypto'
 import type { Env } from '../api'
 import type { AuthUser } from '../middleware/auth'
 
@@ -96,6 +97,38 @@ export async function handleAdminGenerateCodes(
   return json({ ok: true, codes })
 }
 
+// ── GET /admin/lists/:id — fetch any list regardless of permission ──
+export async function handleAdminGetList(
+  listId: string, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const guard = adminGuard(auth)
+  if (guard) return guard
+  const row = await env.DB.prepare(
+    `SELECT l.*, u.username AS owner_username
+     FROM lists l LEFT JOIN users u ON u.id = l.owner_id
+     WHERE l.id = ?`
+  ).bind(listId).first<{
+    id: string; title: string; data: string
+    owner_id: string | null; owner_token: string | null; owner_username: string | null
+    permission: string; version: number
+    created_at: number; updated_at: number; last_accessed_at: number
+  }>()
+  if (!row) return err('Not found', 404)
+  const data = JSON.parse(row.data) as Record<string, unknown>
+  return json({
+    id:            row.id,
+    title:         row.title,
+    ownerId:       row.owner_id ?? undefined,
+    ownerUsername: row.owner_username ?? undefined,
+    permission:    row.permission,
+    version:       row.version,
+    createdAt:     row.created_at,
+    updatedAt:     row.updated_at,
+    lastAccessedAt: row.last_accessed_at,
+    ...data,
+  })
+}
+
 // ── GET /admin/users ──
 export async function handleAdminGetUsers(
   auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
@@ -131,6 +164,75 @@ export async function handleAdminGetUserLists(
   ).bind(userId).all<{ id: string; title: string; permission: string; version: number; updated_at: number }>()
 
   return json(rows.results ?? [])
+}
+
+// ── PUT /admin/users/:id/displayname ──
+export async function handleAdminSetDisplayName(
+  userId: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const guard = adminGuard(auth)
+  if (guard) return guard
+  let body: { displayName?: string }
+  try { body = await request.json() } catch { return err('Invalid JSON', 400) }
+  await env.DB.prepare('UPDATE users SET display_name = ? WHERE id = ?')
+    .bind((body.displayName ?? '').trim() || null, userId).run()
+  return json({ ok: true })
+}
+
+// ── PUT /admin/users/:id/admin ──
+export async function handleAdminSetAdmin(
+  userId: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const guard = adminGuard(auth)
+  if (guard) return guard
+  if (auth!.userId === userId) return err('Cannot change own admin status', 400)
+  let body: { isAdmin?: boolean }
+  try { body = await request.json() } catch { return err('Invalid JSON', 400) }
+  await env.DB.prepare('UPDATE users SET is_admin = ? WHERE id = ?')
+    .bind(body.isAdmin ? 1 : 0, userId).run()
+  return json({ ok: true })
+}
+
+// ── PUT /admin/users/:id/password ──
+export async function handleAdminResetPassword(
+  userId: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const guard = adminGuard(auth)
+  if (guard) return guard
+  let body: { password?: string }
+  try { body = await request.json() } catch { return err('Invalid JSON', 400) }
+  const pw = (body.password ?? '').trim()
+  if (pw.length < 8) return err('密码须至少 8 字符', 400)
+  const { hash, salt } = await hashPassword(pw)
+  await env.DB.prepare('UPDATE user_credentials SET password_hash = ?, salt = ? WHERE user_id = ?')
+    .bind(hash, salt, userId).run()
+  return json({ ok: true })
+}
+
+// ── DELETE /admin/users/:id ──
+export async function handleAdminDeleteUser(
+  userId: string, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const guard = adminGuard(auth)
+  if (guard) return guard
+  if (auth!.userId === userId) return err('Cannot delete yourself', 400)
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM lists WHERE owner_id = ?').bind(userId),
+    env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId),
+    env.DB.prepare('DELETE FROM user_credentials WHERE user_id = ?').bind(userId),
+    env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId),
+  ])
+  return json({ ok: true })
+}
+
+// ── DELETE /admin/lists/:id ──
+export async function handleAdminDeleteList(
+  listId: string, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const guard = adminGuard(auth)
+  if (guard) return guard
+  await env.DB.prepare('DELETE FROM lists WHERE id = ?').bind(listId).run()
+  return json({ ok: true })
 }
 
 // ── DELETE /admin/invite-codes/:code ──

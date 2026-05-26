@@ -10,6 +10,7 @@ interface SessionRow {
   color: string
   display_name: string | null
   is_anonymous: number
+  avatar_image: string | null
 }
 
 const ACTIVE_WINDOW_MS = 30_000
@@ -17,8 +18,10 @@ const ACTIVE_WINDOW_MS = 30_000
 async function getActiveUsers(listId: string, env: Env, json: JsonFn): Promise<Response> {
   const cutoff = Date.now() - ACTIVE_WINDOW_MS
   const rows = await env.DB.prepare(
-    `SELECT user_id, color, display_name, is_anonymous
-     FROM sessions WHERE list_id = ? AND last_seen > ?`
+    `SELECT s.user_id, s.color, s.display_name, s.is_anonymous, u.avatar_image
+     FROM sessions s
+     LEFT JOIN users u ON s.user_id = u.id
+     WHERE s.list_id = ? AND s.last_seen > ?`
   ).bind(listId, cutoff).all<SessionRow>()
 
   return json((rows.results ?? []).map(r => ({
@@ -26,6 +29,7 @@ async function getActiveUsers(listId: string, env: Env, json: JsonFn): Promise<R
     color:       r.color,
     displayName: r.display_name ?? undefined,
     isAnonymous: r.is_anonymous === 1,
+    avatarImage: r.avatar_image ?? undefined,
   })))
 }
 

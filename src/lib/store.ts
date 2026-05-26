@@ -6,6 +6,25 @@ import { listApi } from './api'
 import type { List, ListBackground, ListPermission, Module, TodoModule, VoteModule } from '../types/list.types'
 
 const syncTimers = new Map<string, ReturnType<typeof setTimeout>>()
+let _cloudSyncing = false
+
+// Tombstone: locally-deleted cloud list IDs — syncFromCloud must not re-add them
+const TOMBSTONE_KEY = 'listgo_deleted_ids'
+const deletedListIds = new Set<string>(JSON.parse(localStorage.getItem(TOMBSTONE_KEY) ?? '[]') as string[])
+function addTombstone(id: string) {
+  deletedListIds.add(id)
+  localStorage.setItem(TOMBSTONE_KEY, JSON.stringify([...deletedListIds]))
+}
+
+// Confirmed-in-cloud: IDs returned by GET /lists at least once.
+// Only these can be "remotely deleted" — newly created lists never confirmed yet are safe from removal.
+const CONFIRMED_KEY = 'listgo_confirmed_ids'
+const confirmedCloudIds = new Set<string>(JSON.parse(localStorage.getItem(CONFIRMED_KEY) ?? '[]') as string[])
+function confirmInCloud(ids: string[]) {
+  let changed = false
+  for (const id of ids) { if (!confirmedCloudIds.has(id)) { confirmedCloudIds.add(id); changed = true } }
+  if (changed) localStorage.setItem(CONFIRMED_KEY, JSON.stringify([...confirmedCloudIds]))
+}
 
 // Track per-list sync error so UI can surface it
 const syncErrors = new Map<string, string>()
@@ -26,20 +45,57 @@ function debouncedSync(list: List) {
       if (result.version) _patchVersion?.(list.id, result.version)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'sync failed'
-      syncErrors.set(list.id, msg)
-      console.error('[sync]', list.id, msg)
+      // List not in D1 yet (initial create failed) — create it now
+      if (msg.includes('Not found') || msg.includes('404')) {
+        try {
+          await listApi.create(list)
+          syncErrors.delete(list.id)
+        } catch (e2) {
+          syncErrors.set(list.id, e2 instanceof Error ? e2.message : 'create failed')
+        }
+      } else {
+        syncErrors.set(list.id, msg)
+        console.error('[sync]', list.id, msg)
+      }
     }
   }, 800))
 }
 
-export type Theme = 'day' | 'dark' | 'light-pink' | 'dark-pink'
+export type StyleTheme = 'clay' | 'glass' | 'minimal' | 'brutal' | 'material' | 'bauhaus' | 'retro'
+export type ColorMode = 'light' | 'dark'
+export type Theme = `${StyleTheme}-${ColorMode}`
 
-const THEMES: Theme[] = ['day', 'dark', 'light-pink', 'dark-pink']
+const VALID_THEMES = new Set<Theme>([
+  'clay-light','clay-dark','glass-light','glass-dark','minimal-light','minimal-dark',
+  'brutal-light','brutal-dark','material-light','material-dark','bauhaus-light','bauhaus-dark',
+  'retro-light','retro-dark',
+])
+
+// Migrate pre-restructure theme names to new format
+const THEME_MIGRATION: Record<string, Theme> = {
+  'day': 'clay-light', 'dark': 'clay-dark', 'light-pink': 'clay-light', 'dark-pink': 'clay-dark',
+  'glass': 'glass-light', 'minimal': 'minimal-light', 'brutal': 'brutal-light',
+  'material': 'material-light', 'bauhaus': 'bauhaus-light', 'retro': 'retro-light',
+}
+
+export function parseTheme(t: string): Theme {
+  if (VALID_THEMES.has(t as Theme)) return t as Theme
+  return THEME_MIGRATION[t] ?? 'clay-light'
+}
+
+export function getStyle(theme: Theme): StyleTheme {
+  return theme.slice(0, theme.lastIndexOf('-')) as StyleTheme
+}
+
+export function getMode(theme: Theme): ColorMode {
+  return theme.endsWith('-dark') ? 'dark' : 'light'
+}
+
 const THEME_KEY = 'listgo_theme'
 
 function getInitialTheme(): Theme {
-  const stored = localStorage.getItem(THEME_KEY) as Theme | null
-  const theme = stored && THEMES.includes(stored) ? stored : 'dark'
+  const stored = localStorage.getItem(THEME_KEY) ?? ''
+  const theme = parseTheme(stored)
   document.documentElement.dataset.theme = theme
   return theme
 }
@@ -50,7 +106,9 @@ function ts() {
 
 interface AppStore {
   theme: Theme
-  cycleTheme: () => void
+  setTheme: (theme: string) => void
+  setStyle: (style: StyleTheme) => void
+  toggleMode: () => void
   timeFormat: 'relative' | 'absolute'
   toggleTimeFormat: () => void
   lists: List[]
@@ -66,11 +124,13 @@ interface AppStore {
   reorderModules: (listId: string, fromIndex: number, toIndex: number) => void
   updateListPermission: (id: string, permission: ListPermission) => Promise<void>
   uploadToCloud: (id: string) => Promise<void>
+  updateInvitedUsers: (id: string, usernames: string[]) => void
   claimLists: (listIds: string[], newOwnerId: string) => Promise<void>
   importList: (list: List) => Promise<void>
   applyRemoteList: (list: List) => void
   resolveConflict: (listId: string, choice: 'local' | 'remote', remoteList: List) => void
-  patchModuleVotes: (listId: string, moduleId: string, votes: Record<string, string[]>, version: number) => void
+  patchModuleVotes: (listId: string, moduleId: string, votes: Record<string, string[]>, voterNames: Record<string, string>, version: number) => void
+  syncFromCloud: () => Promise<void>
 }
 
 export const useAppStore = create<AppStore>((set, get) => {
@@ -83,12 +143,29 @@ export const useAppStore = create<AppStore>((set, get) => {
   return {
   theme: getInitialTheme(),
 
-  cycleTheme: () => {
+  setTheme: (themeStr) => {
+    const theme = parseTheme(themeStr)
+    localStorage.setItem(THEME_KEY, theme)
+    document.documentElement.dataset.theme = theme
+    set({ theme })
+  },
+
+  setStyle: (style) => {
     set(s => {
-      const next = THEMES[(THEMES.indexOf(s.theme) + 1) % THEMES.length]
-      localStorage.setItem(THEME_KEY, next)
-      document.documentElement.dataset.theme = next
-      return { theme: next }
+      const theme = `${style}-${getMode(s.theme)}` as Theme
+      localStorage.setItem(THEME_KEY, theme)
+      document.documentElement.dataset.theme = theme
+      return { theme }
+    })
+  },
+
+  toggleMode: () => {
+    set(s => {
+      const mode: ColorMode = getMode(s.theme) === 'light' ? 'dark' : 'light'
+      const theme = `${getStyle(s.theme)}-${mode}` as Theme
+      localStorage.setItem(THEME_KEY, theme)
+      document.documentElement.dataset.theme = theme
+      return { theme }
     })
   },
 
@@ -134,10 +211,15 @@ export const useAppStore = create<AppStore>((set, get) => {
     const list = get().lists.find(l => l.id === id)
     await db.lists.delete(id)
     set(s => ({ lists: s.lists.filter(l => l.id !== id) }))
-    if (list?.ownerId) {
-      listApi.delete(id).catch(console.error)
-    } else if (list?.ownerToken) {
-      listApi.delete(id, list.ownerToken).catch(console.error)
+    if (list?.ownerId || list?.ownerToken) {
+      // Record tombstone before attempting cloud delete so syncFromCloud won't re-add it
+      if (list.ownerId) addTombstone(id)
+      try {
+        await listApi.delete(id, list.ownerToken)
+      } catch (e) {
+        // Cloud delete failed — tombstone already prevents re-sync, but log for visibility
+        console.error('[delete]', id, e instanceof Error ? e.message : e)
+      }
     }
   },
 
@@ -240,6 +322,14 @@ export const useAppStore = create<AppStore>((set, get) => {
     await listApi.create(list)
   },
 
+  updateInvitedUsers: (id, usernames) => {
+    const t = ts()
+    set(s => ({ lists: s.lists.map(l => l.id === id ? { ...l, invitedUsernames: usernames, updatedAt: t } : l) }))
+    void db.lists.update(id, { invitedUsernames: usernames, updatedAt: t })
+    const next = get().lists.find(l => l.id === id)
+    if (next?.ownerId) debouncedSync(next)
+  },
+
   importList: async (list) => {
     const existing = get().lists.find(l => l.id === list.id)
     if (!existing) {
@@ -267,17 +357,16 @@ export const useAppStore = create<AppStore>((set, get) => {
     void db.lists.put(list)
   },
 
-  patchModuleVotes: (listId, moduleId, votes, version) => {
+  patchModuleVotes: (listId, moduleId, votes, voterNames, version) => {
     set(s => ({
       lists: s.lists.map(l => {
         if (l.id !== listId) return l
         const modules = l.modules.map(m =>
-          m.id === moduleId && m.type === 'vote' ? { ...m, votes } : m
+          m.id === moduleId && m.type === 'vote' ? { ...m, votes, voterNames } : m
         )
         return { ...l, modules, version }
       }),
     }))
-    // Write to IndexedDB so a page reload doesn't restore the stale version
     const list = get().lists.find(l => l.id === listId)
     if (list) void db.lists.put(list)
   },
@@ -296,6 +385,61 @@ export const useAppStore = create<AppStore>((set, get) => {
       set(s => ({ lists: s.lists.map(l => l.id === listId ? updated : l) }))
       void db.lists.update(listId, { version: remoteList.version })
       if (updated.ownerId) debouncedSync(updated)
+    }
+  },
+
+  syncFromCloud: async () => {
+    if (_cloudSyncing) return
+    _cloudSyncing = true
+    try {
+      const remote = await listApi.fetchOwned()
+      const remoteIds = new Set(remote.map(r => r.id))
+      const local = get().lists
+
+      // Mark all returned IDs as confirmed-in-cloud
+      confirmInCloud(remote.map(r => r.id))
+
+      // Detect remotely-deleted lists:
+      // local list has ownerId + was confirmed in D1 before + NOT in remote now + not deleted by this device + no pending edit
+      const toRemove = local.filter(l =>
+        l.ownerId &&
+        confirmedCloudIds.has(l.id) &&
+        !remoteIds.has(l.id) &&
+        !deletedListIds.has(l.id) &&
+        !hasPendingSync(l.id)
+      )
+
+      const toAdd: List[] = []
+      const toUpdate: List[] = []
+      for (const r of remote) {
+        const l = local.find(x => x.id === r.id)
+        if (!l) {
+          if (!deletedListIds.has(r.id)) toAdd.push(r)
+        } else if (r.version > l.version && !hasPendingSync(r.id)) {
+          toUpdate.push(r)
+        }
+      }
+
+      if (!toAdd.length && !toUpdate.length && !toRemove.length) return
+
+      await Promise.all([
+        ...[...toAdd, ...toUpdate].map(l => db.lists.put(l)),
+        ...toRemove.map(l => db.lists.delete(l.id)),
+      ])
+
+      set(s => {
+        const removeIds = new Set(toRemove.map(l => l.id))
+        const map = new Map(s.lists.filter(l => !removeIds.has(l.id)).map(l => [l.id, l]))
+        for (const r of toUpdate) map.set(r.id, r)
+        for (const r of toAdd) map.set(r.id, r)
+        const result = Array.from(map.values())
+        result.sort((a, b) => b.updatedAt - a.updatedAt)
+        return { lists: result }
+      })
+    } catch {
+      // silently ignore — user may be offline or token expired
+    } finally {
+      _cloudSyncing = false
     }
   },
   }

@@ -37,19 +37,20 @@ export function AvatarStack({ users, selfUserId }: AvatarStackProps) {
         {shown.map((u, i) => (
           <div
             key={u.userId}
-            className="w-6 h-6 rounded-full flex items-center justify-center text-white select-none border-2 transition-transform hover:scale-110 flex-shrink-0"
+            className="w-6 h-6 rounded-full select-none border-2 transition-transform hover:scale-110 flex-shrink-0 overflow-hidden"
             style={{
               backgroundColor: u.color,
               borderColor: 'var(--color-bg)',
-              fontSize: 9,
-              fontWeight: 700,
               marginLeft: i === 0 ? 0 : -6,
               zIndex: MAX_SHOWN - i,
               opacity: u.userId === selfUserId ? 0.55 : 1,
             }}
             title={title(u)}
           >
-            {label(u)}
+            {u.avatarImage
+              ? <img src={u.avatarImage} alt={title(u)} className="w-full h-full object-cover" />
+              : <span className="w-full h-full flex items-center justify-center text-white" style={{ fontSize: 9, fontWeight: 700 }}>{label(u)}</span>
+            }
           </div>
         ))}
         {overflow > 0 && (
@@ -90,10 +91,13 @@ export function AvatarStack({ users, selfUserId }: AvatarStackProps) {
             {users.map(u => (
               <div key={u.userId} className="flex items-center gap-2 px-3 py-1.5">
                 <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-white flex-shrink-0"
-                  style={{ backgroundColor: u.color, fontSize: 8, fontWeight: 700 }}
+                  className="w-5 h-5 rounded-full flex-shrink-0 overflow-hidden"
+                  style={{ backgroundColor: u.color }}
                 >
-                  {label(u)}
+                  {u.avatarImage
+                    ? <img src={u.avatarImage} alt={title(u)} className="w-full h-full object-cover" />
+                    : <span className="w-full h-full flex items-center justify-center text-white" style={{ fontSize: 8, fontWeight: 700 }}>{label(u)}</span>
+                  }
                 </div>
                 <span className="text-xs truncate" style={{ color: 'var(--color-text)', opacity: u.userId === selfUserId ? 0.45 : 0.85 }}>
                   {title(u)}{u.userId === selfUserId ? ' (你)' : ''}
