@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Copy, Check, Plus, ShieldCheck } from 'lucide-react'
+import { Copy, Check, Plus, ShieldCheck, Mail } from 'lucide-react'
 import { createPortal } from 'react-dom'
-import { api } from '../lib/api'
+import { api, inviteRequestApi } from '../lib/api'
 import { useAuthStore } from '../hooks/useAuth'
 import { useT } from '../hooks/useLang'
 import { AVATAR_COLORS } from '../lib/colors'
@@ -25,16 +25,29 @@ export default function ProfilePage() {
   const [pwError, setPwError] = useState('')
 
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [requestLoading, setRequestLoading] = useState(false)
+  const [requestMsg, setRequestMsg] = useState('')
+
+  const [pokeMessage, setPokeMessage] = useState(user?.pokeMessage ?? '')
+  const [pokeMsgLoading, setPokeMsgLoading] = useState(false)
+  const [pokeMsgSaved, setPokeMsgSaved] = useState(false)
+  const [pendingRequests, setPendingRequests] = useState(0)
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [cropSrc, setCropSrc] = useState<string | null>(null)
   const [pendingAvatar, setPendingAvatar] = useState<string | null>(null)
   const [avatarLoading, setAvatarLoading] = useState(false)
 
-  // Redirect in effect to avoid calling navigate during render
   useEffect(() => {
     if (!user) navigate('/login')
   }, [user, navigate])
+
+  useEffect(() => {
+    if (!user?.isAdmin) return
+    api.get<{ pendingInviteRequests?: number }>('/admin/stats')
+      .then(s => setPendingRequests(s.pendingInviteRequests ?? 0))
+      .catch(() => {})
+  }, [user?.isAdmin])
 
   if (!user) return null
 
@@ -114,7 +127,31 @@ export default function ProfilePage() {
     setTimeout(() => setCopiedCode(null), 1500)
   }
 
-  const card = { backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }
+  const requestInviteCode = async () => {
+    setRequestLoading(true); setRequestMsg('')
+    try {
+      await inviteRequestApi.create()
+      updateUser({ hasRequestedInvite: true })
+      setRequestMsg(t('codeRequestSent'))
+      setTimeout(() => setRequestMsg(''), 4000)
+    } catch (e) {
+      setRequestMsg(e instanceof Error ? e.message : t('saveFailed'))
+      setTimeout(() => setRequestMsg(''), 3000)
+    } finally { setRequestLoading(false) }
+  }
+
+  const savePokeMessage = async () => {
+    setPokeMsgLoading(true)
+    try {
+      await api.put('/auth/profile', { pokeMessage: pokeMessage.trim() || null })
+      updateUser({ pokeMessage: pokeMessage.trim() || undefined })
+      setPokeMsgSaved(true)
+      setTimeout(() => setPokeMsgSaved(false), 2000)
+    } catch { /* ignore */ }
+    finally { setPokeMsgLoading(false) }
+  }
+
+  const card ={ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }
   const inputCls = 'flex-1 min-w-0 px-3 py-2 rounded-lg text-sm outline-none'
   const inputStyle = { backgroundColor: 'var(--color-border)', color: 'var(--color-text)', border: '1px solid transparent' }
   const secLabel = { color: 'var(--color-text)', opacity: 0.6 }
@@ -137,11 +174,17 @@ export default function ProfilePage() {
           {user.isAdmin && (
             <button
               onClick={() => navigate('/admin')}
-              className="flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
+              className="relative flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity"
               style={{ color: 'var(--color-primary)' }}
             >
               <ShieldCheck size={15} />
-              Admin
+              {user.isSuperAdmin ? 'Super Admin' : 'Admin'}
+              {pendingRequests > 0 && (
+                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full text-[9px] flex items-center justify-center font-bold"
+                  style={{ backgroundColor: '#ef4444', color: 'white' }}>
+                  {pendingRequests}
+                </span>
+              )}
             </button>
           )}
           <button onClick={() => { logout(); navigate('/') }} className="text-sm hover:opacity-70" style={{ color: '#ef4444' }}>
@@ -253,8 +296,15 @@ export default function ProfilePage() {
               ))}
               {usedCodes.map(c => (
                 <div key={c.code} className="flex items-center justify-between gap-2 py-1 px-2 rounded-lg"
-                  style={{ backgroundColor: 'var(--color-border)', opacity: 0.4 }}>
-                  <span className="font-mono text-sm tracking-wider line-through" style={{ color: 'var(--color-text)' }}>{c.code}</span>
+                  style={{ backgroundColor: 'var(--color-border)', opacity: 0.5 }}>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-mono text-sm tracking-wider line-through" style={{ color: 'var(--color-text)' }}>{c.code}</span>
+                    {c.usedByUsername && (
+                      <span className="text-xs mt-0.5" style={{ color: 'var(--color-text)', opacity: 0.7 }}>
+                        {t('codeUsedBy').replace('{name}', c.usedByUsername)}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs flex-shrink-0" style={{ color: 'var(--color-text)' }}>
                     {c.revoked ? t('codeRevoked') : t('codeUsed')}
                   </span>
@@ -263,6 +313,43 @@ export default function ProfilePage() {
             </div>
           )
         }
+        {/* Request new code */}
+        {unusedCodes.length === 0 && (
+          <div className="mt-3">
+            {user.hasRequestedInvite ? (
+              <div className="flex items-center gap-2 text-xs py-2 px-3 rounded-lg"
+                style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)', opacity: 0.6 }}>
+                <Mail size={13} />
+                {t('codeRequestPending')}
+              </div>
+            ) : (
+              <button onClick={requestInviteCode} disabled={requestLoading}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg hover:opacity-80 disabled:opacity-40 transition-opacity"
+                style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                <Mail size={13} />
+                {requestLoading ? '…' : t('codeRequestNew')}
+              </button>
+            )}
+            {requestMsg && (
+              <p className="text-xs mt-2" style={{ color: 'var(--color-primary)' }}>{requestMsg}</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Poke message */}
+      <div className="rounded-xl p-5 mb-4" style={card}>
+        <p className="text-xs font-medium mb-3" style={secLabel}>{t('pokeMessageLabel')}</p>
+        <div className="flex gap-2">
+          <input value={pokeMessage} onChange={e => setPokeMessage(e.target.value)}
+            className={inputCls} style={inputStyle} maxLength={50}
+            placeholder={t('pokeMessagePlaceholder')} />
+          <button onClick={savePokeMessage} disabled={pokeMsgLoading}
+            className="px-4 py-2 rounded-lg text-sm font-medium btn-primary hover:opacity-80 disabled:opacity-40 whitespace-nowrap flex-shrink-0"
+            style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+            {pokeMsgSaved ? <Check size={14} /> : pokeMsgLoading ? '…' : t('profileSave')}
+          </button>
+        </div>
       </div>
 
       {/* Change password */}

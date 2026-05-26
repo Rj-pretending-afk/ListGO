@@ -2,6 +2,7 @@ export interface JWTPayload {
   userId: string
   username: string
   isAdmin: boolean
+  isSuperAdmin: boolean
   exp?: number
 }
 
@@ -50,6 +51,9 @@ export async function verifyJWT(token: string, secret: string): Promise<JWTPaylo
 
     const payload = b64url.decode(payloadB64) as JWTPayload
     if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) return null
+
+    // Backcompat: old tokens without isSuperAdmin
+    if (payload.isSuperAdmin === undefined) payload.isSuperAdmin = false
 
     return payload
   } catch {

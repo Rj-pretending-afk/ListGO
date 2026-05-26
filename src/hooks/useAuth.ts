@@ -34,9 +34,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   initAuth: async () => {
     if (!authStorage.getToken()) { set({ authLoading: false }); return }
     try {
-      const user = await api.get<User>('/auth/me')
-      if (user.theme) useAppStore.getState().setTheme(user.theme)
-      set({ user, authLoading: false })
+      const data = await api.get<User & { token?: string }>('/auth/me')
+      // Refresh stored token so DB role changes (e.g. admin promotion) take effect
+      if (data.token) authStorage.setToken(data.token)
+      if (data.theme) useAppStore.getState().setTheme(data.theme)
+      set({ user: data, authLoading: false })
       void useAppStore.getState().syncFromCloud()
     } catch {
       authStorage.clearToken()

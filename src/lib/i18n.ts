@@ -2,7 +2,8 @@ export const zh = {
   // Header
   login: '登录', register: '注册', profileSettings: '个人设置', logout: '退出登录', switchAccount: '切换账号',
   // Home
-  loading: '加载中…', myLists: '我的清单', newList: '新建',
+  loading: '加载中…', myLists: '我的清单', recentLists: '最近访问', newList: '新建',
+  recentEmpty: '暂无最近访问的清单', recentVisited: '访问',
   newListPlaceholder: '清单标题（必填）', cancel: '取消', create: '创建',
   emptyHint: '还没有清单，点「新建」开始', moduleCount: '个模块',
   // List page
@@ -69,6 +70,9 @@ export const zh = {
   profileNameLabel: '显示昵称', profileSave: '保存', profileSaving: '…',
   profileCodesLabel: '我的邀请码', profileNoCodes: '暂无邀请码',
   codeCopy: '复制', codeCopied: '已复制', codeUsed: '已使用', codeRevoked: '已撤销',
+  codeUsedBy: '被 @{name} 使用', codeRequestNew: '申请新码', codeRequestPending: '等待审核',
+  codeRequestSent: '申请已提交，等待管理员审核',
+  pokeMessageLabel: '被戳提示', pokeMessagePlaceholder: '被人戳时显示的文字…（至多 50 字）',
   profilePwLabel: '修改密码',
   profileOldPw: '当前密码', profileNewPw: '新密码（至少 8 字符）', profileConfirmPw: '确认新密码',
   profileChangePw: '确认修改', profileChangingPw: '修改中…', profileLogout: '退出登录',
@@ -88,7 +92,10 @@ export const zh = {
   shareClose: '关闭', viewOnly: '只读',
   // Admin
   adminTitle: '管理员后台', adminStats: '统计',
-  adminUsers: '用户', adminLists: '清单', adminCodes: '邀请码',
+  adminUsers: '用户', adminLists: '清单', adminCodes: '邀请码', adminInviteRequests: '邀请申请',
+  adminRequestsEmpty: '暂无待审申请', adminAccept: '通过', adminReject: '拒绝',
+  adminAccepting: '…', adminRejecting: '…', adminRequestAccepted: '已通过', adminRequestRejected: '已拒绝',
+  adminGenCode: '直接生成',
   adminCodesUsed: '已用', adminCodesAvail: '可用',
   adminCodesSection: '邀请码管理',
   adminGenerate: '批量生成', adminGenerating: '生成中…',
@@ -102,6 +109,12 @@ export const zh = {
   saved: '已保存', saveFailed: '保存失败',
   pwChanged: '密码已修改', pwMismatch: '两次密码不一致',
   pwTooShort: '新密码须至少 8 字符', changeFailed: '修改失败',
+  // Notifications
+  notifTitle: '通知', notifEmpty: '暂无通知',
+  notifPokes: '被戳', notifInvites: '清单邀请',
+  notifPokedBy: '@{name} 戳了你', notifInvitedBy: '@{name} 邀请你查看「{title}」',
+  notifMarkRead: '标为已读',
+  joinList: '打开清单', joinListPlaceholder: '粘贴清单链接或 ID…', joinListGo: '打开',
   // Not found
   notFound: '页面不存在', backHome: '回到首页',
 } as const
@@ -110,7 +123,8 @@ export type I18nKey = keyof typeof zh
 
 export const en: Record<I18nKey, string> = {
   login: 'Login', register: 'Sign Up', profileSettings: 'Settings', logout: 'Logout', switchAccount: 'Switch Account',
-  loading: 'Loading…', myLists: 'My Lists', newList: 'New',
+  loading: 'Loading…', myLists: 'My Lists', recentLists: 'Recent', newList: 'New',
+  recentEmpty: 'No recently visited lists', recentVisited: 'Visited',
   newListPlaceholder: 'List title (required)', cancel: 'Cancel', create: 'Create',
   emptyHint: 'No lists yet. Click "New" to get started.', moduleCount: 'modules',
   addModule: '+ Add Module', collapseMenu: 'Close',
@@ -161,6 +175,9 @@ export const en: Record<I18nKey, string> = {
   profileNameLabel: 'Display Name', profileSave: 'Save', profileSaving: '…',
   profileCodesLabel: 'My Invite Codes', profileNoCodes: 'No invite codes',
   codeCopy: 'Copy', codeCopied: 'Copied!', codeUsed: 'Used', codeRevoked: 'Revoked',
+  codeUsedBy: 'Used by @{name}', codeRequestNew: 'Request Code', codeRequestPending: 'Pending review',
+  codeRequestSent: 'Request submitted, waiting for admin approval',
+  pokeMessageLabel: 'Poke message', pokeMessagePlaceholder: 'Text shown when someone pokes you… (max 50 chars)',
   profilePwLabel: 'Change Password',
   profileOldPw: 'Current password', profileNewPw: 'New password (≥8 chars)', profileConfirmPw: 'Confirm new password',
   profileChangePw: 'Change Password', profileChangingPw: 'Saving…', profileLogout: 'Logout',
@@ -177,7 +194,10 @@ export const en: Record<I18nKey, string> = {
   permInvited: '💌 Invited only', permPrivate: '🔒 Only me',
   shareClose: 'Close', viewOnly: 'View only',
   adminTitle: 'Admin Panel', adminStats: 'Stats',
-  adminUsers: 'Users', adminLists: 'Lists', adminCodes: 'Invite Codes',
+  adminUsers: 'Users', adminLists: 'Lists', adminCodes: 'Invite Codes', adminInviteRequests: 'Requests',
+  adminRequestsEmpty: 'No pending requests', adminAccept: 'Accept', adminReject: 'Reject',
+  adminAccepting: '…', adminRejecting: '…', adminRequestAccepted: 'Accepted', adminRequestRejected: 'Rejected',
+  adminGenCode: 'Generate',
   adminCodesUsed: 'Used', adminCodesAvail: 'Available',
   adminCodesSection: 'Invite Code Management',
   adminGenerate: 'Batch Generate', adminGenerating: 'Generating…',
@@ -190,6 +210,11 @@ export const en: Record<I18nKey, string> = {
   saved: 'Saved', saveFailed: 'Save failed',
   pwChanged: 'Password changed', pwMismatch: 'Passwords do not match',
   pwTooShort: 'New password must be at least 8 characters', changeFailed: 'Failed to change',
+  notifTitle: 'Notifications', notifEmpty: 'No notifications',
+  notifPokes: 'Pokes', notifInvites: 'List Invites',
+  notifPokedBy: '@{name} poked you', notifInvitedBy: '@{name} invited you to "{title}"',
+  notifMarkRead: 'Mark read',
+  joinList: 'Open list', joinListPlaceholder: 'Paste list link or ID…', joinListGo: 'Go',
   notFound: 'Page not found', backHome: 'Back to home',
 }
 
