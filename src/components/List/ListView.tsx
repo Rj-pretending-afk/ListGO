@@ -7,6 +7,8 @@ import { ModuleList } from './ModuleList'
 import { AddModuleButton } from './AddModuleButton'
 import { SharePanel } from '../ui/SharePanel'
 import { AvatarStack } from '../presence/AvatarStack'
+import { AvatarDisplay } from '../ui/AvatarDisplay'
+import { ThemeSwitcher } from '../theme/ThemeSwitcher'
 import { useListActions } from '../../hooks/useList'
 import { useAppStore, getSyncError, clearSyncError } from '../../lib/store'
 import { useListSync } from '../../hooks/useListSync'
@@ -33,6 +35,7 @@ export function ListView({ list, canEdit = true, adminView = false, onModuleUpda
   const [shareOpen, setShareOpen] = useState(false)
   const shareRef = useRef<HTMLDivElement>(null)
   const [syncErr, setSyncErr] = useState<string | null>(null)
+  const [spinning, setSpinning] = useState(false)
   // Strip ownerId for admin view so useListSync is a no-op (avoids polluting admin's local store)
   const syncList = adminView ? { ...list, ownerId: undefined } : list
   const { conflict, resolveConflict, manualRefresh, refreshing } = useListSync(syncList, list.ownerToken)
@@ -86,20 +89,41 @@ export function ListView({ list, canEdit = true, adminView = false, onModuleUpda
           </span>
         )}
 
+        {/* Creator badge for viewers */}
+        {!canEdit && !adminView && list.ownerUsername && (
+          <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+            <AvatarDisplay
+              user={{
+                username: list.ownerUsername,
+                avatarColor: list.ownerAvatarColor ?? '#10B981',
+                avatarImage: list.ownerAvatarImage,
+              }}
+              size={22}
+              border
+            />
+            <span className="text-xs opacity-50" style={{ color: 'var(--color-text)' }}>
+              @{list.ownerUsername}
+            </span>
+          </div>
+        )}
+
         {/* Online presence — only when list is cloud-synced and not admin inspection */}
         {list.ownerId && !adminView && (
           <AvatarStack users={activeUsers} selfUserId={selfUserId} />
         )}
 
+        {/* Theme switcher for owner */}
+        {canEdit && !adminView && <ThemeSwitcher />}
+
         {list.ownerId && !adminView && (
           <button
-            onClick={manualRefresh}
+            onClick={() => { manualRefresh(); setSpinning(true); setTimeout(() => setSpinning(false), 800) }}
             disabled={refreshing}
             className="p-1.5 rounded-lg hover:opacity-60 active:scale-75 transition-all flex-shrink-0 disabled:opacity-30"
             style={{ color: 'var(--color-text)' }}
             title="刷新"
           >
-            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+            <RefreshCw size={16} className={(spinning || refreshing) ? 'animate-spin' : ''} />
           </button>
         )}
         {canEdit && (
