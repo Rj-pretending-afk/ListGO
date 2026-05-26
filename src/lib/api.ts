@@ -59,7 +59,7 @@ export const claimApi = {
 }
 
 export const adminApi = {
-  getUsers: () => api.get<{ id: string; username: string; displayName: string | null; isAdmin: boolean; createdAt: number; listCount: number }[]>('/admin/users'),
+  getUsers: () => api.get<{ id: string; username: string; displayName: string | null; avatarColor: string; avatarImage?: string; isAdmin: boolean; createdAt: number; listCount: number }[]>('/admin/users'),
   getUserLists: (userId: string) => api.get<{ id: string; title: string; permission: string; version: number; updated_at: number }[]>(`/admin/users/${userId}/lists`),
   setDisplayName: (userId: string, displayName: string) => api.put<{ ok: boolean }>(`/admin/users/${userId}/displayname`, { displayName }),
   setAdmin: (userId: string, isAdmin: boolean) => api.put<{ ok: boolean }>(`/admin/users/${userId}/admin`, { isAdmin }),

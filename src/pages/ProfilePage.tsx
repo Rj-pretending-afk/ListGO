@@ -8,6 +8,7 @@ import { useT } from '../hooks/useLang'
 import { AVATAR_COLORS } from '../lib/colors'
 import { CropModal } from '../components/editor/CropModal'
 import { resizeDataUrl } from '../lib/imageUtils'
+import { AvatarDisplay } from '../components/ui/AvatarDisplay'
 
 export default function ProfilePage() {
   const t = useT()
@@ -293,18 +294,3 @@ export default function ProfilePage() {
   )
 }
 
-export function AvatarDisplay({ user, size = 32 }: { user: { username: string; avatarColor: string; avatarImage?: string }; size?: number }) {
-  if (user.avatarImage) {
-    return (
-      <img src={user.avatarImage} alt={user.username}
-        className="rounded-full object-cover flex-shrink-0"
-        style={{ width: size, height: size, border: `2px solid ${user.avatarColor}` }} />
-    )
-  }
-  return (
-    <div className="rounded-full flex items-center justify-center text-white font-bold select-none flex-shrink-0"
-      style={{ width: size, height: size, backgroundColor: user.avatarColor, fontSize: size * 0.4 }}>
-      {user.username[0].toUpperCase()}
-    </div>
-  )
-}

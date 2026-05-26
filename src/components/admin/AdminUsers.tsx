@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Trash2, KeyRound, ShieldCheck, ShieldOff } from 'lucide-react'
 import { adminApi } from '../../lib/api'
+import { AvatarDisplay } from '../ui/AvatarDisplay'
 
 export interface AdminUser {
   id: string; username: string; displayName: string | null
+  avatarColor: string; avatarImage?: string
   isAdmin: boolean; createdAt: number; listCount: number
 }
 
@@ -103,10 +105,7 @@ function UserRow({ user, onRefresh, initialExpanded = false }: {
     <div ref={rowRef} className="rounded-xl overflow-hidden" style={cardStyle}>
       {/* User header row */}
       <div className="flex items-center gap-3 px-4 py-3 flex-wrap">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-          style={{ backgroundColor: 'var(--color-primary)' }}>
-          {user.username[0].toUpperCase()}
-        </div>
+        <AvatarDisplay user={user} size={32} />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

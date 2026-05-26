@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ImagePlus, Link } from 'lucide-react'
 import DOMPurify from 'dompurify'
@@ -19,16 +19,21 @@ interface VoteDescriptionEditorProps {
   canEdit: boolean
   contentFontSettings?: ContentFontSettings
   onClose?: () => void
+  onActivate?: () => void  // called when this editor selects an image (clears opt overlay)
+  clearKey?: number        // increment to force-clear selectedImg
 }
 
 export function VoteDescriptionEditor({
-  value, onChange, canEdit, contentFontSettings, onClose,
+  value, onChange, canEdit, contentFontSettings, onClose, onActivate, clearKey,
 }: VoteDescriptionEditorProps) {
   const t = useT()
   const { user } = useAuthStore()
   const editorRef = useRef<RichTextEditorRef>(null)
   const [selRect, setSelRect] = useState<DOMRect | null>(null)
   const [selectedImg, setSelectedImg] = useState<HTMLImageElement | null>(null)
+
+  // External signal to drop our selection (when opt-image overlay activates)
+  useEffect(() => { if (clearKey !== undefined) setSelectedImg(null) }, [clearKey])
   const [showCrop, setShowCrop] = useState(false)
   const [urlOpen, setUrlOpen] = useState(false)
   const [urlInput, setUrlInput] = useState('')
@@ -127,7 +132,7 @@ export function VoteDescriptionEditor({
         content={value}
         onChange={onChange}
         onSelectionChange={setSelRect}
-        onImageClick={img => { setSelectedImg(img); setSelRect(null) }}
+        onImageClick={img => { onActivate?.(); setSelectedImg(img); setSelRect(null) }}
         onPasteImage={async dataUrl => insertImageSrc(await resizeDataUrl(dataUrl))}
         editorStyle={editorStyle}
       />

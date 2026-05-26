@@ -54,6 +54,8 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
   const originalOptImages = useRef<Record<string, string>>({})
   const [selectedOptId, setSelectedOptId] = useState<string | null>(null)
   const [showCropFor, setShowCropFor] = useState<string | null>(null)
+  // Signals VoteDescriptionEditor to clear its selected image
+  const [descClearKey, setDescClearKey] = useState(0)
 
   const myVotes = localVotes[voterId] ?? []
   const totalVotes = Object.values(localVotes).reduce((sum, ids) => sum + ids.length, 0)
@@ -127,8 +129,8 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
   const handleOptImageClick = (optId: string) => {
     const imgEl = imgRefs.current[optId]
     if (!imgEl) return
-    // Restore dataset if a previous crop exists
     if (originalOptImages.current[optId]) imgEl.dataset.originalSrc = originalOptImages.current[optId]
+    setDescClearKey(k => k + 1)  // dismiss description overlay
     setSelectedOptId(optId)
   }
 
@@ -195,6 +197,8 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
           canEdit={canEdit}
           contentFontSettings={contentFontSettings}
           onClose={canEdit ? () => { update({ description: undefined }); setShowDesc(false) } : undefined}
+          onActivate={() => setSelectedOptId(null)}
+          clearKey={descClearKey}
         />
       )}
 

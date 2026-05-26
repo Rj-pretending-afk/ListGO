@@ -92,9 +92,9 @@ export async function handleLogin(
   if (!username || !password) return err('用户名和密码不能为空', 400)
 
   const user = await env.DB.prepare(
-    'SELECT id, username, display_name, avatar_color, is_admin, theme FROM users WHERE username = ?'
+    'SELECT id, username, display_name, avatar_color, avatar_image, is_admin, theme FROM users WHERE username = ?'
   ).bind(username).first<{
-    id: string; username: string; display_name: string; avatar_color: string; is_admin: number; theme: string | null
+    id: string; username: string; display_name: string; avatar_color: string; avatar_image: string | null; is_admin: number; theme: string | null
   }>()
   if (!user) return err('用户名或密码错误', 401)
 
@@ -116,6 +116,7 @@ export async function handleLogin(
     username: user.username,
     displayName: user.display_name,
     avatarColor: user.avatar_color,
+    avatarImage: user.avatar_image ?? undefined,
     theme: user.theme ?? 'day',
     isAdmin: Boolean(user.is_admin),
     inviteCodes: [],

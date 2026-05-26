@@ -137,15 +137,17 @@ export async function handleAdminGetUsers(
   if (guard) return guard
 
   const rows = await env.DB.prepare(`
-    SELECT u.id, u.username, u.display_name, u.is_admin, u.created_at,
+    SELECT u.id, u.username, u.display_name, u.avatar_color, u.avatar_image, u.is_admin, u.created_at,
            (SELECT COUNT(*) FROM lists WHERE owner_id = u.id) as list_count
     FROM users u ORDER BY u.created_at DESC
-  `).all<{ id: string; username: string; display_name: string | null; is_admin: number; created_at: number; list_count: number }>()
+  `).all<{ id: string; username: string; display_name: string | null; avatar_color: string | null; avatar_image: string | null; is_admin: number; created_at: number; list_count: number }>()
 
   return json((rows.results ?? []).map(r => ({
     id:          r.id,
     username:    r.username,
     displayName: r.display_name,
+    avatarColor: r.avatar_color ?? '#10B981',
+    avatarImage: r.avatar_image ?? undefined,
     isAdmin:     Boolean(r.is_admin),
     createdAt:   r.created_at,
     listCount:   r.list_count,

@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import { ThemeSwitcher } from '../theme/ThemeSwitcher'
 import { useAuthStore } from '../../hooks/useAuth'
 import { useLangStore, useT } from '../../hooks/useLang'
-import { AvatarDisplay } from '../../pages/ProfilePage'
+import { AvatarDisplay } from '../ui/AvatarDisplay'
 
 function LangToggle() {
   const { lang, toggle } = useLangStore()
