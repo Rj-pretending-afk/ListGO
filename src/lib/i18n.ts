@@ -2,7 +2,8 @@ export const zh = {
   // Header
   login: '登录', register: '注册', profileSettings: '个人设置', logout: '退出登录', switchAccount: '切换账号',
   // Home
-  loading: '加载中…', myLists: '我的清单', newList: '新建',
+  loading: '加载中…', myLists: '我的清单', recentLists: '最近访问', newList: '新建',
+  recentEmpty: '暂无最近访问的清单', recentVisited: '访问',
   newListPlaceholder: '清单标题（必填）', cancel: '取消', create: '创建',
   emptyHint: '还没有清单，点「新建」开始', moduleCount: '个模块',
   // List page
@@ -116,7 +117,8 @@ export type I18nKey = keyof typeof zh
 
 export const en: Record<I18nKey, string> = {
   login: 'Login', register: 'Sign Up', profileSettings: 'Settings', logout: 'Logout', switchAccount: 'Switch Account',
-  loading: 'Loading…', myLists: 'My Lists', newList: 'New',
+  loading: 'Loading…', myLists: 'My Lists', recentLists: 'Recent', newList: 'New',
+  recentEmpty: 'No recently visited lists', recentVisited: 'Visited',
   newListPlaceholder: 'List title (required)', cancel: 'Cancel', create: 'Create',
   emptyHint: 'No lists yet. Click "New" to get started.', moduleCount: 'modules',
   addModule: '+ Add Module', collapseMenu: 'Close',

@@ -8,6 +8,7 @@ import { useAppStore, parseTheme } from '../lib/store'
 import { api, listApi } from '../lib/api'
 import { getOwnerToken } from '../lib/ownerToken'
 import { getAnonIdentity, hasSetAnonIdentity } from '../lib/anonIdentity'
+import { recordRecentList } from '../hooks/useRecentLists'
 import type { List, Module } from '../types/list.types'
 
 type FetchState = 'idle' | 'loading' | 'not_found' | 'forbidden'
@@ -38,7 +39,9 @@ export default function ListPage() {
           await importList(list)
         } else {
           setRemoteList(list)
-          // Prompt anonymous (non-logged-in) visitors to pick an identity
+          if (user) {
+            recordRecentList({ id: list.id, title: list.title, ownerUsername: list.ownerUsername, updatedAt: list.updatedAt })
+          }
           if (!user && !hasSetAnonIdentity()) {
             setShowIdentitySheet(true)
           }
