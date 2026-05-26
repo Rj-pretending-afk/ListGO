@@ -12,6 +12,9 @@ interface ListRow {
   permission: string; version: number
   created_at: number; updated_at: number; last_accessed_at: number
   owner_theme?: string | null
+  owner_username?: string | null
+  owner_avatar_color?: string | null
+  owner_avatar_image?: string | null
 }
 
 function serialize(row: ListRow) {
@@ -21,7 +24,10 @@ function serialize(row: ListRow) {
     title:         row.title,
     ownerId:       row.owner_id ?? undefined,
     ownerToken:    row.owner_token ?? undefined,
-    ownerTheme:    row.owner_theme ?? undefined,
+    ownerTheme:       row.owner_theme ?? undefined,
+    ownerUsername:    row.owner_username ?? undefined,
+    ownerAvatarColor: row.owner_avatar_color ?? undefined,
+    ownerAvatarImage: row.owner_avatar_image ?? undefined,
     permission:    row.permission,
     version:       row.version,
     createdAt:     row.created_at,
@@ -83,7 +89,7 @@ export async function handleGetList(
   id: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
   const row = await env.DB.prepare(
-    'SELECT l.*, u.theme AS owner_theme FROM lists l LEFT JOIN users u ON l.owner_id = u.id WHERE l.id = ?'
+    'SELECT l.*, u.theme AS owner_theme, u.username AS owner_username, u.avatar_color AS owner_avatar_color, u.avatar_image AS owner_avatar_image FROM lists l LEFT JOIN users u ON l.owner_id = u.id WHERE l.id = ?'
   ).bind(id).first<ListRow>()
   if (!row) return err('Not found', 404)
 

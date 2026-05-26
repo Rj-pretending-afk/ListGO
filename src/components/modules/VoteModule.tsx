@@ -187,7 +187,7 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
           className="flex items-center gap-1 text-xs mb-3 hover:opacity-80 transition-opacity"
           style={{ color: 'var(--color-text)', opacity: 0.35 }}
         >
-          <AlignLeft size={12} /> 添加描述
+          <AlignLeft size={12} /> {module.description ? '展开描述' : '添加描述'}
         </button>
       )}
       {(showDesc || (!canEdit && module.description)) && (
@@ -196,7 +196,7 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
           onChange={v => update({ description: v || undefined })}
           canEdit={canEdit}
           contentFontSettings={contentFontSettings}
-          onClose={canEdit ? () => { update({ description: undefined }); setShowDesc(false) } : undefined}
+          onClose={canEdit ? () => setShowDesc(false) : undefined}
           onActivate={() => setSelectedOptId(null)}
           clearKey={descClearKey}
         />

@@ -14,6 +14,9 @@ export interface List {
   ownerId?: string
   ownerToken?: string
   ownerTheme?: string
+  ownerUsername?: string
+  ownerAvatarColor?: string
+  ownerAvatarImage?: string
   permission: ListPermission
   invitedUsernames?: string[]
   createdAt: number
