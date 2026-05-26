@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Trash2, KeyRound, ShieldCheck, ShieldOff } from 'lucide-react'
 import { adminApi } from '../../lib/api'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
+import { useAuthStore } from '../../hooks/useAuth'
 
 export interface AdminUser {
   id: string; username: string; displayName: string | null
@@ -29,6 +30,8 @@ function UserRow({ user, onRefresh, initialExpanded = false }: {
   user: AdminUser; onRefresh: () => void; initialExpanded?: boolean
 }) {
   const navigate = useNavigate()
+  const currentUserId = useAuthStore(s => s.user?.id)
+  const isSelf = user.id === currentUserId
   const [expanded, setExpanded] = useState(initialExpanded)
   const [lists, setLists] = useState<UserList[] | null>(null)
   const [loadingLists, setLoadingLists] = useState(false)
@@ -152,13 +155,13 @@ function UserRow({ user, onRefresh, initialExpanded = false }: {
         <div className="flex items-center gap-1">
           {(() => {
             const lvl = user.adminLevel ?? (user.isAdmin ? 1 : 0)
-            const titles = ['设为管理员', '升为超管', '撤销权限']
+            const titles = ['设为管理员', '升级权限', '撤销权限']
             const icons = [<ShieldOff size={15} />, <ShieldCheck size={15} />, <ShieldCheck size={15} />]
             const colors = ['var(--color-text)', 'var(--color-primary)', '#ef4444']
             return (
-              <button onClick={() => void cycleAdmin()} disabled={busy} title={titles[lvl]}
-                className="p-1.5 rounded-lg hover:opacity-70 transition-opacity disabled:opacity-30"
-                style={{ color: colors[lvl] }}>
+              <button onClick={() => void cycleAdmin()} disabled={busy || isSelf} title={isSelf ? '不能修改自己的权限' : titles[lvl]}
+                className="p-1.5 rounded-lg hover:opacity-70 transition-opacity disabled:opacity-20"
+                style={{ color: isSelf ? 'var(--color-text)' : colors[lvl] }}>
                 {icons[lvl]}
               </button>
             )
