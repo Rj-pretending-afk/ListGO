@@ -1,9 +1,13 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
-import { Plus, Trash2, ImagePlus, Link, X } from 'lucide-react'
+import { Plus, Trash2, ImagePlus, Link, X, AlignLeft } from 'lucide-react'
 import { generateItemId } from '../../lib/shortid'
 import type { VoteModule as VoteModuleType, VoteOption } from '../../types/list.types'
 import { VoteResults } from './VoteResults'
+import { VoteDescriptionEditor } from './VoteDescriptionEditor'
 import { IMEInput } from '../ui/IMEInput'
+import { ImageResizeOverlay } from '../editor/ImageResizeOverlay'
+import { CropModal } from '../editor/CropModal'
 import { useT } from '../../hooks/useLang'
 import { contentFontStyle } from '../ui/ContentFormattingBar'
 import type { ContentFontSettings } from '../../types/list.types'
@@ -13,6 +17,8 @@ import { useAppStore } from '../../lib/store'
 import { getAnonVoterId } from '../../lib/anonId'
 import { getAnonIdentity, getAnonDisplayName } from '../../lib/anonIdentity'
 import { resizeDataUrl } from '../../lib/imageUtils'
+
+const OPT_IMG_DEFAULT = 200 // default option image width in px
 
 interface VoteModuleProps {
   module: VoteModuleType
@@ -35,16 +41,23 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
   useEffect(() => { setLocalVotes(module.votes) }, [module.votes])
   useEffect(() => { setLocalVoterNames(module.voterNames ?? {}) }, [module.voterNames])
 
-  // Per-option image picker state
+  // Description editor visibility
+  const [showDesc, setShowDesc] = useState(!!module.description)
+
+  // Per-option image picker
   const [imgPickerOpen, setImgPickerOpen] = useState<string | null>(null)
   const [urlInputs, setUrlInputs] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
-  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  // Per-option image resize / crop
+  const imgRefs = useRef<Record<string, HTMLImageElement | null>>({})
+  const originalOptImages = useRef<Record<string, string>>({})
+  const [selectedOptId, setSelectedOptId] = useState<string | null>(null)
+  const [showCropFor, setShowCropFor] = useState<string | null>(null)
 
   const myVotes = localVotes[voterId] ?? []
   const totalVotes = Object.values(localVotes).reduce((sum, ids) => sum + ids.length, 0)
   const update = (patch: Partial<VoteModuleType>) => onChange({ ...module, ...patch })
-
   const updateOption = (id: string, patch: Partial<VoteOption>) =>
     update({ options: module.options.map(o => o.id === id ? { ...o, ...patch } : o) })
 
@@ -52,9 +65,7 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
     const next = module.multiSelect
       ? myVotes.includes(optionId) ? myVotes.filter(id => id !== optionId) : [...myVotes, optionId]
       : myVotes.includes(optionId) ? [] : [optionId]
-
     setLocalVotes(v => ({ ...v, [voterId]: next }))
-
     try {
       const displayName = !isAnon
         ? (user?.displayName ?? user?.username)
@@ -78,16 +89,16 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
     })
   }
 
+  // ── Option image upload ──
   const handleFileUpload = async (optId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
-
     if (user) {
       setUploading(u => ({ ...u, [optId]: true }))
       try {
         const { url } = await uploadApi.uploadImage(file)
-        updateOption(optId, { image: url })
+        updateOption(optId, { image: url, imageWidth: OPT_IMG_DEFAULT })
         setImgPickerOpen(null)
       } catch { /* silent */ }
       finally { setUploading(u => ({ ...u, [optId]: false })) }
@@ -96,7 +107,7 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
       reader.onload = async ev => {
         if (!ev.target?.result) return
         const src = await resizeDataUrl(ev.target.result as string)
-        updateOption(optId, { image: src })
+        updateOption(optId, { image: src, imageWidth: OPT_IMG_DEFAULT })
         setImgPickerOpen(null)
       }
       reader.readAsDataURL(file)
@@ -106,14 +117,88 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
   const handleUrlInsert = (optId: string) => {
     const url = urlInputs[optId]?.trim()
     if (url) {
-      updateOption(optId, { image: url })
+      updateOption(optId, { image: url, imageWidth: OPT_IMG_DEFAULT })
       setUrlInputs(u => ({ ...u, [optId]: '' }))
       setImgPickerOpen(null)
     }
   }
 
+  // ── Option image resize / crop ──
+  const handleOptImageClick = (optId: string) => {
+    const imgEl = imgRefs.current[optId]
+    if (!imgEl) return
+    // Restore dataset if a previous crop exists
+    if (originalOptImages.current[optId]) imgEl.dataset.originalSrc = originalOptImages.current[optId]
+    setSelectedOptId(optId)
+  }
+
+  const selectedImgEl = selectedOptId ? imgRefs.current[selectedOptId] ?? null : null
+
+  const handleOptResizeEnd = () => {
+    if (!selectedOptId) return
+    const w = imgRefs.current[selectedOptId]?.clientWidth
+    if (w) updateOption(selectedOptId, { imageWidth: w })
+  }
+
+  const handleOptCropOpen = () => {
+    if (!selectedOptId) return
+    const opt = module.options.find(o => o.id === selectedOptId)
+    if (!opt?.image) return
+    if (!originalOptImages.current[selectedOptId])
+      originalOptImages.current[selectedOptId] = opt.image
+    setShowCropFor(selectedOptId)
+  }
+
+  const handleOptCropConfirm = (dataUrl: string) => {
+    if (!showCropFor) return
+    updateOption(showCropFor, { image: dataUrl, imageWidth: OPT_IMG_DEFAULT })
+    setShowCropFor(null)
+    setSelectedOptId(null)
+  }
+
+  const handleOptRestore = () => {
+    if (!selectedOptId) return
+    const original = originalOptImages.current[selectedOptId]
+    if (!original) return
+    delete originalOptImages.current[selectedOptId]
+    updateOption(selectedOptId, { image: original, imageWidth: OPT_IMG_DEFAULT })
+    setSelectedOptId(null)
+  }
+
+  const handleOptRemoveImg = () => {
+    if (!selectedOptId) return
+    delete originalOptImages.current[selectedOptId]
+    updateOption(selectedOptId, { image: undefined, imageWidth: undefined })
+    setSelectedOptId(null)
+  }
+
+  const cropSrc = showCropFor
+    ? (module.options.find(o => o.id === showCropFor)?.image ?? null)
+    : null
+
   return (
-    <div className="space-y-3">
+    <div onClick={() => setSelectedOptId(null)}>
+      {/* ── Description (rich text) ── */}
+      {canEdit && !showDesc && (
+        <button
+          onClick={e => { e.stopPropagation(); setShowDesc(true) }}
+          className="flex items-center gap-1 text-xs mb-3 hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--color-text)', opacity: 0.35 }}
+        >
+          <AlignLeft size={12} /> 添加描述
+        </button>
+      )}
+      {(showDesc || (!canEdit && module.description)) && (
+        <VoteDescriptionEditor
+          value={module.description ?? ''}
+          onChange={v => update({ description: v || undefined })}
+          canEdit={canEdit}
+          contentFontSettings={contentFontSettings}
+          onClose={canEdit ? () => { update({ description: undefined }); setShowDesc(false) } : undefined}
+        />
+      )}
+
+      {/* ── Vote controls ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {[
           { label: module.multiSelect ? t('voteMulti') : t('voteSingle'), active: module.multiSelect, onClick: () => canEdit && update({ multiSelect: !module.multiSelect }) },
@@ -137,27 +222,25 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
         )}
       </div>
 
-      <div className="space-y-2">
+      {/* ── Options ── */}
+      <div className="space-y-2 mt-3">
         {module.options.map(opt => {
           const voted = myVotes.includes(opt.id)
           const pickerOpen = imgPickerOpen === opt.id
           const isUploading = uploading[opt.id]
 
           return (
-            <div key={opt.id} className="space-y-1">
+            <div key={opt.id} className="space-y-1" onClick={e => e.stopPropagation()}>
               <div className="flex items-center gap-2 group">
-                {/* Vote button */}
                 <button onClick={() => castVote(opt.id)}
                   className="flex-shrink-0 flex items-center justify-center"
                   style={{ width: 44, height: 44, margin: -12 }}>
-                  <span
-                    className="w-5 h-5 border-2 transition-all block"
-                    style={{
-                      borderColor: voted ? 'var(--color-primary)' : 'var(--color-text)',
-                      backgroundColor: voted ? 'var(--color-primary)' : 'transparent',
-                      borderRadius: module.multiSelect ? '4px' : '50%',
-                      opacity: voted ? 1 : 0.55,
-                    }} />
+                  <span className="w-5 h-5 border-2 transition-all block" style={{
+                    borderColor: voted ? 'var(--color-primary)' : 'var(--color-text)',
+                    backgroundColor: voted ? 'var(--color-primary)' : 'transparent',
+                    borderRadius: module.multiSelect ? '4px' : '50%',
+                    opacity: voted ? 1 : 0.55,
+                  }} />
                 </button>
 
                 <IMEInput value={opt.text}
@@ -167,11 +250,10 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
                   className="flex-1 bg-transparent outline-none text-sm"
                   style={{ ...cfStyle, color: cfStyle.color ?? 'var(--color-text)' }} />
 
-                {/* Image button — only in edit mode */}
                 {canEdit && (
                   <button
                     onClick={() => setImgPickerOpen(pickerOpen ? null : opt.id)}
-                    className="opacity-20 group-hover:opacity-70 [@media(hover:none)]:opacity-50 transition-opacity flex-shrink-0 p-1.5 -m-1.5"
+                    className="opacity-20 group-hover:opacity-60 [@media(hover:none)]:opacity-50 transition-opacity flex-shrink-0 p-1.5 -m-1.5"
                     style={{ color: pickerOpen ? 'var(--color-primary)' : 'var(--color-text)' }}
                     title="插入图片"
                   >
@@ -188,20 +270,30 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
                 )}
               </div>
 
-              {/* Option image display */}
+              {/* Option image */}
               {opt.image && (
-                <div className="relative ml-8 group/img">
+                <div className="relative ml-8">
                   <img
                     src={opt.image}
+                    ref={el => { imgRefs.current[opt.id] = el }}
                     alt=""
-                    style={{ maxWidth: '100%', borderRadius: 6, display: 'block' }}
+                    onClick={canEdit ? () => handleOptImageClick(opt.id) : undefined}
+                    style={{
+                      width: opt.imageWidth ?? OPT_IMG_DEFAULT,
+                      maxWidth: '100%',
+                      minHeight: 40,
+                      borderRadius: 6,
+                      display: 'block',
+                      cursor: canEdit ? 'pointer' : undefined,
+                      outline: selectedOptId === opt.id ? '2px solid var(--color-primary)' : undefined,
+                    }}
                   />
-                  {canEdit && (
+                  {/* Quick remove when not in overlay mode */}
+                  {canEdit && selectedOptId !== opt.id && (
                     <button
-                      onClick={() => updateOption(opt.id, { image: undefined })}
-                      className="absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover/img:opacity-100 [@media(hover:none)]:opacity-70 transition-opacity"
+                      onClick={() => { delete originalOptImages.current[opt.id]; updateOption(opt.id, { image: undefined, imageWidth: undefined }) }}
+                      className="absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-70 transition-opacity"
                       style={{ backgroundColor: 'rgba(0,0,0,0.55)', color: 'white' }}
-                      title="移除图片"
                     >
                       <X size={12} />
                     </button>
@@ -209,25 +301,16 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
                 </div>
               )}
 
-              {/* Image picker */}
+              {/* Image picker row */}
               {canEdit && pickerOpen && (
-                <div
-                  className="ml-8 flex items-center gap-2 flex-wrap py-1.5 px-2 rounded-lg"
-                  style={{ backgroundColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}
-                >
+                <div className="ml-8 flex items-center gap-2 flex-wrap py-1.5 px-2 rounded-lg"
+                  style={{ backgroundColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
                   <label
-                    className="flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer hover:opacity-70 transition-opacity"
-                    style={{ color: 'var(--color-text)', opacity: isUploading ? 0.35 : 0.65, pointerEvents: isUploading ? 'none' : undefined }}
-                  >
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer hover:opacity-70"
+                    style={{ color: 'var(--color-text)', opacity: isUploading ? 0.35 : 0.65, pointerEvents: isUploading ? 'none' : undefined }}>
                     <ImagePlus size={12} /> {isUploading ? '上传中…' : '上传'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      ref={el => { fileInputRefs.current[opt.id] = el }}
-                      onChange={e => handleFileUpload(opt.id, e)}
-                      disabled={isUploading}
-                    />
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={e => handleFileUpload(opt.id, e)} disabled={isUploading} />
                   </label>
                   <div className="flex items-center gap-1 flex-1 min-w-0">
                     <Link size={12} style={{ color: 'var(--color-text)', opacity: 0.5, flexShrink: 0 }} />
@@ -244,11 +327,9 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
                       style={{ color: 'var(--color-text)' }}
                     />
                     {urlInputs[opt.id]?.trim() && (
-                      <button
-                        onClick={() => handleUrlInsert(opt.id)}
+                      <button onClick={() => handleUrlInsert(opt.id)}
                         className="text-xs px-2 py-0.5 rounded font-medium hover:opacity-80 flex-shrink-0"
-                        style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
-                      >
+                        style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
                         插入
                       </button>
                     )}
@@ -258,6 +339,7 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
             </div>
           )
         })}
+
         {canEdit && (
           <button onClick={addOption} className="flex items-center gap-1 text-xs mt-1 hover:opacity-80 transition-opacity"
             style={{ color: 'var(--color-primary)', opacity: 0.75 }}>
@@ -274,6 +356,27 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
           myVotes={myVotes}
           anonymous={module.anonymous}
         />
+      )}
+
+      {/* ── Portals: resize overlay + crop modal ── */}
+      {canEdit && selectedImgEl && createPortal(
+        <ImageResizeOverlay
+          imgEl={selectedImgEl}
+          onResizeEnd={handleOptResizeEnd}
+          onCrop={handleOptCropOpen}
+          onRemove={handleOptRemoveImg}
+          onRestore={originalOptImages.current[selectedOptId!] ? handleOptRestore : undefined}
+        />,
+        document.body
+      )}
+
+      {cropSrc && createPortal(
+        <CropModal
+          src={cropSrc}
+          onConfirm={handleOptCropConfirm}
+          onClose={() => setShowCropFor(null)}
+        />,
+        document.body
       )}
     </div>
   )

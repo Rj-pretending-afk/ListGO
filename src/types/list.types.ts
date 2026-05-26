@@ -100,6 +100,7 @@ export interface VoteModule {
   customLabel?: string
   contentFontSettings?: ContentFontSettings
   editPermission?: ModuleEditPermission
+  description?: string
   createdAt?: number
   updatedAt?: number
 }
@@ -108,4 +109,5 @@ export interface VoteOption {
   id: string
   text: string
   image?: string
+  imageWidth?: number
 }
