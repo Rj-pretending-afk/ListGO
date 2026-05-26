@@ -27,9 +27,11 @@ export function FontSettingsPicker({ fontSettings, onFontChange }: FontSettingsP
     e.stopPropagation()
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect()
-      const panelW = 224 + 32
-      const top = Math.max(8, Math.min(r.bottom + 4, window.innerHeight - 280 - 8))
-      const left = Math.max(4, Math.min(r.left, window.innerWidth - panelW - 4))
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+      const panelW = 14 * rem
+      const panelH = 220
+      const top = Math.max(8, Math.min(r.bottom + 4, window.innerHeight - panelH - 8))
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - panelW - 8))
       setPanelPos({ top, left })
     }
     setOpen(v => !v)

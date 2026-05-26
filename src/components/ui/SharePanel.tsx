@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { X } from 'lucide-react'
 import { useT } from '../../hooks/useLang'
+import { userApi } from '../../lib/api'
 import type { List, ListPermission } from '../../types/list.types'
 
 interface SharePanelProps {
   list: List
   onPermissionChange: (permission: ListPermission) => void
+  onInvitedUsersChange: (usernames: string[]) => void
   onClose: () => void
 }
 
@@ -15,9 +18,40 @@ const PERMISSIONS: { value: ListPermission; labelKey: 'permPublic' | 'permLogged
   { value: 'private',     labelKey: 'permPrivate' },
 ]
 
-export function SharePanel({ list, onPermissionChange, onClose }: SharePanelProps) {
+export function SharePanel({ list, onPermissionChange, onInvitedUsersChange, onClose }: SharePanelProps) {
   const t = useT()
   const [copied, setCopied] = useState(false)
+  const [inviteInput, setInviteInput] = useState('')
+  const [suggestions, setSuggestions] = useState<{ username: string; displayName: string }[]>([])
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const invited = list.invitedUsernames ?? []
+
+  useEffect(() => {
+    if (inviteInput.length < 1) { setSuggestions([]); return }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await userApi.search(inviteInput)
+        setSuggestions(res.filter(u => !invited.includes(u.username)))
+      } catch {
+        setSuggestions([])
+      }
+    }, 300)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inviteInput])
+
+  const addUser = (username: string) => {
+    if (!invited.includes(username)) {
+      onInvitedUsersChange([...invited, username])
+    }
+    setInviteInput('')
+    setSuggestions([])
+  }
+
+  const removeUser = (username: string) => {
+    onInvitedUsersChange(invited.filter(u => u !== username))
+  }
 
   const shareUrl = `${window.location.origin}/l/${list.id}`
 
@@ -27,7 +61,6 @@ export function SharePanel({ list, onPermissionChange, onClose }: SharePanelProp
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Fallback for browsers without clipboard API
       const ta = document.createElement('textarea')
       ta.value = shareUrl
       document.body.appendChild(ta)
@@ -72,7 +105,7 @@ export function SharePanel({ list, onPermissionChange, onClose }: SharePanelProp
           </div>
           <button
             onClick={copyLink}
-            className="w-full py-1.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+            className="w-full py-1.5 rounded-lg text-sm font-medium btn-primary hover:opacity-80"
             style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
           >
             {copied ? t('shareLinkCopied') : t('shareCopyLink')}
@@ -105,6 +138,74 @@ export function SharePanel({ list, onPermissionChange, onClose }: SharePanelProp
             })}
           </div>
         </div>
+
+        {/* Invite users — only shown for invite_only */}
+        {list.permission === 'invite_only' && (
+          <div className="space-y-2">
+            <div className="text-xs font-medium" style={{ color: 'var(--color-text)', opacity: 0.5 }}>
+              受邀用户
+            </div>
+
+            {/* Current invitees */}
+            {invited.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {invited.map(u => (
+                  <span
+                    key={u}
+                    className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+                    style={{
+                      backgroundColor: 'color-mix(in srgb, var(--color-primary) 15%, transparent)',
+                      color: 'var(--color-primary)',
+                    }}
+                  >
+                    {u}
+                    <button onClick={() => removeUser(u)} className="hover:opacity-60">
+                      <X size={10} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Search input */}
+            <div className="relative">
+              <input
+                value={inviteInput}
+                onChange={e => setInviteInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && suggestions.length > 0) addUser(suggestions[0].username)
+                }}
+                placeholder="搜索用户名…"
+                className="w-full px-3 py-1.5 rounded-lg text-sm outline-none"
+                style={{
+                  backgroundColor: 'var(--color-border)',
+                  color: 'var(--color-text)',
+                  border: '1px solid transparent',
+                }}
+              />
+              {suggestions.length > 0 && (
+                <div
+                  className="absolute left-0 right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-50"
+                  style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+                >
+                  {suggestions.map(s => (
+                    <button
+                      key={s.username}
+                      onClick={() => addUser(s.username)}
+                      className="w-full text-left px-3 py-2 text-sm hover:opacity-80 transition-opacity"
+                      style={{ color: 'var(--color-text)' }}
+                    >
+                      <span className="font-medium">{s.username}</span>
+                      {s.displayName !== s.username && (
+                        <span style={{ opacity: 0.5 }}> · {s.displayName}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </>
   )

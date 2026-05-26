@@ -114,7 +114,7 @@ export default function ProfilePage() {
   }
 
   const card = { backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }
-  const inputCls = 'w-full px-3 py-2 rounded-lg text-sm outline-none'
+  const inputCls = 'flex-1 min-w-0 px-3 py-2 rounded-lg text-sm outline-none'
   const inputStyle = { backgroundColor: 'var(--color-border)', color: 'var(--color-text)', border: '1px solid transparent' }
   const secLabel = { color: 'var(--color-text)', opacity: 0.6 }
 
@@ -159,7 +159,7 @@ export default function ProfilePage() {
               style={{ width: 52, height: 52, border: `2px solid ${user.avatarColor}` }} />
             <div className="flex flex-col gap-2 flex-1">
               <button onClick={savePendingAvatar} disabled={avatarLoading}
-                className="w-full py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40"
+                className="w-full py-1.5 rounded-lg text-xs font-medium btn-primary hover:opacity-80 disabled:opacity-40"
                 style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
                 {avatarLoading ? t('profileProcessing') : t('profileSave')}
               </button>
@@ -172,61 +172,45 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div className="flex items-center justify-center gap-6">
-          {/* Avatar — 76px */}
+        <div className="flex flex-col items-center gap-4">
           <AvatarDisplay user={user} size={76} />
 
-          {/* Button + color columns */}
-          <div className="flex flex-col gap-3">
-            {/* Row 1: upload + colors 0-3 */}
-            <div className="flex items-center gap-4">
-              <button onClick={() => fileRef.current?.click()} disabled={avatarLoading || !!pendingAvatar}
-                className="w-28 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-40 text-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                {t('profileUploadAvatar')}
+          {/* Upload / remove buttons */}
+          <div className="flex gap-2 w-full">
+            <button onClick={() => fileRef.current?.click()} disabled={avatarLoading || !!pendingAvatar}
+              className="flex-1 py-1.5 rounded-lg text-xs font-medium btn-primary hover:opacity-80 disabled:opacity-40 text-center"
+              style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+              {t('profileUploadAvatar')}
+            </button>
+            {user.avatarImage && (
+              <button onClick={removeAvatar} disabled={avatarLoading}
+                className="flex-1 py-1.5 rounded-lg text-xs hover:opacity-70 disabled:opacity-40 text-center"
+                style={{ color: '#ef4444', border: '1px solid var(--color-border)' }}>
+                {t('profileRemoveAvatar')}
               </button>
-              <div className="flex gap-2.5">
-                {AVATAR_COLORS.slice(0, 4).map(({ label, value }) => (
-                  <button key={value} onClick={() => saveColor(value)} title={label}
-                    className="w-8 h-8 rounded-full transition-transform hover:scale-110 flex-shrink-0"
-                    style={{ backgroundColor: value, outline: user.avatarColor === value ? '3px solid var(--color-text)' : 'none', outlineOffset: '2px' }} />
-                ))}
-              </div>
-            </div>
+            )}
+          </div>
 
-            {/* Row 2: remove (or spacer) + colors 4-6 + custom */}
-            <div className="flex items-center gap-4">
-              {user.avatarImage ? (
-                <button onClick={removeAvatar} disabled={avatarLoading}
-                  className="w-28 py-1.5 rounded-lg text-xs hover:opacity-70 disabled:opacity-40 text-center flex-shrink-0"
-                  style={{ color: '#ef4444', border: '1px solid var(--color-border)' }}>
-                  {t('profileRemoveAvatar')}
-                </button>
-              ) : (
-                <div className="w-28 flex-shrink-0" />
+          {/* Color swatches — wrapping row */}
+          <div className="flex flex-wrap gap-2.5 justify-center">
+            {AVATAR_COLORS.map(({ label, value }) => (
+              <button key={value} onClick={() => saveColor(value)} title={label}
+                className="w-8 h-8 rounded-full transition-transform hover:scale-110 flex-shrink-0"
+                style={{ backgroundColor: value, outline: user.avatarColor === value ? '3px solid var(--color-text)' : 'none', outlineOffset: '2px' }} />
+            ))}
+            <label className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform relative"
+              style={{
+                borderColor: 'var(--color-border)',
+                backgroundColor: AVATAR_COLORS.some(c => c.value === user.avatarColor) ? 'transparent' : user.avatarColor,
+              }}
+              title="Custom">
+              {AVATAR_COLORS.some(c => c.value === user.avatarColor) && (
+                <Plus size={14} strokeWidth={1.5} className="pointer-events-none"
+                  style={{ color: 'var(--color-text)', opacity: 0.5 }} />
               )}
-              <div className="flex gap-2.5">
-                {AVATAR_COLORS.slice(4).map(({ label, value }) => (
-                  <button key={value} onClick={() => saveColor(value)} title={label}
-                    className="w-8 h-8 rounded-full transition-transform hover:scale-110 flex-shrink-0"
-                    style={{ backgroundColor: value, outline: user.avatarColor === value ? '3px solid var(--color-text)' : 'none', outlineOffset: '2px' }} />
-                ))}
-                {/* Custom color — "+" centered via flex, no absolute */}
-                <label className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform relative"
-                  style={{
-                    borderColor: 'var(--color-border)',
-                    backgroundColor: AVATAR_COLORS.some(c => c.value === user.avatarColor) ? 'transparent' : user.avatarColor,
-                  }}
-                  title="Custom">
-                  {AVATAR_COLORS.some(c => c.value === user.avatarColor) && (
-                    <Plus size={14} strokeWidth={1.5} className="pointer-events-none"
-                      style={{ color: 'var(--color-text)', opacity: 0.5 }} />
-                  )}
-                  <input type="color" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    value={user.avatarColor} onChange={e => saveColor(e.target.value)} />
-                </label>
-              </div>
-            </div>
+              <input type="color" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                value={user.avatarColor} onChange={e => saveColor(e.target.value)} />
+            </label>
           </div>
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} />
@@ -239,7 +223,7 @@ export default function ProfilePage() {
           <input value={displayName} onChange={e => setDisplayName(e.target.value)}
             className={inputCls} style={inputStyle} maxLength={40} />
           <button onClick={saveName} disabled={nameLoading || !displayName.trim()}
-            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-40"
+            className="px-4 py-2 rounded-lg text-sm font-medium btn-primary hover:opacity-80 disabled:opacity-40 whitespace-nowrap flex-shrink-0"
             style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
             {nameLoading ? t('profileSaving') : t('profileSave')}
           </button>
@@ -294,7 +278,7 @@ export default function ProfilePage() {
           {pwError && <p className="text-xs" style={{ color: '#ef4444' }}>{pwError}</p>}
           {pwMsg  && <p className="text-xs" style={{ color: 'var(--color-primary)' }}>{pwMsg}</p>}
           <button type="submit" disabled={pwLoading}
-            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-40"
+            className="px-4 py-2 rounded-lg text-sm font-medium btn-primary hover:opacity-80 disabled:opacity-40"
             style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
             {pwLoading ? t('profileChangingPw') : t('profileChangePw')}
           </button>

@@ -1,22 +1,27 @@
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
+import { useParams, useLocation } from 'react-router-dom'
 import { ListView } from '../components/List/ListView'
+import { AnonIdentitySheet } from '../components/ui/AnonIdentitySheet'
 import { useListById } from '../hooks/useList'
 import { useAuthStore } from '../hooks/useAuth'
-import { useAppStore } from '../lib/store'
-import { api } from '../lib/api'
+import { useAppStore, parseTheme } from '../lib/store'
+import { api, listApi } from '../lib/api'
 import { getOwnerToken } from '../lib/ownerToken'
-import type { List } from '../types/list.types'
+import { getAnonIdentity, hasSetAnonIdentity } from '../lib/anonIdentity'
+import type { List, Module } from '../types/list.types'
 
 type FetchState = 'idle' | 'loading' | 'not_found' | 'forbidden'
 
 export default function ListPage() {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
+  const adminView = (location.state as { fromAdmin?: boolean } | null)?.fromAdmin === true
   const user = useAuthStore(s => s.user)
   const localList = useListById(id ?? '')
   const importList = useAppStore(s => s.importList)
   const [fetchState, setFetchState] = useState<FetchState>('idle')
   const [remoteList, setRemoteList] = useState<List | null>(null)
+  const [showIdentitySheet, setShowIdentitySheet] = useState(false)
 
   useEffect(() => {
     if (!id || localList) return
@@ -25,16 +30,18 @@ export default function ListPage() {
     setFetchState('loading')
     api.get<List>(`/lists/${id}${qs}`)
       .then(async data => {
-        // Normalize: ensure background exists
         const list: List = { background: { type: 'color', value: '' }, ...data }
         const isOwner = user
           ? list.ownerId === user.id
           : !!list.ownerToken && list.ownerToken === ownerToken
         if (isOwner) {
-          // Save to local store so edits can be synced
           await importList(list)
         } else {
           setRemoteList(list)
+          // Prompt anonymous (non-logged-in) visitors to pick an identity
+          if (!user && !hasSetAnonIdentity()) {
+            setShowIdentitySheet(true)
+          }
         }
         setFetchState('idle')
       })
@@ -50,9 +57,24 @@ export default function ListPage() {
     ? (user ? list.ownerId === user.id : !!list.ownerToken && list.ownerToken === ownerToken)
     : false
 
-  if (!id) {
-    return <ListNotFound />
-  }
+  // Apply owner's theme when viewing someone else's list; restore on leave
+  useEffect(() => {
+    if (canEdit || adminView || !list?.ownerTheme) return
+    const prev = document.documentElement.dataset.theme
+    document.documentElement.dataset.theme = parseTheme(list.ownerTheme)
+    return () => { document.documentElement.dataset.theme = parseTheme(prev ?? 'clay-light') }
+  }, [canEdit, adminView, list?.ownerTheme])
+
+  // Non-owner collaborative module update: optimistic local state + PATCH to server
+  const handleRemoteModuleUpdate = useCallback((module: Module) => {
+    setRemoteList(prev => prev
+      ? { ...prev, modules: prev.modules.map(m => m.id === module.id ? module : m) }
+      : prev
+    )
+    void listApi.patchModule(list!.id, module).catch(() => undefined)
+  }, [list])
+
+  if (!id) return <ListNotFound />
 
   if (fetchState === 'loading') {
     return (
@@ -70,11 +92,24 @@ export default function ListPage() {
     )
   }
 
-  if (!list) {
-    return <ListNotFound />
-  }
+  if (!list) return <ListNotFound />
 
-  return <ListView list={list} canEdit={canEdit} />
+  return (
+    <>
+      {showIdentitySheet && (
+        <AnonIdentitySheet
+          initial={getAnonIdentity()}
+          onDone={() => setShowIdentitySheet(false)}
+        />
+      )}
+      <ListView
+        list={list}
+        canEdit={canEdit}
+        adminView={adminView}
+        onModuleUpdate={!canEdit && remoteList ? handleRemoteModuleUpdate : undefined}
+      />
+    </>
+  )
 }
 
 function ListNotFound() {

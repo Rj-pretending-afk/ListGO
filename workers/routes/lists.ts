@@ -11,6 +11,7 @@ interface ListRow {
   owner_id: string | null; owner_token: string | null
   permission: string; version: number
   created_at: number; updated_at: number; last_accessed_at: number
+  owner_theme?: string | null
 }
 
 function serialize(row: ListRow) {
@@ -20,6 +21,7 @@ function serialize(row: ListRow) {
     title:         row.title,
     ownerId:       row.owner_id ?? undefined,
     ownerToken:    row.owner_token ?? undefined,
+    ownerTheme:    row.owner_theme ?? undefined,
     permission:    row.permission,
     version:       row.version,
     createdAt:     row.created_at,
@@ -70,17 +72,19 @@ export async function handleGetUserLists(
   auth: AuthUser, env: Env, json: JsonFn
 ): Promise<Response> {
   const rows = await env.DB.prepare(
-    'SELECT id, title, permission, version, updated_at FROM lists WHERE owner_id = ? ORDER BY updated_at DESC'
-  ).bind(auth.userId).all<{ id: string; title: string; permission: string; version: number; updated_at: number }>()
+    'SELECT * FROM lists WHERE owner_id = ? ORDER BY updated_at DESC'
+  ).bind(auth.userId).all<ListRow>()
 
-  return json(rows.results ?? [])
+  return json((rows.results ?? []).map(serialize))
 }
 
 // ── GET /lists/:id ──
 export async function handleGetList(
   id: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
-  const row = await env.DB.prepare('SELECT * FROM lists WHERE id = ?').bind(id).first<ListRow>()
+  const row = await env.DB.prepare(
+    'SELECT l.*, u.theme AS owner_theme FROM lists l LEFT JOIN users u ON l.owner_id = u.id WHERE l.id = ?'
+  ).bind(id).first<ListRow>()
   if (!row) return err('Not found', 404)
 
   const url         = new URL(request.url)
@@ -89,10 +93,27 @@ export async function handleGetList(
     ? row.owner_id === auth.userId
     : tokenParam !== null && row.owner_token === tokenParam
 
-  if (!isOwner && row.permission !== 'public') return err('Forbidden', 403)
+  if (!isOwner) {
+    if (row.permission === 'private') return err('Forbidden', 403)
+    if (row.permission === 'verified' && !auth) return err('Login required', 401)
+    if (row.permission === 'invite_only') {
+      if (!auth) return err('Login required', 401)
+      const listData = JSON.parse(row.data) as { invitedUsernames?: string[] }
+      if (!(listData.invitedUsernames ?? []).includes(auth.username)) return err('Forbidden', 403)
+    }
+  }
 
-  // Update last_accessed_at (important for anonymous 30-day cleanup)
+  // Always update last_accessed_at (30-day anonymous cleanup clock)
   void env.DB.prepare('UPDATE lists SET last_accessed_at = ? WHERE id = ?').bind(Date.now(), id).run()
+
+  // ?since=N → return { upToDate: true } if server version hasn't advanced
+  const since = url.searchParams.get('since')
+  if (since !== null) {
+    const sv = parseInt(since, 10)
+    if (!isNaN(sv) && row.version <= sv) {
+      return json({ upToDate: true, version: row.version })
+    }
+  }
 
   return json(serialize(row))
 }
@@ -122,7 +143,19 @@ export async function handleUpdateList(
   }
 
   const { title, modules, background, cardOpacity, permission, invitedUsernames } = body
-  const data = JSON.stringify({ modules, background, cardOpacity, invitedUsernames })
+
+  // Preserve votes that were written via the vote API — don't let a full document sync overwrite them
+  const existingRow = await env.DB.prepare('SELECT data FROM lists WHERE id = ?').bind(id).first<{ data: string }>()
+  const existingData = existingRow ? JSON.parse(existingRow.data) as { modules?: { id: string; type: string; votes?: Record<string, string[]> }[] } : {}
+  const mergedModules = Array.isArray(modules)
+    ? (modules as { id: string; type: string; votes?: Record<string, string[]> }[]).map(m => {
+        if (m.type !== 'vote') return m
+        const serverVotes = existingData.modules?.find(em => em.id === m.id)?.votes
+        return serverVotes ? { ...m, votes: serverVotes } : m
+      })
+    : modules
+
+  const data = JSON.stringify({ modules: mergedModules, background, cardOpacity, invitedUsernames })
   const now  = Date.now()
 
   await env.DB.prepare(`
@@ -132,6 +165,55 @@ export async function handleUpdateList(
 
   const updated = await env.DB.prepare('SELECT version FROM lists WHERE id=?').bind(id).first<{ version: number }>()
   return json({ ok: true, version: updated?.version })
+}
+
+// ── PATCH /lists/:id/modules/:moduleId — collaborative edit for public-permission modules ──
+export async function handleCollabUpdateModule(
+  listId: string, moduleId: string, request: Request,
+  auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const row = await env.DB.prepare(
+    'SELECT data, permission FROM lists WHERE id = ?'
+  ).bind(listId).first<{ data: string; permission: string }>()
+  if (!row) return err('Not found', 404)
+
+  // Same read-access check as GET (non-owners only reach here)
+  if (row.permission === 'private') return err('Forbidden', 403)
+  if (row.permission === 'verified' && !auth) return err('Login required', 401)
+  if (row.permission === 'invite_only') {
+    if (!auth) return err('Login required', 401)
+    const d = JSON.parse(row.data) as { invitedUsernames?: string[] }
+    if (!(d.invitedUsernames ?? []).includes(auth.username)) return err('Forbidden', 403)
+  }
+
+  const listData = JSON.parse(row.data) as { modules?: Record<string, unknown>[] }
+  const existing = (listData.modules ?? []).find((m): m is Record<string, unknown> => m.id === moduleId)
+  if (!existing) return err('Module not found', 404)
+  if (existing.editPermission !== 'public') return err('Forbidden', 403)
+
+  let incoming: Record<string, unknown>
+  try { incoming = await request.json() as Record<string, unknown> } catch { return err('Invalid JSON', 400) }
+
+  // Merge: immutable server fields win; votes preserved server-side
+  const merged: Record<string, unknown> = {
+    ...existing,
+    ...incoming,
+    id:             moduleId,
+    type:           existing.type,
+    editPermission: 'public',
+  }
+  if (existing.type === 'vote') {
+    merged.votes      = existing.votes
+    merged.voterNames = existing.voterNames
+  }
+
+  const updatedModules = (listData.modules ?? []).map(m => m.id === moduleId ? merged : m)
+  const newData = JSON.stringify({ ...listData, modules: updatedModules })
+  await env.DB.prepare(
+    'UPDATE lists SET data=?, version=version+1, updated_at=? WHERE id=?'
+  ).bind(newData, Date.now(), listId).run()
+
+  return json({ ok: true })
 }
 
 // ── DELETE /lists/:id ──

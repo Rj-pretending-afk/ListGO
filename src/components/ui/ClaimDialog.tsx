@@ -88,7 +88,7 @@ export function ClaimDialog({ userId, anonymousLists, onDone }: ClaimDialogProps
             {t('claimSkip')}
           </button>
           <button onClick={handleClaim} disabled={loading || selected.size === 0}
-            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-35"
+            className="px-4 py-2 rounded-lg text-sm font-medium btn-primary hover:opacity-80 disabled:opacity-35"
             style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
             {loading ? t('claimLoading') : t('claimConfirm')}
           </button>

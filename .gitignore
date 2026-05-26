@@ -29,3 +29,7 @@ dist-ssr
 
 # wrangler (Phase 3+)
 .wrangler/
+
+# claude + vite cache
+.claude/
+.vite/

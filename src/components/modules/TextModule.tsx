@@ -10,6 +10,8 @@ import { RichTextEditor, type RichTextEditorRef } from '../editor/RichTextEditor
 import { ImageResizeOverlay } from '../editor/ImageResizeOverlay'
 import { CropModal } from '../editor/CropModal'
 import { resizeDataUrl } from '../../lib/imageUtils'
+import { uploadApi } from '../../lib/api'
+import { useAuthStore } from '../../hooks/useAuth'
 import type { TextModule as TextModuleType } from '../../types/list.types'
 
 interface TextModuleProps {
@@ -21,12 +23,14 @@ interface TextModuleProps {
 
 export function TextModule({ module, onChange, contentFontSettings, canEdit = true }: TextModuleProps) {
   const t = useT()
+  const { user } = useAuthStore()
   const editorRef = useRef<RichTextEditorRef>(null)
   const [selRect, setSelRect] = useState<DOMRect | null>(null)
   const [selectedImg, setSelectedImg] = useState<HTMLImageElement | null>(null)
   const [showCrop, setShowCrop] = useState(false)
   const [urlOpen, setUrlOpen] = useState(false)
   const [urlInput, setUrlInput] = useState('')
+  const [uploading, setUploading] = useState(false)
   const originalQuality = module.originalQuality ?? false
 
   const applyFormat = (cmd: string, value?: string) => editorRef.current?.applyFormat(cmd, value)
@@ -50,19 +54,31 @@ export function TextModule({ module, onChange, contentFontSettings, canEdit = tr
     onChange({ ...module, content: DOMPurify.sanitize(el.innerHTML) })
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = async ev => {
-      if (!ev.target?.result) return
-      const src = originalQuality
-        ? (ev.target.result as string)
-        : await resizeDataUrl(ev.target.result as string)
-      insertImageSrc(src)
-    }
-    reader.readAsDataURL(file)
     e.target.value = ''
+
+    if (user) {
+      // Registered user: upload to R2
+      setUploading(true)
+      try {
+        const { url } = await uploadApi.uploadImage(file)
+        insertImageSrc(url)
+      } catch { /* ignore upload errors silently */ }
+      finally { setUploading(false) }
+    } else {
+      // Anonymous: embed as base64
+      const reader = new FileReader()
+      reader.onload = async ev => {
+        if (!ev.target?.result) return
+        const src = originalQuality
+          ? (ev.target.result as string)
+          : await resizeDataUrl(ev.target.result as string)
+        insertImageSrc(src)
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const handlePasteImage = async (dataUrl: string) => {
@@ -190,10 +206,10 @@ export function TextModule({ module, onChange, contentFontSettings, canEdit = tr
       >
         <label
           className="flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer hover:opacity-70 transition-opacity"
-          style={{ color: 'var(--color-text)', opacity: 0.55 }}
+          style={{ color: 'var(--color-text)', opacity: uploading ? 0.35 : 0.55, pointerEvents: uploading ? 'none' : undefined }}
         >
-          <ImagePlus size={13} /> {t('insertImage')}
-          <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+          <ImagePlus size={13} /> {uploading ? '上传中…' : t('insertImage')}
+          <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={uploading} />
         </label>
         <button
           onClick={() => setUrlOpen(v => !v)}

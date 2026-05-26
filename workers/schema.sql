@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   display_name TEXT NOT NULL,
   avatar_color TEXT DEFAULT '#10B981',
   avatar_image TEXT,
+  theme TEXT DEFAULT 'day',
   invite_codes_remaining INTEGER DEFAULT 2,
   is_admin INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL

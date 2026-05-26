@@ -1,10 +1,13 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { getAuth } from './middleware/auth'
-import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword } from './routes/auth'
-import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList } from './routes/lists'
+import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword, handleSearchUsers } from './routes/auth'
+import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList, handleCollabUpdateModule } from './routes/lists'
+import { handleCastVote } from './routes/votes'
 import { handleClaimPreview, handleClaim } from './routes/claim'
-import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode, handleAdminGetUsers, handleAdminGetUserLists } from './routes/admin'
+import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode, handleAdminGetUsers, handleAdminGetUserLists, handleAdminSetDisplayName, handleAdminSetAdmin, handleAdminResetPassword, handleAdminDeleteUser, handleAdminDeleteList, handleAdminGetList } from './routes/admin'
+import { handleJoinPresence, handleGetPresence, handleLeavePresence } from './routes/presence'
+import { handleUploadImage, handleGetImage } from './routes/upload'
 
 export interface Env {
   DB: D1Database
@@ -14,7 +17,7 @@ export interface Env {
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 }
 
@@ -58,6 +61,10 @@ export default {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleChangePassword(request, auth, env, json, err)
     }
+    if (method === 'GET' && pathname === '/users/search') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleSearchUsers(request, auth, env, json)
+    }
 
     // ── Lists ──
     if (method === 'POST' && pathname === '/lists') {
@@ -76,6 +83,18 @@ export default {
       if (method === 'GET')    return handleGetList(id, request, auth, env, json, err)
       if (method === 'PUT')    return handleUpdateList(id, request, auth, env, json, err)
       if (method === 'DELETE') return handleDeleteList(id, request, auth, env, json, err)
+    }
+    const collabModuleMatch = pathname.match(/^\/lists\/([^/]+)\/modules\/([^/]+)$/)
+    if (collabModuleMatch && method === 'PATCH') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleCollabUpdateModule(collabModuleMatch[1], collabModuleMatch[2], request, auth, env, json, err)
+    }
+
+    // ── Votes ──
+    const voteMatch = pathname.match(/^\/votes\/([^/]+)$/)
+    if (voteMatch && method === 'POST') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleCastVote(voteMatch[1], request, auth, env, json, err)
     }
 
     // ── Claim ──
@@ -116,6 +135,52 @@ export default {
     if (userListsMatch && method === 'GET') {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleAdminGetUserLists(userListsMatch[1], auth, env, json, err)
+    }
+    const adminUserMatch = pathname.match(/^\/admin\/users\/([^/]+)$/)
+    if (adminUserMatch && method === 'DELETE') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminDeleteUser(adminUserMatch[1], auth, env, json, err)
+    }
+    const adminDisplayNameMatch = pathname.match(/^\/admin\/users\/([^/]+)\/displayname$/)
+    if (adminDisplayNameMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminSetDisplayName(adminDisplayNameMatch[1], request, auth, env, json, err)
+    }
+    const adminAdminMatch = pathname.match(/^\/admin\/users\/([^/]+)\/admin$/)
+    if (adminAdminMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminSetAdmin(adminAdminMatch[1], request, auth, env, json, err)
+    }
+    const adminPasswordMatch = pathname.match(/^\/admin\/users\/([^/]+)\/password$/)
+    if (adminPasswordMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminResetPassword(adminPasswordMatch[1], request, auth, env, json, err)
+    }
+const adminListMatch = pathname.match(/^\/admin\/lists\/([^/]+)$/)
+    if (adminListMatch) {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (method === 'GET')    return handleAdminGetList(adminListMatch[1], auth, env, json, err)
+      if (method === 'DELETE') return handleAdminDeleteList(adminListMatch[1], auth, env, json, err)
+    }
+
+    // ── Upload ──
+    if (method === 'POST' && pathname === '/upload/image') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleUploadImage(request, auth, env, json, err)
+    }
+    const imageKeyMatch = pathname.match(/^\/images\/(.+)$/)
+    if (imageKeyMatch && method === 'GET') {
+      return handleGetImage(imageKeyMatch[1], env)
+    }
+
+    // ── Presence ──
+    const presenceMatch = pathname.match(/^\/presence\/([^/]+)$/)
+    if (presenceMatch) {
+      const listId = presenceMatch[1]
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (method === 'POST')   return handleJoinPresence(listId, request, auth, env, json)
+      if (method === 'GET')    return handleGetPresence(listId, env, json)
+      if (method === 'DELETE') return handleLeavePresence(listId, request, auth, env, json)
     }
 
     return err('Not found', 404)

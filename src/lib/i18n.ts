@@ -62,6 +62,7 @@ export const zh = {
   registerSubmit: '注册', registerLoading: '注册中…',
   registerHasAccount: '已有账号？', registerGoLogin: '登录',
   // Profile
+  profileTheme: '外观主题',
   profileAvatar: '头像', profileUploadAvatar: '上传头像',
   profileProcessing: '处理中…', profileRemoveAvatar: '移除自定义头像',
   profileColorLabel: '头像颜色', profileColorWithImg: '（自定义头像时作为边框色）',
@@ -153,6 +154,7 @@ export const en: Record<I18nKey, string> = {
   registerInvite: 'Invite Code', registerInvitePlaceholder: '12-character code',
   registerSubmit: 'Sign Up', registerLoading: 'Signing up…',
   registerHasAccount: 'Already have an account? ', registerGoLogin: 'Login',
+  profileTheme: 'Appearance',
   profileAvatar: 'Avatar', profileUploadAvatar: 'Upload Avatar',
   profileProcessing: 'Processing…', profileRemoveAvatar: 'Remove custom avatar',
   profileColorLabel: 'Avatar Color', profileColorWithImg: '(used as border with custom avatar)',

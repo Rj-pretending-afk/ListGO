@@ -4,6 +4,7 @@ export interface User {
   displayName: string
   avatarColor: string
   avatarImage?: string
+  theme?: string
   isAdmin: boolean
   inviteCodes: InviteCodeInfo[]
 }

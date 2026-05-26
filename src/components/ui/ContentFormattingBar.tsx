@@ -36,13 +36,20 @@ export function ContentFormattingBar({ settings, onChange }: ContentFormattingBa
   const inactive = { color: 'var(--color-text)', opacity: 0.55 }
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1.5 flex-wrap"
+    <div
+      className="flex items-center gap-1 px-2 py-1.5 scrollbar-none"
       style={{
+        overflowX: 'auto',
+        scrollbarWidth: 'none',
+        WebkitOverflowScrolling: 'touch',
         borderBottom: '1px solid color-mix(in srgb, var(--color-border) 60%, transparent)',
         backgroundColor: 'color-mix(in srgb, var(--color-card) 70%, transparent)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-      }}>
+      }}
+      // hide webkit scrollbar
+      onTouchStart={e => e.stopPropagation()}  // prevent drag-to-reorder triggering on bar scroll
+    >
 
       {/* Bold */}
       <button className={btnBase} onClick={() => toggle('bold')} title={t('fmtBold')}
