@@ -95,15 +95,17 @@ export function useListSync(list: List, ownerToken?: string) {
   const manualRefresh = useCallback(() => {
     const current = listRef.current
     if (!current.ownerId) return
-    startRefresh(async () => {
-      try {
-        const data = await listApi.poll(current.id, 0, ownerToken)
-        if (data.upToDate !== true) applyRemoteList(data as unknown as List)
-      } catch (e) {
-        if (e instanceof Error && (e.message.includes('Not found') || e.message.includes('404'))) {
-          void syncFromCloud(); navigate('/')
+    startRefresh(() => {
+      void (async () => {
+        try {
+          const data = await listApi.poll(current.id, 0, ownerToken)
+          if (data.upToDate !== true) applyRemoteList(data as unknown as List)
+        } catch (e) {
+          if (e instanceof Error && (e.message.includes('Not found') || e.message.includes('404'))) {
+            void syncFromCloud(); navigate('/')
+          }
         }
-      }
+      })()
     })
   }, [ownerToken, applyRemoteList, syncFromCloud, navigate])
 

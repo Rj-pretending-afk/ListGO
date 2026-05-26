@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X, Clock, CloudUpload, Trash2, RefreshCw } from 'lucide-react'
+import { Plus, Clock, CloudUpload, Trash2, RefreshCw } from 'lucide-react'
 import { StylePicker } from '../components/theme/StylePicker'
 import { formatDistanceToNow, format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'

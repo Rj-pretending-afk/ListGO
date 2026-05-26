@@ -30,7 +30,7 @@ export default function ListPage() {
     setFetchState('loading')
     api.get<List>(`/lists/${id}${qs}`)
       .then(async data => {
-        const list: List = { background: { type: 'color', value: '' }, ...data }
+        const list: List = { ...data, background: data.background ?? { type: 'color', value: '' } }
         const isOwner = user
           ? list.ownerId === user.id
           : !!list.ownerToken && list.ownerToken === ownerToken
