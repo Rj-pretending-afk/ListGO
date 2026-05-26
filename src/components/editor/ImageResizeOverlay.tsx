@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useT } from '../../hooks/useLang'
 
 interface ImageResizeOverlayProps {
@@ -26,6 +26,11 @@ const CURSOR: Record<Corner, string> = {
 export function ImageResizeOverlay({ imgEl, onResizeEnd, onCrop, onRemove, onRestore }: ImageResizeOverlayProps) {
   const t = useT()
   const [rect, setRect] = useState(() => imgEl.getBoundingClientRect())
+
+  // Reposition when switching to a different image element
+  useEffect(() => {
+    setRect(imgEl.getBoundingClientRect())
+  }, [imgEl])
 
   const refreshRect = useCallback(() => {
     setRect(imgEl.getBoundingClientRect())
