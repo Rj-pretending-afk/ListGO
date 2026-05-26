@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
+import { Link2 } from 'lucide-react'
 import { ThemeSwitcher } from '../theme/ThemeSwitcher'
+import { NotificationBell } from './NotificationBell'
 import { useAuthStore } from '../../hooks/useAuth'
 import { useLangStore, useT } from '../../hooks/useLang'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
@@ -17,6 +19,85 @@ function LangToggle() {
     >
       {lang === 'zh' ? 'EN' : '中'}
     </button>
+  )
+}
+
+function extractListId(input: string): string | null {
+  const trimmed = input.trim()
+  const match = trimmed.match(/\/(?:l|list)\/([a-zA-Z0-9_-]+)/)
+  if (match) return match[1]
+  if (/^[a-zA-Z0-9_-]{4,}$/.test(trimmed)) return trimmed
+  return null
+}
+
+function JoinListButton() {
+  const t = useT()
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState('')
+  const btnRef = useRef<HTMLButtonElement>(null)
+
+  const handleGo = () => {
+    const id = extractListId(value)
+    if (!id) return
+    setOpen(false)
+    setValue('')
+    navigate(`/list/${id}`)
+  }
+
+  return (
+    <div className="relative">
+      <button
+        ref={btnRef}
+        onClick={() => setOpen(v => !v)}
+        className="w-9 h-9 flex items-center justify-center rounded-lg hover:opacity-70 transition-opacity"
+        style={{ color: 'var(--color-text)' }}
+        title={t('joinList')}
+      >
+        <Link2 size={17} />
+      </button>
+
+      {open && createPortal(
+        <>
+          <div className="fixed inset-0 z-[300]" onClick={() => { setOpen(false); setValue('') }} />
+          <div
+            className="fixed z-[301] rounded-xl shadow-xl p-3"
+            style={{
+              top: (btnRef.current?.getBoundingClientRect().bottom ?? 0) + 6,
+              right: window.innerWidth - (btnRef.current?.getBoundingClientRect().right ?? 0),
+              width: '18rem',
+              backgroundColor: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-text)', opacity: 0.6 }}>
+              {t('joinList')}
+            </p>
+            <div className="flex gap-2">
+              <input
+                autoFocus
+                value={value}
+                onChange={e => setValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleGo(); if (e.key === 'Escape') { setOpen(false); setValue('') } }}
+                placeholder={t('joinListPlaceholder')}
+                className="flex-1 text-xs px-2.5 py-2 rounded-lg outline-none"
+                style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
+              />
+              <button
+                onClick={handleGo}
+                disabled={!extractListId(value)}
+                className="px-3 py-2 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-35"
+                style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
+              >
+                {t('joinListGo')}
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
   )
 }
 
@@ -96,11 +177,17 @@ export function Header() {
 
       <div className="flex items-center gap-2">
         <LangToggle />
+        <JoinListButton />
         <ThemeSwitcher />
 
         {!authLoading && (
           user
-            ? <UserMenu />
+            ? (
+              <>
+                <NotificationBell />
+                <UserMenu />
+              </>
+            )
             : (
               <div className="flex items-center gap-2">
                 <Link to="/login"

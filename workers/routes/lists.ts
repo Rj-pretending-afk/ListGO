@@ -6,6 +6,14 @@ import type { AuthUser } from '../middleware/auth'
 type JsonFn = (data: unknown, status?: number) => Response
 type ErrFn  = (message: string, status: number) => Response
 
+function nanoid(len: number): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  let id = ''
+  const bytes = crypto.getRandomValues(new Uint8Array(len))
+  for (const b of bytes) id += chars[b % chars.length]
+  return id
+}
+
 interface ListRow {
   id: string; title: string; data: string
   owner_id: string | null; owner_token: string | null
@@ -163,6 +171,32 @@ export async function handleUpdateList(
 
   const data = JSON.stringify({ modules: mergedModules, background, cardOpacity, invitedUsernames })
   const now  = Date.now()
+
+  // Detect newly added invited usernames and create list_invitation notifications
+  if (Array.isArray(invitedUsernames)) {
+    const oldInvited: string[] = (() => {
+      try { return (JSON.parse(existingRow?.data ?? '{}') as { invitedUsernames?: string[] }).invitedUsernames ?? [] } catch { return [] }
+    })()
+    const addedUsernames = (invitedUsernames as string[]).filter(u => !oldInvited.includes(u))
+    if (addedUsernames.length > 0) {
+      const placeholders = addedUsernames.map(() => '?').join(',')
+      const [inviteeRows, ownerRow] = await Promise.all([
+        env.DB.prepare(`SELECT id FROM users WHERE username IN (${placeholders})`).bind(...addedUsernames).all<{ id: string }>(),
+        env.DB.prepare('SELECT username, avatar_color, avatar_image FROM users WHERE id = ?').bind(auth.userId).first<{ username: string; avatar_color: string; avatar_image: string | null }>(),
+      ])
+      for (const invitee of inviteeRows.results ?? []) {
+        await env.DB.prepare(
+          'INSERT INTO list_invitations (id, list_id, list_title, owner_id, owner_username, owner_avatar_color, owner_avatar_image, invitee_id, status, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)'
+        ).bind(
+          nanoid(16), id, title as string, auth.userId,
+          ownerRow?.username ?? auth.username,
+          ownerRow?.avatar_color ?? '#10B981',
+          ownerRow?.avatar_image ?? null,
+          invitee.id, 'unread', now
+        ).run()
+      }
+    }
+  }
 
   await env.DB.prepare(`
     UPDATE lists SET title=?, data=?, permission=?, version=version+1, updated_at=?, last_accessed_at=?

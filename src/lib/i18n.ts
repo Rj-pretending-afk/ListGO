@@ -109,6 +109,12 @@ export const zh = {
   saved: '已保存', saveFailed: '保存失败',
   pwChanged: '密码已修改', pwMismatch: '两次密码不一致',
   pwTooShort: '新密码须至少 8 字符', changeFailed: '修改失败',
+  // Notifications
+  notifTitle: '通知', notifEmpty: '暂无通知',
+  notifPokes: '被戳', notifInvites: '清单邀请',
+  notifPokedBy: '@{name} 戳了你', notifInvitedBy: '@{name} 邀请你查看「{title}」',
+  notifMarkRead: '标为已读',
+  joinList: '打开清单', joinListPlaceholder: '粘贴清单链接或 ID…', joinListGo: '打开',
   // Not found
   notFound: '页面不存在', backHome: '回到首页',
 } as const
@@ -204,6 +210,11 @@ export const en: Record<I18nKey, string> = {
   saved: 'Saved', saveFailed: 'Save failed',
   pwChanged: 'Password changed', pwMismatch: 'Passwords do not match',
   pwTooShort: 'New password must be at least 8 characters', changeFailed: 'Failed to change',
+  notifTitle: 'Notifications', notifEmpty: 'No notifications',
+  notifPokes: 'Pokes', notifInvites: 'List Invites',
+  notifPokedBy: '@{name} poked you', notifInvitedBy: '@{name} invited you to "{title}"',
+  notifMarkRead: 'Mark read',
+  joinList: 'Open list', joinListPlaceholder: 'Paste list link or ID…', joinListGo: 'Go',
   notFound: 'Page not found', backHome: 'Back to home',
 }
 

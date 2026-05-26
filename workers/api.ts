@@ -8,6 +8,7 @@ import { handleClaimPreview, handleClaim } from './routes/claim'
 import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode, handleAdminGetUsers, handleAdminGetUserLists, handleAdminSetDisplayName, handleAdminSetAdmin, handleAdminResetPassword, handleAdminDeleteUser, handleAdminDeleteList, handleAdminGetList } from './routes/admin'
 import { handleCreateInviteRequest, handleAdminGetInviteRequests, handleAdminAcceptRequest, handleAdminRejectRequest, handleAdminGenerateUserInviteCode } from './routes/inviteRequests'
 import { handleSendPoke, handleGetPokeInbox, handleMarkPokeRead } from './routes/pokes'
+import { handleGetNotifications, handleMarkInvitationRead } from './routes/notifications'
 import { handleJoinPresence, handleGetPresence, handleLeavePresence } from './routes/presence'
 import { handleUploadImage, handleGetImage } from './routes/upload'
 
@@ -184,6 +185,17 @@ const adminListMatch = pathname.match(/^\/admin\/lists\/([^/]+)$/)
     if (adminUserInviteCodeMatch && method === 'POST') {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleAdminGenerateUserInviteCode(adminUserInviteCodeMatch[1], auth, env, json, err)
+    }
+
+    // ── Notifications (pokes + list invitations) ──
+    if (method === 'GET' && pathname === '/notifications') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleGetNotifications(auth, env, json, err)
+    }
+    const invitationReadMatch = pathname.match(/^\/list-invitations\/([^/]+)\/read$/)
+    if (invitationReadMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleMarkInvitationRead(invitationReadMatch[1], auth, env, json, err)
     }
 
     // ── Pokes ──

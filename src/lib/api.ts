@@ -68,6 +68,12 @@ export const pokeApi = {
   markRead: (pokeId: string) => api.put<{ ok: boolean }>(`/pokes/${pokeId}/read`, {}),
 }
 
+export const notificationApi = {
+  getAll: () => api.get<import('../types/user.types').NotificationsResponse>('/notifications'),
+  markPokeRead: (pokeId: string) => api.put<{ ok: boolean }>(`/pokes/${pokeId}/read`, {}),
+  markInvitationRead: (id: string) => api.put<{ ok: boolean }>(`/list-invitations/${id}/read`, {}),
+}
+
 export const adminApi = {
   getInviteRequests: () => api.get<import('../types/user.types').InviteRequestInfo[]>('/admin/invite-requests'),
   acceptInviteRequest: (id: string) => api.put<{ ok: boolean; newCode: string }>(`/admin/invite-requests/${id}/accept`, {}),

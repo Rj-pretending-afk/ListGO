@@ -31,6 +31,22 @@ export interface PokeInfo {
   createdAt: number
 }
 
+export interface ListInvitationNotif {
+  id: string
+  listId: string
+  listTitle: string
+  ownerUsername: string
+  ownerAvatarColor: string
+  ownerAvatarImage?: string
+  status: string
+  createdAt: number
+}
+
+export interface NotificationsResponse {
+  pokes: PokeInfo[]
+  listInvitations: ListInvitationNotif[]
+}
+
 export interface InviteRequestInfo {
   id: string
   requesterId: string

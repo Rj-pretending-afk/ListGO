@@ -94,3 +94,18 @@ CREATE TABLE IF NOT EXISTS pokes (
   FOREIGN KEY (recipient_id) REFERENCES users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_pokes_recipient ON pokes(recipient_id, status);
+
+-- List invitations: notifies a user when they're added to an invite_only list
+CREATE TABLE IF NOT EXISTS list_invitations (
+  id TEXT PRIMARY KEY,
+  list_id TEXT NOT NULL,
+  list_title TEXT NOT NULL,
+  owner_id TEXT NOT NULL,
+  owner_username TEXT NOT NULL,
+  owner_avatar_color TEXT DEFAULT '#10B981',
+  owner_avatar_image TEXT,
+  invitee_id TEXT NOT NULL,
+  status TEXT DEFAULT 'unread',
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_list_invitations_invitee ON list_invitations(invitee_id, status);
