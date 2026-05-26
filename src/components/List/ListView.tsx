@@ -8,7 +8,7 @@ import { AddModuleButton } from './AddModuleButton'
 import { SharePanel } from '../ui/SharePanel'
 import { AvatarStack } from '../presence/AvatarStack'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
-import { ThemeSwitcher } from '../theme/ThemeSwitcher'
+import { StylePicker } from '../theme/StylePicker'
 import { useListActions } from '../../hooks/useList'
 import { useAppStore, getSyncError, clearSyncError } from '../../lib/store'
 import { useListSync } from '../../hooks/useListSync'
@@ -112,8 +112,8 @@ export function ListView({ list, canEdit = true, adminView = false, onModuleUpda
           <AvatarStack users={activeUsers} selfUserId={selfUserId} />
         )}
 
-        {/* Theme switcher for owner */}
-        {canEdit && !adminView && <ThemeSwitcher />}
+        {/* Theme picker for owner */}
+        {canEdit && !adminView && <StylePicker />}
 
         {list.ownerId && !adminView && (
           <button
