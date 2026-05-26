@@ -196,7 +196,7 @@ export function VoteModule({ module, onChange, listId, contentFontSettings, canE
           onChange={v => update({ description: v || undefined })}
           canEdit={canEdit}
           contentFontSettings={contentFontSettings}
-          onClose={canEdit ? () => { update({ description: undefined }); setShowDesc(false) } : undefined}
+          onClose={canEdit ? () => setShowDesc(false) : undefined}
           onActivate={() => setSelectedOptId(null)}
           clearKey={descClearKey}
         />
