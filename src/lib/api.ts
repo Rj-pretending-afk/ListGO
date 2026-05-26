@@ -58,7 +58,21 @@ export const claimApi = {
     api.post<{ ok: boolean }>('/claim', { ownerToken, listIds }),
 }
 
+export const inviteRequestApi = {
+  create: () => api.post<{ ok: boolean }>('/invite-request', {}),
+}
+
+export const pokeApi = {
+  send: (recipientId: string) => api.post<{ ok: boolean; pokeMessage: string | null }>('/pokes', { recipientId }),
+  inbox: () => api.get<import('../types/user.types').PokeInfo[]>('/pokes/inbox'),
+  markRead: (pokeId: string) => api.put<{ ok: boolean }>(`/pokes/${pokeId}/read`, {}),
+}
+
 export const adminApi = {
+  getInviteRequests: () => api.get<import('../types/user.types').InviteRequestInfo[]>('/admin/invite-requests'),
+  acceptInviteRequest: (id: string) => api.put<{ ok: boolean; newCode: string }>(`/admin/invite-requests/${id}/accept`, {}),
+  rejectInviteRequest: (id: string) => api.put<{ ok: boolean }>(`/admin/invite-requests/${id}/reject`, {}),
+  generateUserInviteCode: (userId: string) => api.post<{ ok: boolean; code: string }>(`/admin/users/${userId}/invite-code`, {}),
   getUsers: () => api.get<{ id: string; username: string; displayName: string | null; avatarColor: string; avatarImage?: string; isAdmin: boolean; createdAt: number; listCount: number }[]>('/admin/users'),
   getUserLists: (userId: string) => api.get<{ id: string; title: string; permission: string; version: number; updated_at: number }[]>(`/admin/users/${userId}/lists`),
   setDisplayName: (userId: string, displayName: string) => api.put<{ ok: boolean }>(`/admin/users/${userId}/displayname`, { displayName }),

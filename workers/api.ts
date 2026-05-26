@@ -6,6 +6,8 @@ import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, 
 import { handleCastVote } from './routes/votes'
 import { handleClaimPreview, handleClaim } from './routes/claim'
 import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode, handleAdminGetUsers, handleAdminGetUserLists, handleAdminSetDisplayName, handleAdminSetAdmin, handleAdminResetPassword, handleAdminDeleteUser, handleAdminDeleteList, handleAdminGetList } from './routes/admin'
+import { handleCreateInviteRequest, handleAdminGetInviteRequests, handleAdminAcceptRequest, handleAdminRejectRequest, handleAdminGenerateUserInviteCode } from './routes/inviteRequests'
+import { handleSendPoke, handleGetPokeInbox, handleMarkPokeRead } from './routes/pokes'
 import { handleJoinPresence, handleGetPresence, handleLeavePresence } from './routes/presence'
 import { handleUploadImage, handleGetImage } from './routes/upload'
 
@@ -161,6 +163,42 @@ const adminListMatch = pathname.match(/^\/admin\/lists\/([^/]+)$/)
       const auth = await getAuth(request, env.JWT_SECRET)
       if (method === 'GET')    return handleAdminGetList(adminListMatch[1], auth, env, json, err)
       if (method === 'DELETE') return handleAdminDeleteList(adminListMatch[1], auth, env, json, err)
+    }
+
+    // ── Invite Requests ──
+    if (method === 'POST' && pathname === '/invite-request') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleCreateInviteRequest(auth, env, json, err)
+    }
+    if (method === 'GET' && pathname === '/admin/invite-requests') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminGetInviteRequests(auth, env, json, err)
+    }
+    const inviteReqMatch = pathname.match(/^\/admin\/invite-requests\/([^/]+)\/(accept|reject)$/)
+    if (inviteReqMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (inviteReqMatch[2] === 'accept') return handleAdminAcceptRequest(inviteReqMatch[1], auth, env, json, err)
+      return handleAdminRejectRequest(inviteReqMatch[1], auth, env, json, err)
+    }
+    const adminUserInviteCodeMatch = pathname.match(/^\/admin\/users\/([^/]+)\/invite-code$/)
+    if (adminUserInviteCodeMatch && method === 'POST') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleAdminGenerateUserInviteCode(adminUserInviteCodeMatch[1], auth, env, json, err)
+    }
+
+    // ── Pokes ──
+    if (method === 'POST' && pathname === '/pokes') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleSendPoke(request, auth, env, json, err)
+    }
+    if (method === 'GET' && pathname === '/pokes/inbox') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleGetPokeInbox(auth, env, json, err)
+    }
+    const pokeReadMatch = pathname.match(/^\/pokes\/([^/]+)\/read$/)
+    if (pokeReadMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleMarkPokeRead(pokeReadMatch[1], auth, env, json, err)
     }
 
     // ── Upload ──

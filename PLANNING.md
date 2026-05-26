@@ -477,18 +477,63 @@ listgo/
 
 ---
 
-### Phase 5 · 完善与发布（预计 1-2 天）
+### Phase 5 · 完善与发布
 
-- [ ] PWA 配置
-- [ ] SEO（OG 图用 Light Pink mode 截图）
-- [ ] 错误页 / 空状态 / 加载状态
+#### 5.1 邀请码改进 + 双通知系统
+
+> 两个独立系统，互不耦合：邀请码申请（行政流程）、戳（社交通知）
+
+**邀请码改进**
+- [x] 注册改为只发放 **1 个**邀请码（原为 2 个）
+- [ ] 邀请码被使用后显示使用者 `@username`（可点击打开 profile）
+- [ ] 无可用码时显示"申请新邀请码"按钮（条件：所有码已用 且 无待审请求）
+- [ ] 已有待审请求时按钮变为"等待管理员审核"禁用状态
+
+**邀请码申请系统（行政流程，独立）**
+- [ ] DB：`invite_requests` 表（id, requester_id, status, created_at, resolved_at, resolved_by）
+- [ ] 后端：`POST /invite-request` — 用户申请（校验无可用码 + 无重复申请）
+- [ ] 后端：`GET /admin/invite-requests` — 管理员查看待审请求（带申请者信息）
+- [ ] 后端：`PUT /admin/invite-requests/:id/accept` — 通过（自动生成新邀请码给申请者）
+- [ ] 后端：`PUT /admin/invite-requests/:id/reject` — 拒绝
+- [ ] 后端：`POST /admin/users/:userId/invite-code` — 管理员直接给某用户生成新码
+- [ ] 前端：管理员面板新增"邀请申请"标签页（含待审数量角标）
+- [ ] 前端：管理员 Header 上 Admin 按钮角标（有待审时显示红点）
+
+**戳系统（社交通知，独立）**
+- [ ] DB：`pokes` 表（id, sender_id, recipient_id, status, created_at）；`users` 表 ALTER 加 `poke_message TEXT`
+- [ ] 后端：`POST /pokes` — 发送戳（recipientId 必填）
+- [ ] 后端：`GET /pokes/inbox` — 获取我收到的戳（未读）
+- [ ] 后端：`PUT /pokes/:id/read` — 标记已读
+- [ ] 前端：用户可在个人设置设置"被戳时的提示"（文字 + emoji，≤50 字）
+- [ ] 前端：Header 个人头像角标（有未读戳时显示）
+- [ ] 前端：戳收件箱面板（点击头像角标打开，显示谁戳了你）
+- [ ] 前端：在 `/u/:username` 页添加"戳一下"按钮（显示对方的 poke_message）→ 5.2 实现
+
+#### 5.2 用户主页 `/u/:username`
+
+- [ ] 公开用户主页页面（路由 `/u/:username`）
+- [ ] 显示：头像 + 昵称 + 用户名 + bio
+- [ ] 自定义 bio（富文本一行，个人设置里编辑，存入 `users.bio` 字段）
+- [ ] 后端：`GET /users/:username/profile` 返回公开信息（含 poke_message）
+- [ ] 点击任意用户头像跳转该页（AvatarStack 里的头像、列表创建者 badge 等）
+- [ ] `users` 表 ALTER 加 `bio TEXT` 字段
+- [ ] 在此页显示"戳一下"按钮，完成戳系统的前端闭环
+
+#### 5.3 基础完善
+
+- [ ] 错误页 / 空状态 / 加载骨架
 - [ ] 网络断开提示
-- [ ] 完善 README（GIF 演示）
 - [ ] **Cron Trigger**：每天凌晨清理 30 天未访问的匿名清单
+- [ ] PWA 配置
+- [ ] SEO（OG 图）
 - [ ] Cloudflare Pages 自动部署
+
+#### 5.4 发布
+
+- [ ] 完善 README（GIF 演示）
 - [ ] v1.0.0 tag + Release
 
-**总开发周期估算：约 19-23 天**
+**总开发周期估算：约 25-30 天**
 
 ---
 

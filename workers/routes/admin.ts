@@ -23,20 +23,22 @@ export async function handleAdminStats(
   const guard = adminGuard(auth)
   if (guard) return guard
 
-  const [users, lists, codesTotal, codesUsed, codesAvail] = await Promise.all([
+  const [users, lists, codesTotal, codesUsed, codesAvail, pendingRequests] = await Promise.all([
     env.DB.prepare('SELECT COUNT(*) as n FROM users').first<{ n: number }>(),
     env.DB.prepare('SELECT COUNT(*) as n FROM lists').first<{ n: number }>(),
     env.DB.prepare('SELECT COUNT(*) as n FROM invite_codes').first<{ n: number }>(),
     env.DB.prepare('SELECT COUNT(*) as n FROM invite_codes WHERE used_by_id IS NOT NULL').first<{ n: number }>(),
     env.DB.prepare('SELECT COUNT(*) as n FROM invite_codes WHERE used_by_id IS NULL AND revoked = 0').first<{ n: number }>(),
+    env.DB.prepare("SELECT COUNT(*) as n FROM invite_requests WHERE status = 'pending'").first<{ n: number }>(),
   ])
 
   return json({
-    users:       users?.n ?? 0,
-    lists:       lists?.n ?? 0,
-    codesTotal:  codesTotal?.n ?? 0,
-    codesUsed:   codesUsed?.n ?? 0,
-    codesAvail:  codesAvail?.n ?? 0,
+    users:                users?.n ?? 0,
+    lists:                lists?.n ?? 0,
+    codesTotal:           codesTotal?.n ?? 0,
+    codesUsed:            codesUsed?.n ?? 0,
+    codesAvail:           codesAvail?.n ?? 0,
+    pendingInviteRequests: pendingRequests?.n ?? 0,
   })
 }
 
