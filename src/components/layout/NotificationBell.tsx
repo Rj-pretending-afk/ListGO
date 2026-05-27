@@ -4,6 +4,7 @@ import { Bell, ShieldAlert } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { notificationApi, pokeApi } from '../../lib/api'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
+import { ProfileCard } from '../ui/ProfileCard'
 import { useT } from '../../hooks/useLang'
 import type { PokeInfo, ListInvitationNotif } from '../../types/user.types'
 import { formatDistanceToNow } from 'date-fns'
@@ -23,6 +24,7 @@ export function NotificationBell() {
   const [invites, setInvites] = useState<ListInvitationNotif[]>([])
   const [pendingAdmin, setPendingAdmin] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [profileCard, setProfileCard] = useState<string | null>(null) // username to show
   const btnRef = useRef<HTMLButtonElement>(null)
 
   const totalUnread = pokes.length + invites.length + pendingAdmin
@@ -46,12 +48,12 @@ export function NotificationBell() {
   }, [fetchAll])
 
   const handlePokeClick = async (p: PokeInfo) => {
-    // Mark read, send return poke, open sender's profile
     await notificationApi.markPokeRead(p.id).catch(() => undefined)
     setPokes(prev => prev.filter(item => item.id !== p.id))
+    // Send return poke so sender receives pokee's poke_message
     pokeApi.send(p.senderId).catch(() => undefined)
-    setOpen(false)
-    navigate(`/u/${p.senderUsername}`)
+    // Show sender's profile card (stay on current page)
+    setProfileCard(p.senderUsername)
   }
 
   const markInviteRead = async (id: string, listId: string) => {
@@ -145,6 +147,11 @@ export function NotificationBell() {
                             <p className="text-xs font-medium truncate" style={{ color: 'var(--color-text)' }}>
                               {t('notifPokedBy').replace('{name}', p.senderDisplayName)}
                             </p>
+                            {p.senderPokeMessage && (
+                              <p className="text-[10px] italic truncate" style={{ color: 'var(--color-primary)', opacity: 0.85 }}>
+                                "{p.senderPokeMessage}"
+                              </p>
+                            )}
                             <p className="text-[10px]" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
                               {timeAgo(p.createdAt, lang)}
                             </p>
@@ -215,6 +222,9 @@ export function NotificationBell() {
           </div>
         </>,
         document.body
+      )}
+      {profileCard && (
+        <ProfileCard username={profileCard} onClose={() => setProfileCard(null)} />
       )}
     </div>
   )
