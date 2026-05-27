@@ -7,6 +7,7 @@ import { useAuthStore } from '../hooks/useAuth'
 import { useT } from '../hooks/useLang'
 import { AVATAR_COLORS } from '../lib/colors'
 import { CropModal } from '../components/editor/CropModal'
+import { ProfileRichEditor } from '../components/editor/ProfileRichEditor'
 import { resizeDataUrl } from '../lib/imageUtils'
 import { AvatarDisplay } from '../components/ui/AvatarDisplay'
 
@@ -354,13 +355,16 @@ export default function ProfilePage() {
 
       {/* Bio */}
       <div className="rounded-xl p-5 mb-4" style={card}>
-        <p className="text-xs font-medium mb-3" style={secLabel}>{t('profileBioLabel')}</p>
-        <div className="flex gap-2">
-          <input value={bio} onChange={e => setBio(e.target.value)}
-            className={inputCls} style={inputStyle} maxLength={120}
-            placeholder={t('profileBioPlaceholder')} />
+        <p className="text-xs font-medium mb-2" style={secLabel}>{t('profileBioLabel')}</p>
+        <ProfileRichEditor
+          value={bio}
+          onChange={setBio}
+          minHeight={72}
+          placeholder={t('profileBioPlaceholder')}
+        />
+        <div className="flex justify-end mt-2">
           <button onClick={saveBio} disabled={bioLoading}
-            className="px-4 py-2 rounded-lg text-sm font-medium btn-primary hover:opacity-80 disabled:opacity-40 whitespace-nowrap flex-shrink-0"
+            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-40"
             style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
             {bioSaved ? <Check size={14} /> : bioLoading ? '…' : t('profileSave')}
           </button>
@@ -369,13 +373,16 @@ export default function ProfilePage() {
 
       {/* Poke message */}
       <div className="rounded-xl p-5 mb-4" style={card}>
-        <p className="text-xs font-medium mb-3" style={secLabel}>{t('pokeMessageLabel')}</p>
-        <div className="flex gap-2">
-          <input value={pokeMessage} onChange={e => setPokeMessage(e.target.value)}
-            className={inputCls} style={inputStyle} maxLength={50}
-            placeholder={t('pokeMessagePlaceholder')} />
+        <p className="text-xs font-medium mb-2" style={secLabel}>{t('pokeMessageLabel')}</p>
+        <ProfileRichEditor
+          value={pokeMessage}
+          onChange={setPokeMessage}
+          minHeight={54}
+          placeholder={t('pokeMessagePlaceholder')}
+        />
+        <div className="flex justify-end mt-2">
           <button onClick={savePokeMessage} disabled={pokeMsgLoading}
-            className="px-4 py-2 rounded-lg text-sm font-medium btn-primary hover:opacity-80 disabled:opacity-40 whitespace-nowrap flex-shrink-0"
+            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-40"
             style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
             {pokeMsgSaved ? <Check size={14} /> : pokeMsgLoading ? '…' : t('profileSave')}
           </button>

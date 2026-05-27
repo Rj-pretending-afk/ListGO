@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Zap } from 'lucide-react'
+import DOMPurify from 'dompurify'
 import { userApi, pokeApi } from '../lib/api'
 import { useAuthStore } from '../hooks/useAuth'
 import { AvatarDisplay } from '../components/ui/AvatarDisplay'
@@ -56,11 +57,10 @@ export default function UserProfilePage() {
 
   const canPoke = !!currentUser && !profile.isSelf
 
-  const pokeLabel =
+  const pokeButtonLabel =
     pokeState === 'sending' ? '…'
     : pokeState === 'sent'  ? t('userPokeSent')
     : pokeState === 'error' ? t('userPokeError')
-    : profile.pokeMessage   ? profile.pokeMessage
     : t('userPokeBtn')
 
   return (
@@ -91,11 +91,27 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      {/* Bio */}
+      {/* Bio — rendered as rich HTML */}
       {profile.bio && (
-        <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--color-text)', opacity: 0.75 }}>
-          {profile.bio}
-        </p>
+        <div
+          className="text-sm mb-6 leading-relaxed prose-sm max-w-none"
+          style={{ color: 'var(--color-text)', opacity: 0.75 }}
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(profile.bio) }}
+        />
+      )}
+
+      {/* Poke message (被戳提示) — rich HTML display */}
+      {canPoke && profile.pokeMessage && (
+        <div
+          className="text-sm mb-4 px-4 py-3 rounded-xl leading-relaxed prose-sm max-w-none"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)',
+            color: 'var(--color-primary)',
+          }}
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(profile.pokeMessage) }}
+        />
       )}
 
       {/* Poke button */}
@@ -107,7 +123,7 @@ export default function UserProfilePage() {
           style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
         >
           <Zap size={15} />
-          {pokeLabel}
+          {pokeButtonLabel}
         </button>
       )}
 

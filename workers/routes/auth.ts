@@ -218,14 +218,14 @@ export async function handleUpdateProfile(
   }
   if ('bio' in body) {
     const b = body.bio ? String(body.bio).trim() : null
-    if (b && b.length > 120) return err('简介须 120 字以内', 400)
+    if (b && b.length > 10000) return err('简介内容过长', 400)
     updates.push('bio = ?')
     values.push(b || null)
   }
   if ('pokeMessage' in body) {
     if (body.pokeMessage !== null && body.pokeMessage !== undefined) {
       const msg = String(body.pokeMessage).trim()
-      if (msg.length > 50) return err('被戳提示须 50 字以内', 400)
+      if (msg.length > 5000) return err('被戳提示内容过长', 400)
       updates.push('poke_message = ?')
       values.push(msg || null)
     } else {

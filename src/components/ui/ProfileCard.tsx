@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
+import DOMPurify from 'dompurify'
 import { userApi } from '../../lib/api'
 import { AvatarDisplay } from './AvatarDisplay'
 import type { PublicProfile } from '../../types/user.types'
@@ -77,24 +78,27 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
               </div>
             </div>
 
-            {/* Bio */}
+            {/* Bio — rendered as rich HTML */}
             {profile.bio && (
-              <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--color-text)', opacity: 0.7 }}>
-                {profile.bio}
-              </p>
+              <div
+                className="text-xs mb-3 leading-relaxed prose-sm max-w-none"
+                style={{ color: 'var(--color-text)', opacity: 0.7 }}
+                // eslint-disable-next-line react/no-danger
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(profile.bio) }}
+              />
             )}
 
-            {/* Poke message (被戳信息) */}
+            {/* Poke message — rich HTML */}
             {profile.pokeMessage && (
               <div
-                className="text-xs px-3 py-2 rounded-lg mb-3 italic"
+                className="text-xs px-3 py-2 rounded-lg mb-3 prose-sm max-w-none"
                 style={{
                   backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)',
                   color: 'var(--color-primary)',
                 }}
-              >
-                "{profile.pokeMessage}"
-              </div>
+                // eslint-disable-next-line react/no-danger
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(profile.pokeMessage) }}
+              />
             )}
 
             {/* Actions */}

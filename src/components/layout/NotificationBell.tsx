@@ -147,11 +147,15 @@ export function NotificationBell() {
                             <p className="text-xs font-medium truncate" style={{ color: 'var(--color-text)' }}>
                               {t('notifPokedBy').replace('{name}', p.senderDisplayName)}
                             </p>
-                            {p.senderPokeMessage && (
-                              <p className="text-[10px] italic truncate" style={{ color: 'var(--color-primary)', opacity: 0.85 }}>
-                                "{p.senderPokeMessage}"
-                              </p>
-                            )}
+                            {p.senderPokeMessage && (() => {
+                              // Strip HTML tags for compact display in notification row
+                              const plain = p.senderPokeMessage.replace(/<[^>]*>/g, '').trim()
+                              return plain ? (
+                                <p className="text-[10px] italic truncate" style={{ color: 'var(--color-primary)', opacity: 0.85 }}>
+                                  "{plain}"
+                                </p>
+                              ) : null
+                            })()}
                             <p className="text-[10px]" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
                               {timeAgo(p.createdAt, lang)}
                             </p>
