@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { X } from 'lucide-react'
+import { X, Zap } from 'lucide-react'
 import DOMPurify from 'dompurify'
-import { userApi } from '../../lib/api'
+import { userApi, pokeApi } from '../../lib/api'
 import { AvatarDisplay } from './AvatarDisplay'
+import { useAuthStore } from '../../hooks/useAuth'
 import type { PublicProfile } from '../../types/user.types'
 
 interface ProfileCardProps {
@@ -14,8 +15,10 @@ interface ProfileCardProps {
 
 export function ProfileCard({ username, onClose }: ProfileCardProps) {
   const navigate = useNavigate()
+  const currentUser = useAuthStore(s => s.user)
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [pokeState, setPokeState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
   useEffect(() => {
     userApi.getProfile(username)
@@ -25,6 +28,19 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
   }, [username])
 
   const goToProfile = () => { onClose(); navigate(`/u/${username}`) }
+
+  const handlePoke = async () => {
+    if (!profile || pokeState !== 'idle') return
+    setPokeState('sending')
+    try {
+      await pokeApi.send(profile.id)
+      setPokeState('sent')
+      setTimeout(() => setPokeState('idle'), 2000)
+    } catch {
+      setPokeState('error')
+      setTimeout(() => setPokeState('idle'), 2000)
+    }
+  }
 
   return createPortal(
     <>
@@ -88,27 +104,27 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
               />
             )}
 
-            {/* Poke message — rich HTML */}
-            {profile.pokeMessage && (
-              <div
-                className="text-xs px-3 py-2 rounded-lg mb-3 prose-sm max-w-none"
-                style={{
-                  backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)',
-                  color: 'var(--color-primary)',
-                }}
-                // eslint-disable-next-line react/no-danger
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(profile.pokeMessage) }}
-              />
-            )}
-
             {/* Actions */}
-            <button
-              onClick={goToProfile}
-              className="w-full text-xs py-2 rounded-lg font-medium hover:opacity-80 transition-opacity"
-              style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
-            >
-              查看完整主页 →
-            </button>
+            <div className="flex gap-2">
+              {currentUser && !profile.isSelf && (
+                <button
+                  onClick={() => void handlePoke()}
+                  disabled={pokeState === 'sending'}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
+                  style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
+                >
+                  <Zap size={12} />
+                  {pokeState === 'sent' ? '已戳！' : pokeState === 'error' ? '失败' : '戳一下'}
+                </button>
+              )}
+              <button
+                onClick={goToProfile}
+                className="flex-1 text-xs py-1.5 rounded-lg font-medium hover:opacity-80 transition-opacity"
+                style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
+              >
+                查看完整主页 →
+              </button>
+            </div>
           </>
         ) : (
           <p className="text-xs text-center py-6" style={{ color: 'var(--color-text)', opacity: 0.4 }}>

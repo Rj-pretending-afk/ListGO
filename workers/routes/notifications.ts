@@ -18,6 +18,7 @@ export async function handleGetNotifications(
              u.display_name AS sender_display_name,
              u.avatar_color AS sender_avatar_color,
              u.avatar_image AS sender_avatar_image,
+             p.poke_message_snapshot,
              p.status, p.created_at
       FROM pokes p
       JOIN users u ON u.id = p.sender_id
@@ -26,7 +27,8 @@ export async function handleGetNotifications(
     `).bind(auth.userId).all<{
       id: string; sender_id: string; sender_username: string
       sender_display_name: string | null; sender_avatar_color: string | null
-      sender_avatar_image: string | null; status: string; created_at: number
+      sender_avatar_image: string | null; poke_message_snapshot: string | null
+      status: string; created_at: number
     }>(),
     env.DB.prepare(
       'SELECT * FROM list_invitations WHERE invitee_id = ? AND status = ? ORDER BY created_at DESC LIMIT 20'
@@ -48,9 +50,10 @@ export async function handleGetNotifications(
       senderUsername:    r.sender_username,
       senderDisplayName: r.sender_display_name ?? r.sender_username,
       senderAvatarColor: r.sender_avatar_color ?? '#10B981',
-      senderAvatarImage: r.sender_avatar_image ?? undefined,
-      status:            r.status,
-      createdAt:           r.created_at,
+      senderAvatarImage:       r.sender_avatar_image ?? undefined,
+      pokeMessageSnapshot:     r.poke_message_snapshot ?? undefined,
+      status:                  r.status,
+      createdAt:               r.created_at,
     })),
     listInvitations: (invitesResult.results ?? []).map(r => ({
       id:               r.id,

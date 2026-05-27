@@ -65,7 +65,7 @@ export const inviteRequestApi = {
 }
 
 export const pokeApi = {
-  send: (recipientId: string) => api.post<{ ok: boolean; pokeMessage: string | null }>('/pokes', { recipientId }),
+  send: (recipientId: string) => api.post<{ ok: boolean }>('/pokes', { recipientId }),
   inbox: () => api.get<import('../types/user.types').PokeInfo[]>('/pokes/inbox'),
   markRead: (pokeId: string) => api.put<{ ok: boolean }>(`/pokes/${pokeId}/read`, {}),
 }

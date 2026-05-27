@@ -101,19 +101,6 @@ export default function UserProfilePage() {
         />
       )}
 
-      {/* Poke message (被戳提示) — rich HTML display */}
-      {canPoke && profile.pokeMessage && (
-        <div
-          className="text-sm mb-4 px-4 py-3 rounded-xl leading-relaxed prose-sm max-w-none"
-          style={{
-            backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)',
-            color: 'var(--color-primary)',
-          }}
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(profile.pokeMessage) }}
-        />
-      )}
-
       {/* Poke button */}
       {canPoke && (
         <button

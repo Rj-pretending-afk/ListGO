@@ -2,10 +2,16 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, ShieldAlert } from 'lucide-react'
 import { createPortal } from 'react-dom'
-import { notificationApi, pokeApi } from '../../lib/api'
+import { notificationApi } from '../../lib/api'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
 import { ProfileCard } from '../ui/ProfileCard'
 import { useT } from '../../hooks/useLang'
+
+function stripHtml(html: string): string {
+  const el = document.createElement('div')
+  el.innerHTML = html
+  return el.textContent ?? ''
+}
 import type { PokeInfo, ListInvitationNotif } from '../../types/user.types'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
@@ -48,11 +54,9 @@ export function NotificationBell() {
   }, [fetchAll])
 
   const handlePokeClick = async (p: PokeInfo) => {
+    // Backend auto-sends reader's poke_message back to the poker on mark-read
     await notificationApi.markPokeRead(p.id).catch(() => undefined)
     setPokes(prev => prev.filter(item => item.id !== p.id))
-    // Send return poke so sender receives pokee's poke_message
-    pokeApi.send(p.senderId).catch(() => undefined)
-    // Show sender's profile card (stay on current page)
     setProfileCard(p.senderUsername)
   }
 
@@ -147,6 +151,11 @@ export function NotificationBell() {
                             <p className="text-xs font-medium truncate" style={{ color: 'var(--color-text)' }}>
                               {t('notifPokedBy').replace('{name}', p.senderDisplayName)}
                             </p>
+                            {p.pokeMessageSnapshot && (
+                              <p className="text-[10px] italic truncate" style={{ color: 'var(--color-primary)' }}>
+                                {stripHtml(p.pokeMessageSnapshot)}
+                              </p>
+                            )}
                             <p className="text-[10px]" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
                               {timeAgo(p.createdAt, lang)}
                             </p>
