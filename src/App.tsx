@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Header } from './components/layout/Header'
 import { useAppStore } from './lib/store'
 import { useAuthStore } from './hooks/useAuth'
+import { useNetworkStatus } from './hooks/useNetworkStatus'
 import Home from './pages/Home'
 import ListPage from './pages/ListPage'
 import LoginPage from './pages/LoginPage'
@@ -16,6 +17,7 @@ import NotFound from './pages/NotFound'
 export default function App() {
   const init = useAppStore(s => s.init)
   const initAuth = useAuthStore(s => s.initAuth)
+  const online = useNetworkStatus()
 
   useEffect(() => {
     let cancelled = false
@@ -30,6 +32,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
+        {!online && (
+          <div
+            className="fixed bottom-0 inset-x-0 z-[500] py-2 px-4 text-xs text-center font-medium"
+            style={{ backgroundColor: '#1f2937', color: '#f9fafb' }}
+          >
+            📶 网络已断开，编辑内容已保存在本地
+          </div>
+        )}
         <Header />
         <main>
           <Routes>

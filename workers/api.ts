@@ -11,6 +11,7 @@ import { handleSendPoke, handleGetPokeInbox, handleMarkPokeRead } from './routes
 import { handleGetNotifications, handleMarkInvitationRead } from './routes/notifications'
 import { handleJoinPresence, handleGetPresence, handleLeavePresence } from './routes/presence'
 import { handleUploadImage, handleGetImage } from './routes/upload'
+import { handleScheduled } from './cron'
 
 export interface Env {
   DB: D1Database
@@ -239,5 +240,9 @@ const adminListMatch = pathname.match(/^\/admin\/lists\/([^/]+)$/)
     }
 
     return err('Not found', 404)
+  },
+
+  async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
+    await handleScheduled(event, env)
   },
 }

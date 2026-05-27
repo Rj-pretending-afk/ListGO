@@ -1,0 +1,17 @@
+{
+  "name": "ListGo",
+  "short_name": "ListGo",
+  "description": "让朋友替你做决定的轻协作清单工具",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#34D399",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

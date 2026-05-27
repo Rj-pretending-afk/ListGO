@@ -57,6 +57,7 @@ export interface ListInvitationNotif {
 export interface NotificationsResponse {
   pokes: PokeInfo[]
   listInvitations: ListInvitationNotif[]
+  pendingAdminRequests?: number
 }
 
 export interface InviteRequestInfo {

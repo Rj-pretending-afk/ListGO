@@ -12,7 +12,7 @@ export async function handleGetNotifications(
 ): Promise<Response> {
   if (!auth) return err('Unauthorized', 401)
 
-  const [pokesResult, invitesResult] = await Promise.all([
+  const [pokesResult, invitesResult, adminResult] = await Promise.all([
     env.DB.prepare(`
       SELECT p.id, p.sender_id, u.username AS sender_username,
              u.display_name AS sender_display_name,
@@ -34,7 +34,11 @@ export async function handleGetNotifications(
       id: string; list_id: string; list_title: string
       owner_username: string; owner_avatar_color: string | null
       owner_avatar_image: string | null; status: string; created_at: number
-    }>()
+    }>(),
+    auth.isAdmin
+      ? env.DB.prepare(`SELECT COUNT(*) AS cnt FROM invite_requests WHERE status = 'pending'`)
+          .first<{ cnt: number }>()
+      : Promise.resolve(null),
   ])
 
   return json({
@@ -58,6 +62,7 @@ export async function handleGetNotifications(
       status:           r.status,
       createdAt:        r.created_at,
     })),
+    ...(auth.isAdmin ? { pendingAdminRequests: adminResult?.cnt ?? 0 } : {}),
   })
 }
 

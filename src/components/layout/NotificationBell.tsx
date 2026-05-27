@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell } from 'lucide-react'
+import { Bell, ShieldAlert } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { notificationApi } from '../../lib/api'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
@@ -21,10 +21,11 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [pokes, setPokes] = useState<PokeInfo[]>([])
   const [invites, setInvites] = useState<ListInvitationNotif[]>([])
+  const [pendingAdmin, setPendingAdmin] = useState(0)
   const [loading, setLoading] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
-  const totalUnread = pokes.length + invites.length
+  const totalUnread = pokes.length + invites.length + pendingAdmin
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -32,6 +33,7 @@ export function NotificationBell() {
       const data = await notificationApi.getAll()
       setPokes(data.pokes)
       setInvites(data.listInvitations)
+      setPendingAdmin(data.pendingAdminRequests ?? 0)
     } catch { /* silent */ }
     finally { setLoading(false) }
   }, [])
@@ -116,7 +118,7 @@ export function NotificationBell() {
             <div className="overflow-y-auto flex-1">
               {loading && pokes.length === 0 && invites.length === 0 ? (
                 <p className="text-xs text-center py-8" style={{ color: 'var(--color-text)', opacity: 0.4 }}>{t('loading')}</p>
-              ) : totalUnread === 0 ? (
+              ) : pokes.length === 0 && invites.length === 0 && pendingAdmin === 0 ? (
                 <p className="text-xs text-center py-8" style={{ color: 'var(--color-text)', opacity: 0.4 }}>{t('notifEmpty')}</p>
               ) : (
                 <>
@@ -175,6 +177,32 @@ export function NotificationBell() {
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: 'var(--color-primary)' }} />
                         </div>
                       ))}
+                    </>
+                  )}
+                  {/* Admin section */}
+                  {pendingAdmin > 0 && (
+                    <>
+                      <p className="text-[10px] uppercase tracking-wider px-4 pt-3 pb-1 font-semibold"
+                        style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+                        管理员
+                      </p>
+                      <div
+                        className="flex items-center gap-3 px-4 py-2.5 hover:opacity-80 cursor-pointer"
+                        style={{ borderBottom: '1px solid var(--color-border)' }}
+                        onClick={() => { setOpen(false); navigate('/admin') }}
+                      >
+                        <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 15%, transparent)' }}>
+                          <ShieldAlert size={14} style={{ color: 'var(--color-primary)' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>
+                            {pendingAdmin} 条待审邀请申请
+                          </p>
+                          <p className="text-[10px]" style={{ color: 'var(--color-text)', opacity: 0.4 }}>前往管理员后台</p>
+                        </div>
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: '#f59e0b' }} />
+                      </div>
                     </>
                   )}
                 </>
