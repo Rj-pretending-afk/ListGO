@@ -39,7 +39,6 @@ export interface PokeInfo {
   senderDisplayName: string
   senderAvatarColor: string
   senderAvatarImage?: string
-  senderPokeMessage?: string
   status: string
   createdAt: number
 }
