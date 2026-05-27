@@ -44,13 +44,14 @@ export default function ListPage() {
         const isOwner = currentUser
           ? list.ownerId === currentUser.id
           : !!list.ownerToken && list.ownerToken === ownerToken
+        // Record in recent history for any logged-in user (owner or visitor)
+        if (currentUser) {
+          recordRecentList({ id: list.id, title: list.title, ownerUsername: list.ownerUsername, updatedAt: list.updatedAt })
+        }
         if (isOwner) {
           await importList(list)
         } else {
           setRemoteList(list)
-          if (currentUser) {
-            recordRecentList({ id: list.id, title: list.title, ownerUsername: list.ownerUsername, updatedAt: list.updatedAt })
-          }
           if (!currentUser && !hasSetAnonIdentity()) {
             setShowIdentitySheet(true)
           }
