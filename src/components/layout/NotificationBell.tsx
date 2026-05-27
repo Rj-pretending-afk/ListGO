@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, ShieldAlert } from 'lucide-react'
 import { createPortal } from 'react-dom'
-import { notificationApi } from '../../lib/api'
+import { notificationApi, pokeApi } from '../../lib/api'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
 import { useT } from '../../hooks/useLang'
 import type { PokeInfo, ListInvitationNotif } from '../../types/user.types'
@@ -45,9 +45,13 @@ export function NotificationBell() {
     return () => clearInterval(id)
   }, [fetchAll])
 
-  const markPokeRead = async (id: string) => {
-    await notificationApi.markPokeRead(id).catch(() => undefined)
-    setPokes(prev => prev.filter(p => p.id !== id))
+  const handlePokeClick = async (p: PokeInfo) => {
+    // Mark read, send return poke, open sender's profile
+    await notificationApi.markPokeRead(p.id).catch(() => undefined)
+    setPokes(prev => prev.filter(item => item.id !== p.id))
+    pokeApi.send(p.senderId).catch(() => undefined)
+    setOpen(false)
+    navigate(`/u/${p.senderUsername}`)
   }
 
   const markInviteRead = async (id: string, listId: string) => {
@@ -132,7 +136,7 @@ export function NotificationBell() {
                       {pokes.map(p => (
                         <div key={p.id} className="flex items-center gap-3 px-4 py-2.5 hover:opacity-80 cursor-pointer"
                           style={{ borderBottom: '1px solid var(--color-border)' }}
-                          onClick={() => void markPokeRead(p.id)}>
+                          onClick={() => void handlePokeClick(p)}>
                           <AvatarDisplay
                             user={{ username: p.senderUsername, avatarColor: p.senderAvatarColor, avatarImage: p.senderAvatarImage }}
                             size={30}
