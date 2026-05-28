@@ -88,7 +88,7 @@ export const zh = {
   shareSettings: '共享设置', shareCopyLink: '复制链接', shareLinkCopied: '已复制！',
   sharePermission: '访问权限',
   permPublic: '🌐 公开（任何人）', permLoggedIn: '🔐 仅登录用户',
-  permInvited: '💌 仅受邀用户', permPrivate: '🔒 仅自己',
+  permInvited: '💌 仅受邀用户', permFriendsOnly: '👥 仅好友', permPrivate: '🔒 仅自己',
   shareClose: '关闭', viewOnly: '只读',
   // Admin
   adminTitle: '管理员后台', adminStats: '统计',
@@ -204,7 +204,7 @@ export const en: Record<I18nKey, string> = {
   shareSettings: 'Share Settings', shareCopyLink: 'Copy Link', shareLinkCopied: 'Copied!',
   sharePermission: 'Access Permission',
   permPublic: '🌐 Public (anyone)', permLoggedIn: '🔐 Logged-in only',
-  permInvited: '💌 Invited only', permPrivate: '🔒 Only me',
+  permInvited: '💌 Invited only', permFriendsOnly: '👥 Friends only', permPrivate: '🔒 Only me',
   shareClose: 'Close', viewOnly: 'View only',
   adminTitle: 'Admin Panel', adminStats: 'Stats',
   adminUsers: 'Users', adminLists: 'Lists', adminCodes: 'Invite Codes', adminInviteRequests: 'Requests',

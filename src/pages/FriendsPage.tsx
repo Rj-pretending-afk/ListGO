@@ -225,14 +225,6 @@ export default function FriendsPage() {
                     <Zap size={15} />
                   </button>
                   <button
-                    onClick={() => setProfileCard(f.username)}
-                    className="p-2 rounded-lg hover:opacity-70 transition-opacity"
-                    title={t('friendsPublicLists')}
-                    style={{ color: 'var(--color-text)', opacity: 0.5 }}
-                  >
-                    <ExternalLink size={14} />
-                  </button>
-                  <button
                     onClick={() => void removeFriend(f.id)}
                     className="p-2 rounded-lg hover:opacity-70 transition-opacity"
                     title={t('friendRemove')}

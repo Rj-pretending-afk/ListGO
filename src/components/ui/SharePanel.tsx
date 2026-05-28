@@ -11,11 +11,12 @@ interface SharePanelProps {
   onClose: () => void
 }
 
-const PERMISSIONS: { value: ListPermission; labelKey: 'permPublic' | 'permLoggedIn' | 'permInvited' | 'permPrivate' }[] = [
-  { value: 'public',      labelKey: 'permPublic' },
-  { value: 'verified',    labelKey: 'permLoggedIn' },
-  { value: 'invite_only', labelKey: 'permInvited' },
-  { value: 'private',     labelKey: 'permPrivate' },
+const PERMISSIONS: { value: ListPermission; labelKey: 'permPublic' | 'permLoggedIn' | 'permInvited' | 'permFriendsOnly' | 'permPrivate' }[] = [
+  { value: 'public',        labelKey: 'permPublic' },
+  { value: 'verified',      labelKey: 'permLoggedIn' },
+  { value: 'invite_only',   labelKey: 'permInvited' },
+  { value: 'friends-only',  labelKey: 'permFriendsOnly' },
+  { value: 'private',       labelKey: 'permPrivate' },
 ]
 
 export function SharePanel({ list, onPermissionChange, onInvitedUsersChange, onClose }: SharePanelProps) {

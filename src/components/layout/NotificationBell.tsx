@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, ShieldAlert, UserPlus, Check, X } from 'lucide-react'
+import { Bell, ShieldAlert, Check, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { notificationApi, friendApi } from '../../lib/api'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
