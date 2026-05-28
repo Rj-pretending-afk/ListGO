@@ -12,6 +12,7 @@ import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 import AdminListPage from './pages/AdminListPage'
 import UserProfilePage from './pages/UserProfilePage'
+import FriendsPage from './pages/FriendsPage'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/list/:id" element={<AdminListPage />} />
             <Route path="/u/:username" element={<UserProfilePage />} />
+            <Route path="/friends" element={<FriendsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

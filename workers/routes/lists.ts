@@ -115,6 +115,16 @@ export async function handleGetList(
       const listData = JSON.parse(row.data) as { invitedUsernames?: string[] }
       if (!(listData.invitedUsernames ?? []).includes(auth.username)) return err('Forbidden', 403)
     }
+    if (row.permission === 'friends-only') {
+      if (!auth) return err('Login required', 401)
+      if (row.owner_id) {
+        const fs = await env.DB.prepare(
+          `SELECT id FROM friendships WHERE status = 'accepted'
+           AND ((requester_id = ? AND addressee_id = ?) OR (requester_id = ? AND addressee_id = ?))`
+        ).bind(auth.userId, row.owner_id, row.owner_id, auth.userId).first()
+        if (!fs) return err('Forbidden', 403)
+      }
+    }
   }
 
   // Always update last_accessed_at (30-day anonymous cleanup clock)
@@ -224,6 +234,11 @@ export async function handleCollabUpdateModule(
     if (!auth) return err('Login required', 401)
     const d = JSON.parse(row.data) as { invitedUsernames?: string[] }
     if (!(d.invitedUsernames ?? []).includes(auth.username)) return err('Forbidden', 403)
+  }
+  if (row.permission === 'friends-only') {
+    if (!auth) return err('Login required', 401)
+    // owner_id not in this query; friends-only collab edit is restricted
+    return err('Forbidden', 403)
   }
 
   const listData = JSON.parse(row.data) as { modules?: Record<string, unknown>[] }

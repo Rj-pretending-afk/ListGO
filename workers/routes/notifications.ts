@@ -6,13 +6,13 @@ import type { AuthUser } from '../middleware/auth'
 type JsonFn = (data: unknown, status?: number) => Response
 type ErrFn  = (message: string, status: number) => Response
 
-// ── GET /notifications ── combined pokes + list invitations
+// ── GET /notifications ── combined pokes + list invitations + friend requests
 export async function handleGetNotifications(
   auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
 ): Promise<Response> {
   if (!auth) return err('Unauthorized', 401)
 
-  const [pokesResult, invitesResult, adminResult] = await Promise.all([
+  const [pokesResult, invitesResult, friendReqResult, adminResult] = await Promise.all([
     env.DB.prepare(`
       SELECT p.id, p.sender_id, u.username AS sender_username,
              u.display_name AS sender_display_name,
@@ -37,6 +37,22 @@ export async function handleGetNotifications(
       owner_username: string; owner_avatar_color: string | null
       owner_avatar_image: string | null; status: string; created_at: number
     }>(),
+    env.DB.prepare(`
+      SELECT f.id, f.requester_id,
+             u.username AS requester_username,
+             u.display_name AS requester_display_name,
+             u.avatar_color AS requester_avatar_color,
+             u.avatar_image AS requester_avatar_image,
+             f.created_at
+      FROM friendships f
+      JOIN users u ON u.id = f.requester_id
+      WHERE f.addressee_id = ? AND f.status = 'pending'
+      ORDER BY f.created_at DESC LIMIT 20
+    `).bind(auth.userId).all<{
+      id: string; requester_id: string; requester_username: string
+      requester_display_name: string | null; requester_avatar_color: string | null
+      requester_avatar_image: string | null; created_at: number
+    }>(),
     auth.isAdmin
       ? env.DB.prepare(`SELECT COUNT(*) AS cnt FROM invite_requests WHERE status = 'pending'`)
           .first<{ cnt: number }>()
@@ -45,11 +61,11 @@ export async function handleGetNotifications(
 
   return json({
     pokes: (pokesResult.results ?? []).map(r => ({
-      id:                r.id,
-      senderId:          r.sender_id,
-      senderUsername:    r.sender_username,
-      senderDisplayName: r.sender_display_name ?? r.sender_username,
-      senderAvatarColor: r.sender_avatar_color ?? '#10B981',
+      id:                      r.id,
+      senderId:                r.sender_id,
+      senderUsername:          r.sender_username,
+      senderDisplayName:       r.sender_display_name ?? r.sender_username,
+      senderAvatarColor:       r.sender_avatar_color ?? '#10B981',
       senderAvatarImage:       r.sender_avatar_image ?? undefined,
       pokeMessageSnapshot:     r.poke_message_snapshot ?? undefined,
       status:                  r.status,
@@ -64,6 +80,15 @@ export async function handleGetNotifications(
       ownerAvatarImage: r.owner_avatar_image ?? undefined,
       status:           r.status,
       createdAt:        r.created_at,
+    })),
+    friendRequests: (friendReqResult.results ?? []).map(r => ({
+      id:                    r.id,
+      requesterId:           r.requester_id,
+      requesterUsername:     r.requester_username,
+      requesterDisplayName:  r.requester_display_name ?? r.requester_username,
+      requesterAvatarColor:  r.requester_avatar_color ?? '#10B981',
+      requesterAvatarImage:  r.requester_avatar_image ?? undefined,
+      createdAt:             r.created_at,
     })),
     ...(auth.isAdmin ? { pendingAdminRequests: adminResult?.cnt ?? 0 } : {}),
   })

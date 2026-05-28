@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { X, Zap, Pencil } from 'lucide-react'
+import { X, Zap, Pencil, UserPlus, UserCheck, UserX, Clock } from 'lucide-react'
 import DOMPurify from 'dompurify'
-import { userApi, pokeApi } from '../../lib/api'
+import { userApi, pokeApi, friendApi } from '../../lib/api'
 import { AvatarDisplay } from './AvatarDisplay'
 import { useAuthStore } from '../../hooks/useAuth'
-import type { PublicProfile } from '../../types/user.types'
+import type { PublicProfile, FriendshipStatus } from '../../types/user.types'
 
 interface ProfileCardProps {
   username: string
@@ -19,10 +19,17 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [pokeState, setPokeState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [friendStatus, setFriendStatus] = useState<FriendshipStatus>('none')
+  const [friendshipId, setFriendshipId] = useState<string | undefined>()
+  const [friendAction, setFriendAction] = useState<'idle' | 'loading'>('idle')
 
   useEffect(() => {
     userApi.getProfile(username)
-      .then(setProfile)
+      .then(p => {
+        setProfile(p)
+        setFriendStatus(p.friendshipStatus ?? 'none')
+        setFriendshipId(p.friendshipId)
+      })
       .catch(() => setProfile(null))
       .finally(() => setLoading(false))
   }, [username])
@@ -38,6 +45,25 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
       setPokeState('error')
       setTimeout(() => setPokeState('idle'), 2000)
     }
+  }
+
+  const handleFriendAction = async () => {
+    if (!profile || friendAction === 'loading') return
+    setFriendAction('loading')
+    try {
+      if (friendStatus === 'none') {
+        await friendApi.sendRequest(profile.id)
+        setFriendStatus('pending_sent')
+      } else if (friendStatus === 'pending_received' && friendshipId) {
+        await friendApi.accept(friendshipId)
+        setFriendStatus('accepted')
+      } else if (friendStatus === 'accepted' && friendshipId) {
+        await friendApi.remove(friendshipId)
+        setFriendStatus('none')
+        setFriendshipId(undefined)
+      }
+    } catch { /* silent */ }
+    finally { setFriendAction('idle') }
   }
 
   const goToEdit = () => { onClose(); navigate('/profile') }
@@ -116,7 +142,7 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
 
             {/* Actions footer */}
             <div
-              className="px-5 py-3 flex gap-2"
+              className="px-5 py-3 flex gap-2 flex-wrap"
               style={{ borderTop: '1px solid var(--color-border)' }}
             >
               {profile.isSelf ? (
@@ -129,15 +155,61 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
                   编辑资料
                 </button>
               ) : currentUser ? (
-                <button
-                  onClick={() => void handlePoke()}
-                  disabled={pokeState === 'sending'}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
-                  style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
-                >
-                  <Zap size={12} />
-                  {pokeState === 'sent' ? '已戳！' : pokeState === 'error' ? '失败' : '戳回去'}
-                </button>
+                <>
+                  {/* Friend action */}
+                  {friendStatus === 'none' && (
+                    <button
+                      onClick={() => void handleFriendAction()}
+                      disabled={friendAction === 'loading'}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
+                      style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
+                    >
+                      <UserPlus size={12} />
+                      加好友
+                    </button>
+                  )}
+                  {friendStatus === 'pending_sent' && (
+                    <span
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
+                      style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)', opacity: 0.5 }}
+                    >
+                      <Clock size={12} />
+                      等待确认
+                    </span>
+                  )}
+                  {friendStatus === 'pending_received' && (
+                    <button
+                      onClick={() => void handleFriendAction()}
+                      disabled={friendAction === 'loading'}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
+                      style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
+                    >
+                      <UserCheck size={12} />
+                      接受申请
+                    </button>
+                  )}
+                  {friendStatus === 'accepted' && (
+                    <button
+                      onClick={() => void handleFriendAction()}
+                      disabled={friendAction === 'loading'}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
+                      style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
+                    >
+                      <UserX size={12} />
+                      删除好友
+                    </button>
+                  )}
+                  {/* Poke */}
+                  <button
+                    onClick={() => void handlePoke()}
+                    disabled={pokeState === 'sending'}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
+                    style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
+                  >
+                    <Zap size={12} />
+                    {pokeState === 'sent' ? '已戳！' : pokeState === 'error' ? '失败' : '戳回去'}
+                  </button>
+                </>
               ) : null}
             </div>
           </>

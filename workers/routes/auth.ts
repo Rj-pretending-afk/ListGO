@@ -283,6 +283,25 @@ export async function handleGetUserProfile(
   }>()
   if (!row) return err('用户不存在', 404)
 
+  const isSelf = auth?.userId === row.id
+  let friendshipStatus: string = 'none'
+  let friendshipId: string | undefined
+
+  if (auth && !isSelf) {
+    const fs = await env.DB.prepare(
+      `SELECT id, status, requester_id FROM friendships
+       WHERE (requester_id = ? AND addressee_id = ?) OR (requester_id = ? AND addressee_id = ?)`
+    ).bind(auth.userId, row.id, row.id, auth.userId)
+      .first<{ id: string; status: string; requester_id: string }>()
+
+    if (fs) {
+      friendshipId = fs.id
+      if (fs.status === 'accepted') friendshipStatus = 'accepted'
+      else if (fs.status === 'blocked') friendshipStatus = 'blocked'
+      else friendshipStatus = fs.requester_id === auth.userId ? 'pending_sent' : 'pending_received'
+    }
+  }
+
   return json({
     id: row.id,
     username: row.username,
@@ -291,7 +310,9 @@ export async function handleGetUserProfile(
     avatarImage: row.avatar_image ?? undefined,
     bio: row.bio ?? undefined,
     pokeMessage: row.poke_message ?? undefined,
-    isSelf: auth?.userId === row.id,
+    isSelf,
+    friendshipStatus,
+    friendshipId,
   })
 }
 
@@ -303,8 +324,8 @@ export async function handleSearchUsers(
   const q = new URL(request.url).searchParams.get('q') ?? ''
   if (q.length < 1) return json([])
   const rows = await env.DB.prepare(
-    'SELECT username, display_name FROM users WHERE username LIKE ? AND id != ? LIMIT 8'
-  ).bind(`${q}%`, auth.userId).all<{ username: string; display_name: string | null }>()
-  return json((rows.results ?? []).map(r => ({ username: r.username, displayName: r.display_name ?? r.username })))
+    'SELECT id, username, display_name FROM users WHERE username LIKE ? AND id != ? LIMIT 8'
+  ).bind(`${q}%`, auth.userId).all<{ id: string; username: string; display_name: string | null }>()
+  return json((rows.results ?? []).map(r => ({ id: r.id, username: r.username, displayName: r.display_name ?? r.username })))
 }
 

@@ -118,7 +118,16 @@ export const zh = {
   notifPokes: '被戳', notifInvites: '清单邀请',
   notifPokedBy: '@{name} 戳了你', notifPokeReply: '@{name} 感受到了戳', notifInvitedBy: '@{name} 邀请你查看「{title}」',
   notifMarkRead: '标为已读',
+  notifFriendReqs: '好友申请', notifFriendReqBy: '@{name} 想加你为好友',
   joinList: '打开清单', joinListPlaceholder: '粘贴清单链接或 ID…', joinListGo: '打开',
+  // Friends
+  friendsTitle: '好友', friendsEmpty: '还没有好友，去搜索添加吧',
+  friendsRequests: '好友申请', friendsRequestsEmpty: '暂无待处理的申请',
+  friendAdd: '加好友', friendAdded: '已是好友', friendPending: '等待确认',
+  friendPendingReceived: '接受申请', friendAccept: '接受', friendReject: '拒绝',
+  friendRemove: '删除好友', friendBlock: '屏蔽',
+  friendRequestSent: '申请已发送', friendRequestFailed: '发送失败',
+  friendsPublicLists: '公开清单',
   // Not found
   notFound: '页面不存在', backHome: '回到首页',
 } as const
@@ -221,7 +230,15 @@ export const en: Record<I18nKey, string> = {
   notifPokes: 'Pokes', notifInvites: 'List Invites',
   notifPokedBy: '@{name} poked you', notifPokeReply: '@{name} felt the poke', notifInvitedBy: '@{name} invited you to "{title}"',
   notifMarkRead: 'Mark read',
+  notifFriendReqs: 'Friend Requests', notifFriendReqBy: '@{name} wants to be your friend',
   joinList: 'Open list', joinListPlaceholder: 'Paste list link or ID…', joinListGo: 'Go',
+  friendsTitle: 'Friends', friendsEmpty: 'No friends yet — search to add some',
+  friendsRequests: 'Friend Requests', friendsRequestsEmpty: 'No pending requests',
+  friendAdd: 'Add friend', friendAdded: 'Friends', friendPending: 'Pending',
+  friendPendingReceived: 'Accept request', friendAccept: 'Accept', friendReject: 'Decline',
+  friendRemove: 'Remove friend', friendBlock: 'Block',
+  friendRequestSent: 'Request sent', friendRequestFailed: 'Failed to send',
+  friendsPublicLists: 'Public lists',
   notFound: 'Page not found', backHome: 'Back to home',
 }
 

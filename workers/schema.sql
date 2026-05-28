@@ -110,3 +110,20 @@ CREATE TABLE IF NOT EXISTS list_invitations (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_list_invitations_invitee ON list_invitations(invitee_id, status);
+
+-- Friendships: bidirectional relationships (pending → accepted; blocked terminates flow)
+CREATE TABLE IF NOT EXISTS friendships (
+  id TEXT PRIMARY KEY,
+  requester_id TEXT NOT NULL,
+  addressee_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending', -- pending, accepted, blocked
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (addressee_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(requester_id, addressee_id)
+);
+CREATE INDEX IF NOT EXISTS idx_friendships_addressee ON friendships(addressee_id, status);
+CREATE INDEX IF NOT EXISTS idx_friendships_requester ON friendships(requester_id, status);
+
+-- poke_message_snapshot column added via migration: ALTER TABLE pokes ADD COLUMN poke_message_snapshot TEXT;

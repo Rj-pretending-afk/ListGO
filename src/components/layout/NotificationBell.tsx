@@ -1,24 +1,24 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, ShieldAlert } from 'lucide-react'
+import { Bell, ShieldAlert, UserPlus, Check, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
-import { notificationApi } from '../../lib/api'
+import { notificationApi, friendApi } from '../../lib/api'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
 import { ProfileCard } from '../ui/ProfileCard'
 import { useT } from '../../hooks/useLang'
+import { useLangStore } from '../../hooks/useLang'
+import type { PokeInfo, ListInvitationNotif, FriendRequest } from '../../types/user.types'
+import { formatDistanceToNow } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
+
+function timeAgo(ts: number, lang: string) {
+  return formatDistanceToNow(ts, { locale: lang === 'zh' ? zhCN : undefined, addSuffix: true })
+}
 
 function stripHtml(html: string): string {
   const el = document.createElement('div')
   el.innerHTML = html
   return el.textContent ?? ''
-}
-import type { PokeInfo, ListInvitationNotif } from '../../types/user.types'
-import { formatDistanceToNow } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
-import { useLangStore } from '../../hooks/useLang'
-
-function timeAgo(ts: number, lang: string) {
-  return formatDistanceToNow(ts, { locale: lang === 'zh' ? zhCN : undefined, addSuffix: true })
 }
 
 export function NotificationBell() {
@@ -28,12 +28,13 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [pokes, setPokes] = useState<PokeInfo[]>([])
   const [invites, setInvites] = useState<ListInvitationNotif[]>([])
+  const [friendReqs, setFriendReqs] = useState<FriendRequest[]>([])
   const [pendingAdmin, setPendingAdmin] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [profileCard, setProfileCard] = useState<string | null>(null) // username to show
+  const [profileCard, setProfileCard] = useState<string | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
-  const totalUnread = pokes.length + invites.length + pendingAdmin
+  const totalUnread = pokes.length + invites.length + friendReqs.length + pendingAdmin
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -41,6 +42,7 @@ export function NotificationBell() {
       const data = await notificationApi.getAll()
       setPokes(data.pokes)
       setInvites(data.listInvitations)
+      setFriendReqs(data.friendRequests ?? [])
       setPendingAdmin(data.pendingAdminRequests ?? 0)
     } catch { /* silent */ }
     finally { setLoading(false) }
@@ -65,6 +67,16 @@ export function NotificationBell() {
     setInvites(prev => prev.filter(i => i.id !== id))
     setOpen(false)
     navigate(`/list/${listId}`)
+  }
+
+  const acceptFriendReq = async (id: string) => {
+    await friendApi.accept(id).catch(() => undefined)
+    setFriendReqs(prev => prev.filter(r => r.id !== id))
+  }
+
+  const rejectFriendReq = async (id: string) => {
+    await friendApi.remove(id).catch(() => undefined)
+    setFriendReqs(prev => prev.filter(r => r.id !== id))
   }
 
   const markAllRead = async () => {
@@ -126,9 +138,9 @@ export function NotificationBell() {
 
             {/* Body */}
             <div className="overflow-y-auto flex-1">
-              {loading && pokes.length === 0 && invites.length === 0 ? (
+              {loading && pokes.length === 0 && invites.length === 0 && friendReqs.length === 0 ? (
                 <p className="text-xs text-center py-8" style={{ color: 'var(--color-text)', opacity: 0.4 }}>{t('loading')}</p>
-              ) : pokes.length === 0 && invites.length === 0 && pendingAdmin === 0 ? (
+              ) : pokes.length === 0 && invites.length === 0 && friendReqs.length === 0 && pendingAdmin === 0 ? (
                 <p className="text-xs text-center py-8" style={{ color: 'var(--color-text)', opacity: 0.4 }}>{t('notifEmpty')}</p>
               ) : (
                 <>
@@ -190,6 +202,53 @@ export function NotificationBell() {
                             </p>
                           </div>
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: 'var(--color-primary)' }} />
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {/* Friend requests section */}
+                  {friendReqs.length > 0 && (
+                    <>
+                      <p className="text-[10px] uppercase tracking-wider px-4 pt-3 pb-1 font-semibold"
+                        style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+                        {t('notifFriendReqs')}
+                      </p>
+                      {friendReqs.map(r => (
+                        <div key={r.id} className="flex items-center gap-3 px-4 py-2.5"
+                          style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <button className="flex-1 flex items-center gap-3 text-left hover:opacity-80"
+                            onClick={() => setProfileCard(r.requesterUsername)}>
+                            <AvatarDisplay
+                              user={{ username: r.requesterUsername, avatarColor: r.requesterAvatarColor, avatarImage: r.requesterAvatarImage }}
+                              size={30}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium truncate" style={{ color: 'var(--color-text)' }}>
+                                {t('notifFriendReqBy').replace('{name}', r.requesterDisplayName)}
+                              </p>
+                              <p className="text-[10px]" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+                                {timeAgo(r.createdAt, lang)}
+                              </p>
+                            </div>
+                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => void acceptFriendReq(r.id)}
+                              className="p-1.5 rounded-lg hover:opacity-70"
+                              style={{ color: 'var(--color-primary)' }}
+                              title={t('friendAccept')}
+                            >
+                              <Check size={13} />
+                            </button>
+                            <button
+                              onClick={() => void rejectFriendReq(r.id)}
+                              className="p-1.5 rounded-lg hover:opacity-70"
+                              style={{ color: 'var(--color-text)', opacity: 0.4 }}
+                              title={t('friendReject')}
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </>

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
-import { Link2 } from 'lucide-react'
+import { Link2, Users } from 'lucide-react'
 import { ThemeSwitcher } from '../theme/ThemeSwitcher'
 import { NotificationBell } from './NotificationBell'
 import { useAuthStore } from '../../hooks/useAuth'
@@ -184,6 +184,14 @@ export function Header() {
           user
             ? (
               <>
+                <Link
+                  to="/friends"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:opacity-70 transition-opacity"
+                  style={{ color: 'var(--color-text)' }}
+                  title="好友"
+                >
+                  <Users size={17} />
+                </Link>
                 <NotificationBell />
                 <UserMenu />
               </>

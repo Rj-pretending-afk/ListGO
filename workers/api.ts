@@ -9,6 +9,7 @@ import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handle
 import { handleCreateInviteRequest, handleAdminGetInviteRequests, handleAdminAcceptRequest, handleAdminRejectRequest, handleAdminGenerateUserInviteCode } from './routes/inviteRequests'
 import { handleSendPoke, handleGetPokeInbox, handleMarkPokeRead } from './routes/pokes'
 import { handleGetNotifications, handleMarkInvitationRead } from './routes/notifications'
+import { handleSendFriendRequest, handleAcceptFriendRequest, handleRemoveFriend, handleBlockUser, handleGetFriends, handleGetFriendRequests } from './routes/friends'
 import { handleJoinPresence, handleGetPresence, handleLeavePresence } from './routes/presence'
 import { handleUploadImage, handleGetImage } from './routes/upload'
 import { handleScheduled } from './cron'
@@ -217,6 +218,31 @@ const adminListMatch = pathname.match(/^\/admin\/lists\/([^/]+)$/)
     if (pokeReadMatch && method === 'PUT') {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleMarkPokeRead(pokeReadMatch[1], auth, env, json, err)
+    }
+
+    // ── Friends ──
+    if (method === 'POST' && pathname === '/friends/request') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleSendFriendRequest(request, auth, env, json, err)
+    }
+    if (method === 'GET' && pathname === '/friends') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleGetFriends(auth, env, json, err)
+    }
+    if (method === 'GET' && pathname === '/friends/requests') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleGetFriendRequests(auth, env, json, err)
+    }
+    const friendActionMatch = pathname.match(/^\/friends\/([^/]+)\/(accept|block)$/)
+    if (friendActionMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (friendActionMatch[2] === 'accept') return handleAcceptFriendRequest(friendActionMatch[1], auth, env, json, err)
+      return handleBlockUser(friendActionMatch[1], auth, env, json, err)
+    }
+    const friendIdMatch = pathname.match(/^\/friends\/([^/]+)$/)
+    if (friendIdMatch && method === 'DELETE') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleRemoveFriend(friendIdMatch[1], auth, env, json, err)
     }
 
     // ── Upload ──

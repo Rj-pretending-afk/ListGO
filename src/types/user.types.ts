@@ -13,6 +13,8 @@ export interface User {
   inviteCodes: InviteCodeInfo[]
 }
 
+export type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'accepted' | 'blocked'
+
 export interface PublicProfile {
   id: string
   username: string
@@ -22,6 +24,8 @@ export interface PublicProfile {
   bio?: string
   pokeMessage?: string
   isSelf: boolean
+  friendshipStatus?: FriendshipStatus
+  friendshipId?: string
 }
 
 export interface InviteCodeInfo {
@@ -55,9 +59,30 @@ export interface ListInvitationNotif {
   createdAt: number
 }
 
+export interface FriendInfo {
+  id: string
+  userId: string
+  username: string
+  displayName: string
+  avatarColor: string
+  avatarImage?: string
+  createdAt: number
+}
+
+export interface FriendRequest {
+  id: string
+  requesterId: string
+  requesterUsername: string
+  requesterDisplayName: string
+  requesterAvatarColor: string
+  requesterAvatarImage?: string
+  createdAt: number
+}
+
 export interface NotificationsResponse {
   pokes: PokeInfo[]
   listInvitations: ListInvitationNotif[]
+  friendRequests: FriendRequest[]
   pendingAdminRequests?: number
 }
 
