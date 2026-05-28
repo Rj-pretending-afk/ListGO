@@ -114,7 +114,7 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
                   style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
                 >
                   <Zap size={12} />
-                  {pokeState === 'sent' ? '已戳！' : pokeState === 'error' ? '失败' : '戳一下'}
+                  {pokeState === 'sent' ? '已戳！' : pokeState === 'error' ? '失败' : '戳回去'}
                 </button>
               )}
               <button
