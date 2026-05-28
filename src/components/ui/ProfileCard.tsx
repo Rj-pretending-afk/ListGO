@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { X, Zap } from 'lucide-react'
+import { X, Zap, Pencil } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import { userApi, pokeApi } from '../../lib/api'
 import { AvatarDisplay } from './AvatarDisplay'
@@ -27,8 +27,6 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
       .finally(() => setLoading(false))
   }, [username])
 
-  const goToProfile = () => { onClose(); navigate(`/u/${username}`) }
-
   const handlePoke = async () => {
     if (!profile || pokeState !== 'idle') return
     setPokeState('sending')
@@ -42,94 +40,113 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
     }
   }
 
+  const goToEdit = () => { onClose(); navigate('/profile') }
+
   return createPortal(
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-[400]"
-        style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+        style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
         onClick={onClose}
       />
 
-      {/* Card */}
       <div
-        className="fixed z-[401] rounded-2xl shadow-2xl p-5 w-72"
+        className="fixed z-[401] rounded-2xl shadow-2xl flex flex-col"
         style={{
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
+          width: '22rem',
+          maxHeight: '85vh',
           backgroundColor: 'var(--color-card)',
           border: '1px solid var(--color-border)',
         }}
         onClick={e => e.stopPropagation()}
       >
+        {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 p-1 rounded-lg hover:opacity-60"
+          className="absolute top-3 right-3 p-1 rounded-lg hover:opacity-60 z-10"
           style={{ color: 'var(--color-text)' }}
         >
           <X size={15} />
         </button>
 
         {loading ? (
-          <div className="flex items-center justify-center h-24">
-            <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
+          <div className="flex items-center justify-center h-40">
+            <div className="w-5 h-5 rounded-full border-2 animate-spin"
               style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
           </div>
         ) : profile ? (
           <>
-            {/* Avatar + name */}
-            <div className="flex items-center gap-3 mb-3">
-              <AvatarDisplay
-                user={{ username: profile.username, avatarColor: profile.avatarColor, avatarImage: profile.avatarImage }}
-                size={48}
-              />
-              <div className="min-w-0">
-                <p className="font-semibold text-sm truncate" style={{ color: 'var(--color-text)' }}>
-                  {profile.displayName}
-                </p>
-                <p className="text-xs opacity-45 truncate" style={{ color: 'var(--color-text)' }}>
-                  @{profile.username}
-                </p>
+            {/* Header band */}
+            <div className="px-5 pt-6 pb-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <div className="flex items-center gap-4">
+                <AvatarDisplay
+                  user={{ username: profile.username, avatarColor: profile.avatarColor, avatarImage: profile.avatarImage }}
+                  size={64}
+                  border
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-base truncate" style={{ color: 'var(--color-text)' }}>
+                    {profile.displayName}
+                  </p>
+                  <p className="text-xs mt-0.5 font-mono" style={{ color: 'var(--color-text)', opacity: 0.45 }}>
+                    @{profile.username}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Bio — rendered as rich HTML */}
-            {profile.bio && (
-              <div
-                className="text-xs mb-3 leading-relaxed prose-sm max-w-none"
-                style={{ color: 'var(--color-text)', opacity: 0.7 }}
-                // eslint-disable-next-line react/no-danger
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(profile.bio) }}
-              />
-            )}
+            {/* Body — scrollable */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+              {profile.bio ? (
+                <div
+                  className="text-sm leading-relaxed prose-sm max-w-none"
+                  style={{ color: 'var(--color-text)', opacity: 0.8 }}
+                  // eslint-disable-next-line react/no-danger
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(profile.bio) }}
+                />
+              ) : (
+                <p className="text-xs italic" style={{ color: 'var(--color-text)', opacity: 0.3 }}>
+                  暂无简介
+                </p>
+              )}
+            </div>
 
-            {/* Actions */}
-            <div className="flex gap-2">
-              {currentUser && !profile.isSelf && (
+            {/* Actions footer */}
+            <div
+              className="px-5 py-3 flex gap-2"
+              style={{ borderTop: '1px solid var(--color-border)' }}
+            >
+              {profile.isSelf ? (
+                <button
+                  onClick={goToEdit}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium hover:opacity-80 transition-opacity"
+                  style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
+                >
+                  <Pencil size={12} />
+                  编辑资料
+                </button>
+              ) : currentUser ? (
                 <button
                   onClick={() => void handlePoke()}
                   disabled={pokeState === 'sending'}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
                   style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
                 >
                   <Zap size={12} />
                   {pokeState === 'sent' ? '已戳！' : pokeState === 'error' ? '失败' : '戳回去'}
                 </button>
-              )}
-              <button
-                onClick={goToProfile}
-                className="flex-1 text-xs py-1.5 rounded-lg font-medium hover:opacity-80 transition-opacity"
-                style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
-              >
-                查看完整主页 →
-              </button>
+              ) : null}
             </div>
           </>
         ) : (
-          <p className="text-xs text-center py-6" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
-            无法加载用户信息
-          </p>
+          <div className="flex items-center justify-center h-40">
+            <p className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+              无法加载用户信息
+            </p>
+          </div>
         )}
       </div>
     </>,
