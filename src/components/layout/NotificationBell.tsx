@@ -149,7 +149,7 @@ export function NotificationBell() {
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium truncate" style={{ color: 'var(--color-text)' }}>
-                              {t('notifPokedBy').replace('{name}', p.senderDisplayName)}
+                              {(p.pokeMessageSnapshot ? t('notifPokeReply') : t('notifPokedBy')).replace('{name}', p.senderDisplayName)}
                             </p>
                             {p.pokeMessageSnapshot && (
                               <p className="text-[10px] italic truncate" style={{ color: 'var(--color-primary)' }}>

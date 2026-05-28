@@ -116,7 +116,7 @@ export const zh = {
   // Notifications
   notifTitle: '通知', notifEmpty: '暂无通知',
   notifPokes: '被戳', notifInvites: '清单邀请',
-  notifPokedBy: '@{name} 戳了你', notifInvitedBy: '@{name} 邀请你查看「{title}」',
+  notifPokedBy: '@{name} 戳了你', notifPokeReply: '@{name} 感受到了戳', notifInvitedBy: '@{name} 邀请你查看「{title}」',
   notifMarkRead: '标为已读',
   joinList: '打开清单', joinListPlaceholder: '粘贴清单链接或 ID…', joinListGo: '打开',
   // Not found
@@ -219,7 +219,7 @@ export const en: Record<I18nKey, string> = {
   userIsSelf: 'This is your profile',
   notifTitle: 'Notifications', notifEmpty: 'No notifications',
   notifPokes: 'Pokes', notifInvites: 'List Invites',
-  notifPokedBy: '@{name} poked you', notifInvitedBy: '@{name} invited you to "{title}"',
+  notifPokedBy: '@{name} poked you', notifPokeReply: '@{name} felt the poke', notifInvitedBy: '@{name} invited you to "{title}"',
   notifMarkRead: 'Mark read',
   joinList: 'Open list', joinListPlaceholder: 'Paste list link or ID…', joinListGo: 'Go',
   notFound: 'Page not found', backHome: 'Back to home',
