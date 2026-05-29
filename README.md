@@ -21,15 +21,27 @@ ListGo isn't a work tool — **it's a cozy corner where friends show they care**
 - ✅ 待办 Todo（协作勾选 · collaborative check-off）
 - 📝 富文本 Rich text（字体、颜色、大小 · font, color, size）
 
+**7 种视觉风格 · 7 visual styles**（亮色 / 暗色 · light / dark）
+
+| 风格 | Style |
+|---|---|
+| 🪨 粘土拟态 | Claymorphism |
+| 🔮 玻璃拟态 | Glassmorphism |
+| ◻ 极简主义 | Minimalism |
+| ⬛ 新粗野 | Neo-Brutalism |
+| 💎 质感设计 | Material |
+| ◼ 包豪斯 | Bauhaus |
+| 📺 复古未来 | Retrofuturism |
+
 **账号系统 · Account system**
 - 邀请码注册，清单云端持久化 · Invite-code signup, cloud persistence
-- 多设备同步，好友系统 · Multi-device sync, friends system
 - 匿名清单一键认领 · Claim anonymous lists to your account
+- 多设备实时同步 · Multi-device real-time sync
 
-**体验细节 · Details**
-- 4 套主题 · 4 themes：☀ Day · 🌙 Dark · 🌸 Light Pink · 🥀 Dark Pink
-- 实时协作 · Real-time collaboration（长轮询同步 · long-poll sync）
-- 移动端友好 · Mobile-friendly
+**好友 & 权限 · Friends & permissions**
+- 好友申请 / 通知中心 · Friend requests & notification center
+- 5 级权限：公开 · 登录可见 · 邀请制 · 仅好友 · 私密
+- 5 permission levels: Public · Logged-in · Invite-only · Friends-only · Private
 
 ---
 
@@ -40,7 +52,7 @@ npm install
 npm run dev
 ```
 
-Worker（API）本地调试 · local Worker dev:
+Worker（API）本地调试 · Local Worker dev:
 
 ```bash
 npx wrangler dev workers/api.ts
@@ -56,7 +68,7 @@ npx wrangler dev workers/api.ts
 | 后端 Backend | Cloudflare Workers · Hono |
 | 数据库 Database | Cloudflare D1 (SQLite) |
 | 存储 Storage | Cloudflare R2 |
-| 部署 Deploy | Cloudflare Pages (frontend) · GitHub Actions (Worker) |
+| 部署 Deploy | Cloudflare Pages (frontend) · GitHub Actions (Worker CI) |
 
 ---
 
