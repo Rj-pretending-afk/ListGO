@@ -125,6 +125,18 @@ export async function handleGetList(
         if (!fs) return err('Forbidden', 403)
       }
     }
+    if (row.permission === 'invite_only_friends') {
+      if (!auth) return err('Login required', 401)
+      const listData = JSON.parse(row.data) as { invitedUsernames?: string[] }
+      if (!(listData.invitedUsernames ?? []).includes(auth.username)) return err('Forbidden', 403)
+      if (row.owner_id) {
+        const fs = await env.DB.prepare(
+          `SELECT id FROM friendships WHERE status = 'accepted'
+           AND ((requester_id = ? AND addressee_id = ?) OR (requester_id = ? AND addressee_id = ?))`
+        ).bind(auth.userId, row.owner_id, row.owner_id, auth.userId).first()
+        if (!fs) return err('Forbidden', 403)
+      }
+    }
   }
 
   // Always update last_accessed_at (30-day anonymous cleanup clock)
@@ -268,6 +280,70 @@ export async function handleCollabUpdateModule(
     'UPDATE lists SET data=?, version=version+1, updated_at=? WHERE id=?'
   ).bind(newData, Date.now(), listId).run()
 
+  return json({ ok: true })
+}
+
+// ── GET /lists/invited ──
+export async function handleGetInvitedLists(
+  auth: AuthUser | null, env: Env, json: JsonFn
+): Promise<Response> {
+  if (!auth) return json([])
+  const rows = await env.DB.prepare(
+    `SELECT li.list_id, li.list_title, li.owner_username, li.owner_avatar_color, li.owner_avatar_image, li.created_at,
+            l.data, l.updated_at, l.permission
+     FROM list_invitations li
+     JOIN lists l ON l.id = li.list_id
+     WHERE li.invitee_id = ? AND l.permission IN ('invite_only', 'invite_only_friends')
+     ORDER BY li.created_at DESC LIMIT 50`
+  ).bind(auth.userId).all<{
+    list_id: string; list_title: string; owner_username: string;
+    owner_avatar_color: string; owner_avatar_image: string | null;
+    created_at: number; data: string; updated_at: number; permission: string
+  }>()
+  return json((rows.results ?? []).map(r => {
+    const d = JSON.parse(r.data) as { modules?: unknown[] }
+    return {
+      id: r.list_id,
+      title: r.list_title,
+      ownerUsername: r.owner_username,
+      ownerAvatarColor: r.owner_avatar_color,
+      ownerAvatarImage: r.owner_avatar_image ?? undefined,
+      moduleCount: (d.modules ?? []).length,
+      updatedAt: r.updated_at,
+      invitedAt: r.created_at,
+    }
+  }))
+}
+
+// ── POST /lists/:id/invite ──
+export async function handleInviteToList(
+  listId: string, request: Request, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  if (!auth) return err('Unauthorized', 401)
+  const row = await env.DB.prepare('SELECT owner_id, data, title FROM lists WHERE id = ?')
+    .bind(listId).first<{ owner_id: string | null; data: string; title: string }>()
+  if (!row) return err('Not found', 404)
+  if (row.owner_id !== auth.userId) return err('Forbidden', 403)
+  const body = await request.json() as { username: string }
+  if (!body.username) return err('username required', 400)
+  // Find invitee
+  const invitee = await env.DB.prepare('SELECT id FROM users WHERE username = ?')
+    .bind(body.username).first<{ id: string }>()
+  if (!invitee) return err('User not found', 404)
+  // Add to invitedUsernames in data
+  const data = JSON.parse(row.data) as { invitedUsernames?: string[]; [k: string]: unknown }
+  if (!(data.invitedUsernames ?? []).includes(body.username)) {
+    data.invitedUsernames = [...(data.invitedUsernames ?? []), body.username]
+    const now = Date.now()
+    await env.DB.prepare('UPDATE lists SET data = ?, updated_at = ? WHERE id = ?')
+      .bind(JSON.stringify(data), now, listId).run()
+    // Create invitation notification
+    const owner = await env.DB.prepare('SELECT avatar_color, avatar_image FROM users WHERE id = ?')
+      .bind(auth.userId).first<{ avatar_color: string; avatar_image: string | null }>()
+    await env.DB.prepare(
+      'INSERT OR IGNORE INTO list_invitations (id, list_id, list_title, owner_id, owner_username, owner_avatar_color, owner_avatar_image, invitee_id, status, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)'
+    ).bind(nanoid(16), listId, row.title, auth.userId, auth.username, owner?.avatar_color ?? '#10B981', owner?.avatar_image ?? null, invitee.id, 'pending', now).run()
+  }
   return json({ ok: true })
 }
 

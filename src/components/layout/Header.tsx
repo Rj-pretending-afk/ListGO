@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { Link2, Users } from 'lucide-react'
 import { ThemeSwitcher } from '../theme/ThemeSwitcher'
@@ -8,6 +8,7 @@ import { useAuthStore } from '../../hooks/useAuth'
 import { useLangStore, useT } from '../../hooks/useLang'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
 import FriendsPage from '../../pages/FriendsPage'
+import { useLists } from '../../hooks/useList'
 
 function LangToggle() {
   const { lang, toggle } = useLangStore()
@@ -168,6 +169,15 @@ export function Header() {
   const user = useAuthStore(s => s.user)
   const authLoading = useAuthStore(s => s.authLoading)
   const [friendsOpen, setFriendsOpen] = useState(false)
+
+  const location = useLocation()
+  const lists = useLists()
+  const listMatch = location.pathname.match(/^\/list\/([^/]+)$/)
+  const currentListId = listMatch?.[1] ?? null
+  // Only pass listId if the current user is the owner of that list
+  const currentList = currentListId ? lists.find(l => l.id === currentListId) : null
+  const sharedListId = currentList ? currentList.id : null
+
   return (
     <>
     <header
@@ -234,7 +244,7 @@ export function Header() {
           }}
         >
           <div className="flex-1 overflow-y-auto">
-            <FriendsPage asPanel onClose={() => setFriendsOpen(false)} />
+            <FriendsPage asPanel onClose={() => setFriendsOpen(false)} currentListId={sharedListId ?? undefined} />
           </div>
         </div>
       </>,

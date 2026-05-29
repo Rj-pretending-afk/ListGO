@@ -2,7 +2,7 @@
 
 import { getAuth } from './middleware/auth'
 import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword, handleSearchUsers, handleGetUserProfile } from './routes/auth'
-import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList, handleCollabUpdateModule } from './routes/lists'
+import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList, handleCollabUpdateModule, handleGetInvitedLists, handleInviteToList } from './routes/lists'
 import { handleCastVote } from './routes/votes'
 import { handleClaimPreview, handleClaim } from './routes/claim'
 import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handleAdminRevokeCode, handleAdminGetUsers, handleAdminGetUserLists, handleAdminSetDisplayName, handleAdminSetAdmin, handleAdminResetPassword, handleAdminDeleteUser, handleAdminDeleteList, handleAdminGetList } from './routes/admin'
@@ -81,10 +81,19 @@ export default {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleCreateList(request, auth, env, json, err)
     }
+    if (method === 'GET' && pathname === '/lists/invited') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleGetInvitedLists(auth, env, json)
+    }
     if (method === 'GET' && pathname === '/lists') {
       const auth = await getAuth(request, env.JWT_SECRET)
       if (!auth) return err('Unauthorized', 401)
       return handleGetUserLists(auth, env, json)
+    }
+    const listInviteMatch = pathname.match(/^\/lists\/([^/]+)\/invite$/)
+    if (listInviteMatch && method === 'POST') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleInviteToList(listInviteMatch[1], request, auth, env, json, err)
     }
     const listIdMatch = pathname.match(/^\/lists\/([^/]+)$/)
     if (listIdMatch) {

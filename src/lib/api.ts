@@ -145,9 +145,26 @@ export const presenceApi = {
     api.get<PresenceUser[]>(`/presence/${listId}`),
 }
 
+export interface InvitedListEntry {
+  id: string
+  title: string
+  ownerUsername: string
+  ownerAvatarColor: string
+  ownerAvatarImage?: string
+  moduleCount: number
+  updatedAt: number
+  invitedAt: number
+}
+
 export const listApi = {
   fetchOwned: () =>
     api.get<List[]>('/lists'),
+
+  invited: () =>
+    api.get<InvitedListEntry[]>('/lists/invited'),
+
+  invite: (listId: string, username: string) =>
+    api.post<{ ok: boolean }>(`/lists/${listId}/invite`, { username }),
 
   create: (list: List) =>
     api.post<{ ok: boolean }>('/lists', listPayload(list)),

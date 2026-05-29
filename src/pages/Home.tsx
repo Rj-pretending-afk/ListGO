@@ -9,8 +9,10 @@ import { useT, useLangStore } from '../hooks/useLang'
 import { useAppStore } from '../lib/store'
 import { useAuthStore } from '../hooks/useAuth'
 import { getRecentLists, removeRecentList, type RecentListEntry } from '../hooks/useRecentLists'
+import { listApi, type InvitedListEntry } from '../lib/api'
+import { AvatarDisplay } from '../components/ui/AvatarDisplay'
 
-type Tab = 'mine' | 'recent'
+type Tab = 'mine' | 'recent' | 'invited'
 
 export default function Home() {
   const t = useT()
@@ -32,10 +34,16 @@ export default function Home() {
   const syncFromCloud = useAppStore(s => s.syncFromCloud)
 
   const [recentLists, setRecentLists] = useState<RecentListEntry[]>([])
+  const [invitedLists, setInvitedLists] = useState<InvitedListEntry[]>([])
   const [tab, setTab] = useState<Tab>('mine')
 
   useEffect(() => {
     if (currentUser) setRecentLists(getRecentLists())
+  }, [currentUser])
+
+  useEffect(() => {
+    if (!currentUser) return
+    listApi.invited().then(setInvitedLists).catch(() => {})
   }, [currentUser])
 
   const syncRef = useRef(syncFromCloud)
@@ -103,7 +111,7 @@ export default function Home() {
     )
   }
 
-  const showTabs = currentUser && recentLists.length > 0
+  const showTabs = !!currentUser
   const cardStyle = { backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }
 
   return (
@@ -130,6 +138,23 @@ export default function Home() {
                   opacity: tab === 'recent' ? 1 : 0.5,
                 }}>
                 {t('recentLists')}
+              </button>
+              <button onClick={() => setTab('invited')}
+                className="relative px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                style={{
+                  backgroundColor: tab === 'invited' ? 'var(--color-primary)' : 'transparent',
+                  color: tab === 'invited' ? 'white' : 'var(--color-text)',
+                  opacity: tab === 'invited' ? 1 : 0.5,
+                }}>
+                {t('invitedLists')}
+                {invitedLists.length > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full text-[9px] font-bold flex items-center justify-center px-1"
+                    style={{ backgroundColor: '#ec4899', color: 'white' }}
+                  >
+                    {invitedLists.length}
+                  </span>
+                )}
               </button>
             </>
           ) : (
@@ -289,6 +314,47 @@ export default function Home() {
                     style={{ color: 'var(--color-text)' }} title="从最近移除">
                     <X size={14} />
                   </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Invited lists */}
+      {tab === 'invited' && (
+        <>
+          {invitedLists.length === 0 ? (
+            <div className="text-center py-20" style={{ color: 'var(--color-text)', opacity: 0.35 }}>
+              <p className="text-sm">{t('invitedListsEmpty')}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {invitedLists.map(entry => (
+                <div key={entry.id}
+                  onClick={() => navigate(`/list/${entry.id}`)}
+                  className="p-4 rounded-xl cursor-pointer hover:opacity-90 transition-opacity relative group"
+                  style={cardStyle}>
+                  <h3 className="font-semibold text-sm mb-1.5 truncate" style={{ color: 'var(--color-text)' }}>
+                    {entry.title}
+                  </h3>
+                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                    <AvatarDisplay
+                      user={{ username: entry.ownerUsername, avatarColor: entry.ownerAvatarColor, avatarImage: entry.ownerAvatarImage }}
+                      size={16}
+                    />
+                    <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.45 }}>
+                      @{entry.ownerUsername}
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.3 }}>·</span>
+                    <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.45 }}>
+                      {entry.moduleCount} {t('moduleCount')}
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.3 }}>·</span>
+                    <span className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.45 }}>
+                      {t('timeModified')} {fmt(entry.updatedAt)}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

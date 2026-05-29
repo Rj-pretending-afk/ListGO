@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { UserPlus, Zap, UserMinus, Check, X, Search } from 'lucide-react'
-import { friendApi, pokeApi, userApi } from '../lib/api'
+import { UserPlus, Zap, UserMinus, Check, X, Search, Share2 } from 'lucide-react'
+import { friendApi, pokeApi, userApi, listApi } from '../lib/api'
 import { useAuthStore } from '../hooks/useAuth'
 import { AvatarDisplay } from '../components/ui/AvatarDisplay'
 import { ProfileCard } from '../components/ui/ProfileCard'
@@ -14,9 +14,9 @@ function timeAgo(ts: number, lang: string) {
   return formatDistanceToNow(ts, { locale: lang === 'zh' ? zhCN : undefined, addSuffix: true })
 }
 
-interface FriendsPageProps { asPanel?: boolean; onClose?: () => void }
+interface FriendsPageProps { asPanel?: boolean; onClose?: () => void; currentListId?: string }
 
-export default function FriendsPage({ asPanel, onClose }: FriendsPageProps = {}) {
+export default function FriendsPage({ asPanel, onClose, currentListId }: FriendsPageProps = {}) {
   const t = useT()
   const lang = useLangStore(s => s.lang)
   const user = useAuthStore(s => s.user)
@@ -34,6 +34,9 @@ export default function FriendsPage({ asPanel, onClose }: FriendsPageProps = {})
 
   // Poke state per friend
   const [pokeStates, setPokeStates] = useState<Record<string, 'idle' | 'sent' | 'error'>>({})
+
+  // Share state per friend
+  const [shareStates, setShareStates] = useState<Record<string, 'idle' | 'sent' | 'error'>>({})
 
   // Profile card
   const [profileCard, setProfileCard] = useState<string | null>(null)
@@ -95,6 +98,19 @@ export default function FriendsPage({ asPanel, onClose }: FriendsPageProps = {})
       setTimeout(() => setPokeStates(prev => ({ ...prev, [friendId]: 'idle' })), 2000)
     }
     setTimeout(() => setPokeStates(prev => ({ ...prev, [friendId]: 'idle' })), 3000)
+  }
+
+  const shareList = async (friendUsername: string, friendId: string) => {
+    if (!currentListId || shareStates[friendId] === 'sent') return
+    setShareStates(prev => ({ ...prev, [friendId]: 'sent' }))
+    try {
+      await listApi.invite(currentListId, friendUsername)
+    } catch {
+      setShareStates(prev => ({ ...prev, [friendId]: 'error' }))
+      setTimeout(() => setShareStates(prev => ({ ...prev, [friendId]: 'idle' })), 2000)
+      return
+    }
+    setTimeout(() => setShareStates(prev => ({ ...prev, [friendId]: 'idle' })), 3000)
   }
 
   if (!user) {
@@ -231,6 +247,16 @@ export default function FriendsPage({ asPanel, onClose }: FriendsPageProps = {})
                   >
                     <Zap size={15} />
                   </button>
+                  {currentListId && (
+                    <button
+                      onClick={() => void shareList(f.username, f.id)}
+                      className="p-2 rounded-lg hover:opacity-70 transition-opacity"
+                      title={shareStates[f.id] === 'sent' ? t('shareListSent') : t('shareListToFriend')}
+                      style={{ color: shareStates[f.id] === 'sent' ? 'var(--color-primary)' : 'var(--color-text)', opacity: shareStates[f.id] === 'sent' ? 1 : 0.5 }}
+                    >
+                      <Share2 size={14} />
+                    </button>
+                  )}
                   <button
                     onClick={() => void removeFriend(f.id)}
                     className="p-2 rounded-lg hover:opacity-70 transition-opacity"
