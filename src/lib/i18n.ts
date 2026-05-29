@@ -127,7 +127,6 @@ export const zh = {
   friendPendingReceived: '接受申请', friendAccept: '接受', friendReject: '拒绝',
   friendRemove: '删除好友', friendBlock: '屏蔽',
   friendRequestSent: '申请已发送', friendRequestFailed: '发送失败',
-  friendsPublicLists: '公开清单',
   // Not found
   notFound: '页面不存在', backHome: '回到首页',
 } as const
@@ -238,7 +237,6 @@ export const en: Record<I18nKey, string> = {
   friendPendingReceived: 'Accept request', friendAccept: 'Accept', friendReject: 'Decline',
   friendRemove: 'Remove friend', friendBlock: 'Block',
   friendRequestSent: 'Request sent', friendRequestFailed: 'Failed to send',
-  friendsPublicLists: 'Public lists',
   notFound: 'Page not found', backHome: 'Back to home',
 }
 

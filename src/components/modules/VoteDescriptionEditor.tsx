@@ -10,7 +10,7 @@ import { resizeDataUrl } from '../../lib/imageUtils'
 import { uploadApi } from '../../lib/api'
 import { useAuthStore } from '../../hooks/useAuth'
 import { useT } from '../../hooks/useLang'
-import { contentFontStyle } from '../ui/ContentFormattingBar'
+import { contentFontStyle } from '../../lib/contentFontStyle'
 import type { ContentFontSettings } from '../../types/list.types'
 
 interface VoteDescriptionEditorProps {
