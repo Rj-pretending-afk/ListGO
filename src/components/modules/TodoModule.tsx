@@ -4,7 +4,7 @@ import { generateItemId } from '../../lib/shortid'
 import type { TodoModule as TodoModuleType, TodoItem } from '../../types/list.types'
 import { IMEInput } from '../ui/IMEInput'
 import { useT } from '../../hooks/useLang'
-import { contentFontStyle } from '../ui/ContentFormattingBar'
+import { contentFontStyle } from '../../lib/contentFontStyle'
 import type { ContentFontSettings } from '../../types/list.types'
 
 interface TodoModuleProps {
