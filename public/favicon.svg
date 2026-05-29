@@ -1,3 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <text y=".9em" font-size="90">💌</text>
+  <!-- background -->
+  <rect width="100" height="100" rx="22" fill="#1F0A14"/>
+  <!-- envelope body -->
+  <rect x="12" y="30" width="76" height="48" rx="5" fill="#3D1428"/>
+  <rect x="12" y="30" width="76" height="48" rx="5" fill="none" stroke="#F472B6" stroke-width="2.5"/>
+  <!-- envelope flap (V shape) -->
+  <polyline points="12,30 50,60 88,30" fill="none" stroke="#F472B6" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- bottom fold lines -->
+  <line x1="12" y1="78" x2="36" y2="55" stroke="#F472B6" stroke-width="2" opacity="0.6"/>
+  <line x1="88" y1="78" x2="64" y2="55" stroke="#F472B6" stroke-width="2" opacity="0.6"/>
+  <!-- heart seal -->
+  <path d="M50 50 C50 50 44 44 44 40 C44 37 46.5 35 50 38 C53.5 35 56 37 56 40 C56 44 50 50 50 50Z" fill="#F472B6" opacity="0.9"/>
 </svg>
