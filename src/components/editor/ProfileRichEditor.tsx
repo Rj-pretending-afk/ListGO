@@ -115,6 +115,7 @@ export function ProfileRichEditor({ value, onChange, minHeight = 60, placeholder
           onImageClick={handleImageClick}
           onPasteImage={handlePasteImage}
           editorStyle={{ minHeight, fontSize: '0.875rem' }}
+          placeholder=""
         />
         {!value && (
           <p className="pointer-events-none absolute top-2 left-3 text-sm select-none"

@@ -13,10 +13,11 @@ interface RichTextEditorProps {
   onImageClick?: (img: HTMLImageElement, rect: DOMRect) => void
   onPasteImage?: (dataUrl: string) => void
   editorStyle?: React.CSSProperties
+  placeholder?: string
 }
 
 export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
-  ({ content, onChange, onSelectionChange, onImageClick, onPasteImage, editorStyle }, ref) => {
+  ({ content, onChange, onSelectionChange, onImageClick, onPasteImage, editorStyle, placeholder = '输入文字…' }, ref) => {
     let el: HTMLDivElement | null = null
     const setRef = (node: HTMLDivElement | null) => { el = node }
 
@@ -92,7 +93,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
         onClick={handleClick}
         className="outline-none min-h-[60px] text-sm leading-relaxed"
         style={{ color: 'var(--color-text)', ...editorStyle }}
-        data-placeholder="输入文字…"
+        data-placeholder={placeholder}
       />
     )
   }
