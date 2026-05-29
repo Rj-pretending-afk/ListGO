@@ -40,37 +40,59 @@ export function ProfileRichEditor({ value, onChange, minHeight = 60, placeholder
     img.src = src
     img.style.cssText = 'max-width:100%;border-radius:6px;display:block;margin-top:6px'
     el.appendChild(img)
+    // Add empty paragraph after image so cursor can be placed there
+    const p = document.createElement('p')
+    p.appendChild(document.createElement('br'))
+    el.appendChild(p)
+    // Move cursor into the paragraph
+    const range = document.createRange()
+    range.setStart(p, 0)
+    range.collapse(true)
+    const sel = window.getSelection()
+    sel?.removeAllRanges()
+    sel?.addRange(range)
     onChange(DOMPurify.sanitize(el.innerHTML))
     setUrlOpen(false)
     setUrlInput('')
+  }
+
+  const dataUrlToR2 = async (dataUrl: string): Promise<string> => {
+    const resized = await resizeDataUrl(dataUrl)
+    const blob = await fetch(resized).then(r => r.blob())
+    const file = new File([blob], 'image.jpg', { type: 'image/jpeg' })
+    const { url } = await uploadApi.uploadImage(file)
+    return url
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
-    if (user) {
-      setUploading(true)
-      try { const { url } = await uploadApi.uploadImage(file); insertImageSrc(url) }
-      catch { /* silent */ }
-      finally { setUploading(false) }
-    } else {
-      const reader = new FileReader()
-      reader.onload = async ev => {
-        if (!ev.target?.result) return
-        insertImageSrc(await resizeDataUrl(ev.target.result as string))
+    setUploading(true)
+    try {
+      if (user) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = ev => resolve(ev.target?.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+        insertImageSrc(await dataUrlToR2(dataUrl))
+      } else {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = ev => resolve(ev.target?.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+        insertImageSrc(await resizeDataUrl(dataUrl))
       }
-      reader.readAsDataURL(file)
-    }
+    } catch { /* silent */ }
+    finally { setUploading(false) }
   }
 
   const uploadOrEmbed = async (dataUrl: string): Promise<string> => {
-    if (user) {
-      const blob = await fetch(dataUrl).then(r => r.blob())
-      const file = new File([blob], 'image.jpg', { type: blob.type || 'image/jpeg' })
-      const { url } = await uploadApi.uploadImage(file)
-      return url
-    }
+    if (user) return dataUrlToR2(dataUrl)
     return resizeDataUrl(dataUrl)
   }
 
