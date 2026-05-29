@@ -88,8 +88,17 @@ export default function Home() {
 
   if (!loaded) {
     return (
-      <div className="flex items-center justify-center h-64 text-sm" style={{ color: 'var(--color-text)', opacity: 0.35 }}>
-        {t('loading')}
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="rounded-2xl h-28 animate-pulse" style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
+              <div className="p-4 space-y-2">
+                <div className="h-3 rounded-full w-3/5" style={{ backgroundColor: 'var(--color-border)' }} />
+                <div className="h-2 rounded-full w-2/5" style={{ backgroundColor: 'var(--color-border)', opacity: 0.6 }} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
