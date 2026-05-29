@@ -14,7 +14,9 @@ function timeAgo(ts: number, lang: string) {
   return formatDistanceToNow(ts, { locale: lang === 'zh' ? zhCN : undefined, addSuffix: true })
 }
 
-export default function FriendsPage() {
+interface FriendsPageProps { asPanel?: boolean; onClose?: () => void }
+
+export default function FriendsPage({ asPanel, onClose }: FriendsPageProps = {}) {
   const t = useT()
   const lang = useLangStore(s => s.lang)
   const user = useAuthStore(s => s.user)
@@ -106,9 +108,14 @@ export default function FriendsPage() {
   const pendingCount = requests.length
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-10">
+    <div className={asPanel ? 'px-4 py-5' : 'max-w-lg mx-auto px-4 py-10'}>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>{t('friendsTitle')}</h1>
+        {asPanel && onClose && (
+          <button onClick={onClose} className="p-1 rounded-lg hover:opacity-60" style={{ color: 'var(--color-text)' }}>
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* Search bar */}

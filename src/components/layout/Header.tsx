@@ -7,6 +7,7 @@ import { NotificationBell } from './NotificationBell'
 import { useAuthStore } from '../../hooks/useAuth'
 import { useLangStore, useT } from '../../hooks/useLang'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
+import FriendsPage from '../../pages/FriendsPage'
 
 function LangToggle() {
   const { lang, toggle } = useLangStore()
@@ -166,7 +167,9 @@ export function Header() {
   const t = useT()
   const user = useAuthStore(s => s.user)
   const authLoading = useAuthStore(s => s.authLoading)
+  const [friendsOpen, setFriendsOpen] = useState(false)
   return (
+    <>
     <header
       className="h-14 flex items-center justify-between px-4 border-b sticky top-0 z-10"
       style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)' }}
@@ -184,14 +187,14 @@ export function Header() {
           user
             ? (
               <>
-                <Link
-                  to="/friends"
+                <button
+                  onClick={() => setFriendsOpen(true)}
                   className="w-9 h-9 flex items-center justify-center rounded-lg hover:opacity-70 transition-opacity"
                   style={{ color: 'var(--color-text)' }}
-                  title="好友"
+                  title={t('friendsTitle')}
                 >
                   <Users size={17} />
-                </Link>
+                </button>
                 <NotificationBell />
                 <UserMenu />
               </>
@@ -213,5 +216,30 @@ export function Header() {
         )}
       </div>
     </header>
+
+    {friendsOpen && createPortal(
+      <>
+        <div
+          className="fixed inset-0 z-[200]"
+          style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+          onClick={() => setFriendsOpen(false)}
+        />
+        <div
+          className="fixed top-0 right-0 h-full z-[201] flex flex-col overflow-hidden"
+          style={{
+            width: 'min(420px, 100vw)',
+            backgroundColor: 'var(--color-bg)',
+            borderLeft: '1px solid var(--color-border)',
+            boxShadow: '-8px 0 32px rgba(0,0,0,0.15)',
+          }}
+        >
+          <div className="flex-1 overflow-y-auto">
+            <FriendsPage asPanel onClose={() => setFriendsOpen(false)} />
+          </div>
+        </div>
+      </>,
+      document.body
+    )}
+    </>
   )
 }
