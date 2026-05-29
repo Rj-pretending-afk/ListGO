@@ -44,13 +44,14 @@ export default function ListPage() {
         const isOwner = currentUser
           ? list.ownerId === currentUser.id
           : !!list.ownerToken && list.ownerToken === ownerToken
+        // Record in recent history for any logged-in user (owner or visitor)
+        if (currentUser) {
+          recordRecentList({ id: list.id, title: list.title, ownerUsername: list.ownerUsername, updatedAt: list.updatedAt })
+        }
         if (isOwner) {
           await importList(list)
         } else {
           setRemoteList(list)
-          if (currentUser) {
-            recordRecentList({ id: list.id, title: list.title, ownerUsername: list.ownerUsername, updatedAt: list.updatedAt })
-          }
           if (!currentUser && !hasSetAnonIdentity()) {
             setShowIdentitySheet(true)
           }
@@ -74,9 +75,10 @@ export default function ListPage() {
   // Apply owner's theme when viewing someone else's list; restore on leave
   useEffect(() => {
     if (canEdit || adminView || !list?.ownerTheme) return
-    const prev = document.documentElement.dataset.theme
     document.documentElement.dataset.theme = parseTheme(list.ownerTheme)
-    return () => { document.documentElement.dataset.theme = parseTheme(prev ?? 'clay-light') }
+    // Read store at cleanup time (not at effect-run time) so toggle clicks while on the
+    // list don't leave the store and DOM out of sync when navigating away.
+    return () => { document.documentElement.dataset.theme = useAppStore.getState().theme }
   }, [canEdit, adminView, list?.ownerTheme])
 
   // Non-owner collaborative module update: optimistic local state + PATCH to server

@@ -1,4 +1,4 @@
-export type ListPermission = 'public' | 'verified' | 'invite_only' | 'private'
+export type ListPermission = 'public' | 'verified' | 'invite_only' | 'friends-only' | 'private'
 export type ModuleEditPermission = 'owner_only' | 'public'
 
 export type ListBackground =

@@ -8,8 +8,24 @@ export interface User {
   isAdmin: boolean
   isSuperAdmin: boolean
   pokeMessage?: string
+  bio?: string
   hasRequestedInvite?: boolean
   inviteCodes: InviteCodeInfo[]
+}
+
+export type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'accepted' | 'blocked'
+
+export interface PublicProfile {
+  id: string
+  username: string
+  displayName: string
+  avatarColor: string
+  avatarImage?: string
+  bio?: string
+  pokeMessage?: string
+  isSelf: boolean
+  friendshipStatus?: FriendshipStatus
+  friendshipId?: string
 }
 
 export interface InviteCodeInfo {
@@ -27,6 +43,7 @@ export interface PokeInfo {
   senderDisplayName: string
   senderAvatarColor: string
   senderAvatarImage?: string
+  pokeMessageSnapshot?: string
   status: string
   createdAt: number
 }
@@ -42,9 +59,31 @@ export interface ListInvitationNotif {
   createdAt: number
 }
 
+export interface FriendInfo {
+  id: string
+  userId: string
+  username: string
+  displayName: string
+  avatarColor: string
+  avatarImage?: string
+  createdAt: number
+}
+
+export interface FriendRequest {
+  id: string
+  requesterId: string
+  requesterUsername: string
+  requesterDisplayName: string
+  requesterAvatarColor: string
+  requesterAvatarImage?: string
+  createdAt: number
+}
+
 export interface NotificationsResponse {
   pokes: PokeInfo[]
   listInvitations: ListInvitationNotif[]
+  friendRequests: FriendRequest[]
+  pendingAdminRequests?: number
 }
 
 export interface InviteRequestInfo {

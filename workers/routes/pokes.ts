@@ -27,16 +27,15 @@ export async function handleSendPoke(
   if (!recipientId) return err('recipientId required', 400)
   if (recipientId === auth.userId) return err('不能戳自己', 400)
 
-  const recipient = await env.DB.prepare(
-    'SELECT id, poke_message FROM users WHERE id = ?'
-  ).bind(recipientId).first<{ id: string; poke_message: string | null }>()
-  if (!recipient) return err('用户不存在', 404)
+  if (!await env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(recipientId).first()) {
+    return err('用户不存在', 404)
+  }
 
   await env.DB.prepare(
-    'INSERT INTO pokes (id, sender_id, recipient_id, status, created_at) VALUES (?,?,?,?,?)'
-  ).bind(nanoid(16), auth.userId, recipientId, 'unread', Date.now()).run()
+    'INSERT INTO pokes (id, sender_id, recipient_id, status, poke_message_snapshot, created_at) VALUES (?,?,?,?,?,?)'
+  ).bind(nanoid(16), auth.userId, recipientId, 'unread', null, Date.now()).run()
 
-  return json({ ok: true, pokeMessage: recipient.poke_message ?? null })
+  return json({ ok: true })
 }
 
 // ── GET /pokes/inbox ──
@@ -79,9 +78,26 @@ export async function handleMarkPokeRead(
 ): Promise<Response> {
   if (!auth) return err('Unauthorized', 401)
 
-  await env.DB.prepare(
-    'UPDATE pokes SET status = ? WHERE id = ? AND recipient_id = ?'
-  ).bind('read', pokeId, auth.userId).run()
+  const poke = await env.DB.prepare(
+    'SELECT sender_id, poke_message_snapshot FROM pokes WHERE id = ? AND recipient_id = ?'
+  ).bind(pokeId, auth.userId).first<{ sender_id: string; poke_message_snapshot: string | null }>()
+
+  if (poke) {
+    await env.DB.prepare(
+      'UPDATE pokes SET status = ? WHERE id = ? AND recipient_id = ?'
+    ).bind('read', pokeId, auth.userId).run()
+
+    // Auto-reply only for original pokes (null snapshot = original, non-null = auto-reply)
+    if (poke.poke_message_snapshot === null) {
+      const reader = await env.DB.prepare('SELECT poke_message FROM users WHERE id = ?')
+        .bind(auth.userId).first<{ poke_message: string | null }>()
+      if (reader?.poke_message) {
+        await env.DB.prepare(
+          'INSERT INTO pokes (id, sender_id, recipient_id, status, poke_message_snapshot, created_at) VALUES (?,?,?,?,?,?)'
+        ).bind(nanoid(16), auth.userId, poke.sender_id, 'unread', reader.poke_message, Date.now()).run()
+      }
+    }
+  }
 
   return json({ ok: true })
 }

@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { getAuth } from './middleware/auth'
-import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword, handleSearchUsers } from './routes/auth'
+import { handleRegister, handleLogin, handleMe, handleUpdateProfile, handleChangePassword, handleSearchUsers, handleGetUserProfile } from './routes/auth'
 import { handleCreateList, handleGetUserLists, handleGetList, handleUpdateList, handleDeleteList, handleCollabUpdateModule } from './routes/lists'
 import { handleCastVote } from './routes/votes'
 import { handleClaimPreview, handleClaim } from './routes/claim'
@@ -9,8 +9,10 @@ import { handleAdminStats, handleAdminGetCodes, handleAdminGenerateCodes, handle
 import { handleCreateInviteRequest, handleAdminGetInviteRequests, handleAdminAcceptRequest, handleAdminRejectRequest, handleAdminGenerateUserInviteCode } from './routes/inviteRequests'
 import { handleSendPoke, handleGetPokeInbox, handleMarkPokeRead } from './routes/pokes'
 import { handleGetNotifications, handleMarkInvitationRead } from './routes/notifications'
+import { handleSendFriendRequest, handleAcceptFriendRequest, handleRemoveFriend, handleBlockUser, handleGetFriends, handleGetFriendRequests } from './routes/friends'
 import { handleJoinPresence, handleGetPresence, handleLeavePresence } from './routes/presence'
 import { handleUploadImage, handleGetImage } from './routes/upload'
+import { handleScheduled } from './cron'
 
 export interface Env {
   DB: D1Database
@@ -67,6 +69,11 @@ export default {
     if (method === 'GET' && pathname === '/users/search') {
       const auth = await getAuth(request, env.JWT_SECRET)
       return handleSearchUsers(request, auth, env, json)
+    }
+    const userProfileMatch = pathname.match(/^\/users\/([^/]+)\/profile$/)
+    if (userProfileMatch && method === 'GET') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleGetUserProfile(userProfileMatch[1], auth, env, json, err)
     }
 
     // ── Lists ──
@@ -213,6 +220,31 @@ const adminListMatch = pathname.match(/^\/admin\/lists\/([^/]+)$/)
       return handleMarkPokeRead(pokeReadMatch[1], auth, env, json, err)
     }
 
+    // ── Friends ──
+    if (method === 'POST' && pathname === '/friends/request') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleSendFriendRequest(request, auth, env, json, err)
+    }
+    if (method === 'GET' && pathname === '/friends') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleGetFriends(auth, env, json, err)
+    }
+    if (method === 'GET' && pathname === '/friends/requests') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleGetFriendRequests(auth, env, json, err)
+    }
+    const friendActionMatch = pathname.match(/^\/friends\/([^/]+)\/(accept|block)$/)
+    if (friendActionMatch && method === 'PUT') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      if (friendActionMatch[2] === 'accept') return handleAcceptFriendRequest(friendActionMatch[1], auth, env, json, err)
+      return handleBlockUser(friendActionMatch[1], auth, env, json, err)
+    }
+    const friendIdMatch = pathname.match(/^\/friends\/([^/]+)$/)
+    if (friendIdMatch && method === 'DELETE') {
+      const auth = await getAuth(request, env.JWT_SECRET)
+      return handleRemoveFriend(friendIdMatch[1], auth, env, json, err)
+    }
+
     // ── Upload ──
     if (method === 'POST' && pathname === '/upload/image') {
       const auth = await getAuth(request, env.JWT_SECRET)
@@ -234,5 +266,9 @@ const adminListMatch = pathname.match(/^\/admin\/lists\/([^/]+)$/)
     }
 
     return err('Not found', 404)
+  },
+
+  async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
+    await handleScheduled(event, env)
   },
 }

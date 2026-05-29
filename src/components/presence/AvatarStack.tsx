@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import type { PresenceUser } from '../../lib/api'
 
 interface AvatarStackProps {
@@ -11,6 +12,7 @@ const MAX_SHOWN = 5
 
 export function AvatarStack({ users, selfUserId }: AvatarStackProps) {
   const [expanded, setExpanded] = useState(false)
+  const navigate = useNavigate()
 
   if (users.length === 0) return null
 
@@ -89,7 +91,11 @@ export function AvatarStack({ users, selfUserId }: AvatarStackProps) {
               {users.length} 人在线
             </p>
             {users.map(u => (
-              <div key={u.userId} className="flex items-center gap-2 px-3 py-1.5">
+              <div
+                key={u.userId}
+                className={`flex items-center gap-2 px-3 py-1.5 ${!u.isAnonymous && u.username ? 'cursor-pointer hover:opacity-70' : ''}`}
+                onClick={() => { if (!u.isAnonymous && u.username) { setExpanded(false); navigate(`/u/${u.username}`) } }}
+              >
                 <div
                   className="w-5 h-5 rounded-full flex-shrink-0 overflow-hidden"
                   style={{ backgroundColor: u.color }}

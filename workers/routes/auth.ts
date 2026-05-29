@@ -130,11 +130,11 @@ export async function handleMe(
   if (!auth) return err('Unauthorized', 401)
 
   const user = await env.DB.prepare(
-    'SELECT id, username, display_name, avatar_color, avatar_image, theme, poke_message, invite_codes_remaining, is_admin FROM users WHERE id = ?'
+    'SELECT id, username, display_name, avatar_color, avatar_image, theme, poke_message, bio, invite_codes_remaining, is_admin FROM users WHERE id = ?'
   ).bind(auth.userId).first<{
     id: string; username: string; display_name: string
     avatar_color: string; avatar_image: string | null; theme: string | null
-    poke_message: string | null; invite_codes_remaining: number; is_admin: number
+    poke_message: string | null; bio: string | null; invite_codes_remaining: number; is_admin: number
   }>()
   if (!user) return err('User not found', 404)
 
@@ -167,6 +167,7 @@ export async function handleMe(
     isAdmin: user.is_admin >= 1,
     isSuperAdmin: user.is_admin >= 2,
     pokeMessage: user.poke_message ?? undefined,
+    bio: user.bio ?? undefined,
     hasRequestedInvite: !!pendingRequest,
     inviteCodes: (codesResult.results ?? []).map(c => ({
       code: c.code,
@@ -184,7 +185,7 @@ export async function handleUpdateProfile(
 ): Promise<Response> {
   if (!auth) return err('Unauthorized', 401)
 
-  let body: { displayName?: string; avatarColor?: string; avatarImage?: string | null; theme?: string; pokeMessage?: string | null }
+  let body: { displayName?: string; avatarColor?: string; avatarImage?: string | null; theme?: string; pokeMessage?: string | null; bio?: string | null }
   try { body = await request.json() } catch { return err('Invalid JSON', 400) }
 
   const updates: string[] = []
@@ -215,10 +216,16 @@ export async function handleUpdateProfile(
     updates.push('theme = ?')
     values.push(body.theme)
   }
+  if ('bio' in body) {
+    const b = body.bio ? String(body.bio).trim() : null
+    if (b && b.length > 10000) return err('简介内容过长', 400)
+    updates.push('bio = ?')
+    values.push(b || null)
+  }
   if ('pokeMessage' in body) {
     if (body.pokeMessage !== null && body.pokeMessage !== undefined) {
       const msg = String(body.pokeMessage).trim()
-      if (msg.length > 50) return err('被戳提示须 50 字以内', 400)
+      if (msg.length > 5000) return err('被戳提示内容过长', 400)
       updates.push('poke_message = ?')
       values.push(msg || null)
     } else {
@@ -263,6 +270,52 @@ export async function handleChangePassword(
   return json({ ok: true })
 }
 
+// ── GET /users/:username/profile ── public profile
+export async function handleGetUserProfile(
+  username: string, auth: AuthUser | null, env: Env, json: JsonFn, err: ErrFn
+): Promise<Response> {
+  const row = await env.DB.prepare(
+    'SELECT id, username, display_name, avatar_color, avatar_image, bio, poke_message FROM users WHERE username = ?'
+  ).bind(username).first<{
+    id: string; username: string; display_name: string
+    avatar_color: string; avatar_image: string | null
+    bio: string | null; poke_message: string | null
+  }>()
+  if (!row) return err('用户不存在', 404)
+
+  const isSelf = auth?.userId === row.id
+  let friendshipStatus: string = 'none'
+  let friendshipId: string | undefined
+
+  if (auth && !isSelf) {
+    const fs = await env.DB.prepare(
+      `SELECT id, status, requester_id FROM friendships
+       WHERE (requester_id = ? AND addressee_id = ?) OR (requester_id = ? AND addressee_id = ?)`
+    ).bind(auth.userId, row.id, row.id, auth.userId)
+      .first<{ id: string; status: string; requester_id: string }>()
+
+    if (fs) {
+      friendshipId = fs.id
+      if (fs.status === 'accepted') friendshipStatus = 'accepted'
+      else if (fs.status === 'blocked') friendshipStatus = 'blocked'
+      else friendshipStatus = fs.requester_id === auth.userId ? 'pending_sent' : 'pending_received'
+    }
+  }
+
+  return json({
+    id: row.id,
+    username: row.username,
+    displayName: row.display_name,
+    avatarColor: row.avatar_color,
+    avatarImage: row.avatar_image ?? undefined,
+    bio: row.bio ?? undefined,
+    pokeMessage: row.poke_message ?? undefined,
+    isSelf,
+    friendshipStatus,
+    friendshipId,
+  })
+}
+
 // ── GET /users/search?q= ──
 export async function handleSearchUsers(
   request: Request, auth: AuthUser | null, env: Env, json: JsonFn
@@ -271,8 +324,8 @@ export async function handleSearchUsers(
   const q = new URL(request.url).searchParams.get('q') ?? ''
   if (q.length < 1) return json([])
   const rows = await env.DB.prepare(
-    'SELECT username, display_name FROM users WHERE username LIKE ? AND id != ? LIMIT 8'
-  ).bind(`${q}%`, auth.userId).all<{ username: string; display_name: string | null }>()
-  return json((rows.results ?? []).map(r => ({ username: r.username, displayName: r.display_name ?? r.username })))
+    'SELECT id, username, display_name FROM users WHERE username LIKE ? AND id != ? LIMIT 8'
+  ).bind(`${q}%`, auth.userId).all<{ id: string; username: string; display_name: string | null }>()
+  return json((rows.results ?? []).map(r => ({ id: r.id, username: r.username, displayName: r.display_name ?? r.username })))
 }
 

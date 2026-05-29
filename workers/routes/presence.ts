@@ -11,6 +11,7 @@ interface SessionRow {
   display_name: string | null
   is_anonymous: number
   avatar_image: string | null
+  username: string | null
 }
 
 const ACTIVE_WINDOW_MS = 30_000
@@ -18,7 +19,7 @@ const ACTIVE_WINDOW_MS = 30_000
 async function getActiveUsers(listId: string, env: Env, json: JsonFn): Promise<Response> {
   const cutoff = Date.now() - ACTIVE_WINDOW_MS
   const rows = await env.DB.prepare(
-    `SELECT s.user_id, s.color, s.display_name, s.is_anonymous, u.avatar_image
+    `SELECT s.user_id, s.color, s.display_name, s.is_anonymous, u.avatar_image, u.username
      FROM sessions s
      LEFT JOIN users u ON s.user_id = u.id
      WHERE s.list_id = ? AND s.last_seen > ?`
@@ -30,6 +31,7 @@ async function getActiveUsers(listId: string, env: Env, json: JsonFn): Promise<R
     displayName: r.display_name ?? undefined,
     isAnonymous: r.is_anonymous === 1,
     avatarImage: r.avatar_image ?? undefined,
+    username:    r.username ?? undefined,
   })))
 }
 

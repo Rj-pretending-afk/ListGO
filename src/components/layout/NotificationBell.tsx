@@ -1,17 +1,24 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell } from 'lucide-react'
+import { Bell, ShieldAlert, Check, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
-import { notificationApi } from '../../lib/api'
+import { notificationApi, friendApi } from '../../lib/api'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
+import { ProfileCard } from '../ui/ProfileCard'
 import { useT } from '../../hooks/useLang'
-import type { PokeInfo, ListInvitationNotif } from '../../types/user.types'
+import { useLangStore } from '../../hooks/useLang'
+import type { PokeInfo, ListInvitationNotif, FriendRequest } from '../../types/user.types'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { useLangStore } from '../../hooks/useLang'
 
 function timeAgo(ts: number, lang: string) {
   return formatDistanceToNow(ts, { locale: lang === 'zh' ? zhCN : undefined, addSuffix: true })
+}
+
+function stripHtml(html: string): string {
+  const el = document.createElement('div')
+  el.innerHTML = html
+  return el.textContent ?? ''
 }
 
 export function NotificationBell() {
@@ -21,10 +28,13 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [pokes, setPokes] = useState<PokeInfo[]>([])
   const [invites, setInvites] = useState<ListInvitationNotif[]>([])
+  const [friendReqs, setFriendReqs] = useState<FriendRequest[]>([])
+  const [pendingAdmin, setPendingAdmin] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [profileCard, setProfileCard] = useState<string | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
-  const totalUnread = pokes.length + invites.length
+  const totalUnread = pokes.length + invites.length + friendReqs.length + pendingAdmin
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -32,6 +42,8 @@ export function NotificationBell() {
       const data = await notificationApi.getAll()
       setPokes(data.pokes)
       setInvites(data.listInvitations)
+      setFriendReqs(data.friendRequests ?? [])
+      setPendingAdmin(data.pendingAdminRequests ?? 0)
     } catch { /* silent */ }
     finally { setLoading(false) }
   }, [])
@@ -43,9 +55,11 @@ export function NotificationBell() {
     return () => clearInterval(id)
   }, [fetchAll])
 
-  const markPokeRead = async (id: string) => {
-    await notificationApi.markPokeRead(id).catch(() => undefined)
-    setPokes(prev => prev.filter(p => p.id !== id))
+  const handlePokeClick = async (p: PokeInfo) => {
+    // Backend auto-sends reader's poke_message back to the poker on mark-read
+    await notificationApi.markPokeRead(p.id).catch(() => undefined)
+    setPokes(prev => prev.filter(item => item.id !== p.id))
+    setProfileCard(p.senderUsername)
   }
 
   const markInviteRead = async (id: string, listId: string) => {
@@ -53,6 +67,16 @@ export function NotificationBell() {
     setInvites(prev => prev.filter(i => i.id !== id))
     setOpen(false)
     navigate(`/list/${listId}`)
+  }
+
+  const acceptFriendReq = async (id: string) => {
+    await friendApi.accept(id).catch(() => undefined)
+    setFriendReqs(prev => prev.filter(r => r.id !== id))
+  }
+
+  const rejectFriendReq = async (id: string) => {
+    await friendApi.remove(id).catch(() => undefined)
+    setFriendReqs(prev => prev.filter(r => r.id !== id))
   }
 
   const markAllRead = async () => {
@@ -114,9 +138,9 @@ export function NotificationBell() {
 
             {/* Body */}
             <div className="overflow-y-auto flex-1">
-              {loading && pokes.length === 0 && invites.length === 0 ? (
+              {loading && pokes.length === 0 && invites.length === 0 && friendReqs.length === 0 ? (
                 <p className="text-xs text-center py-8" style={{ color: 'var(--color-text)', opacity: 0.4 }}>{t('loading')}</p>
-              ) : totalUnread === 0 ? (
+              ) : pokes.length === 0 && invites.length === 0 && friendReqs.length === 0 && pendingAdmin === 0 ? (
                 <p className="text-xs text-center py-8" style={{ color: 'var(--color-text)', opacity: 0.4 }}>{t('notifEmpty')}</p>
               ) : (
                 <>
@@ -130,15 +154,20 @@ export function NotificationBell() {
                       {pokes.map(p => (
                         <div key={p.id} className="flex items-center gap-3 px-4 py-2.5 hover:opacity-80 cursor-pointer"
                           style={{ borderBottom: '1px solid var(--color-border)' }}
-                          onClick={() => void markPokeRead(p.id)}>
+                          onClick={() => void handlePokeClick(p)}>
                           <AvatarDisplay
                             user={{ username: p.senderUsername, avatarColor: p.senderAvatarColor, avatarImage: p.senderAvatarImage }}
                             size={30}
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium truncate" style={{ color: 'var(--color-text)' }}>
-                              {t('notifPokedBy').replace('{name}', p.senderDisplayName)}
+                              {(p.pokeMessageSnapshot ? t('notifPokeReply') : t('notifPokedBy')).replace('{name}', p.senderDisplayName)}
                             </p>
+                            {p.pokeMessageSnapshot && (
+                              <p className="text-[10px] italic truncate" style={{ color: 'var(--color-primary)' }}>
+                                {stripHtml(p.pokeMessageSnapshot)}
+                              </p>
+                            )}
                             <p className="text-[10px]" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
                               {timeAgo(p.createdAt, lang)}
                             </p>
@@ -177,12 +206,88 @@ export function NotificationBell() {
                       ))}
                     </>
                   )}
+                  {/* Friend requests section */}
+                  {friendReqs.length > 0 && (
+                    <>
+                      <p className="text-[10px] uppercase tracking-wider px-4 pt-3 pb-1 font-semibold"
+                        style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+                        {t('notifFriendReqs')}
+                      </p>
+                      {friendReqs.map(r => (
+                        <div key={r.id} className="flex items-center gap-3 px-4 py-2.5"
+                          style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <button className="flex-1 flex items-center gap-3 text-left hover:opacity-80"
+                            onClick={() => setProfileCard(r.requesterUsername)}>
+                            <AvatarDisplay
+                              user={{ username: r.requesterUsername, avatarColor: r.requesterAvatarColor, avatarImage: r.requesterAvatarImage }}
+                              size={30}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium truncate" style={{ color: 'var(--color-text)' }}>
+                                {t('notifFriendReqBy').replace('{name}', r.requesterDisplayName)}
+                              </p>
+                              <p className="text-[10px]" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+                                {timeAgo(r.createdAt, lang)}
+                              </p>
+                            </div>
+                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => void acceptFriendReq(r.id)}
+                              className="p-1.5 rounded-lg hover:opacity-70"
+                              style={{ color: 'var(--color-primary)' }}
+                              title={t('friendAccept')}
+                            >
+                              <Check size={13} />
+                            </button>
+                            <button
+                              onClick={() => void rejectFriendReq(r.id)}
+                              className="p-1.5 rounded-lg hover:opacity-70"
+                              style={{ color: 'var(--color-text)', opacity: 0.4 }}
+                              title={t('friendReject')}
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {/* Admin section */}
+                  {pendingAdmin > 0 && (
+                    <>
+                      <p className="text-[10px] uppercase tracking-wider px-4 pt-3 pb-1 font-semibold"
+                        style={{ color: 'var(--color-text)', opacity: 0.4 }}>
+                        管理员
+                      </p>
+                      <div
+                        className="flex items-center gap-3 px-4 py-2.5 hover:opacity-80 cursor-pointer"
+                        style={{ borderBottom: '1px solid var(--color-border)' }}
+                        onClick={() => { setOpen(false); navigate('/admin') }}
+                      >
+                        <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 15%, transparent)' }}>
+                          <ShieldAlert size={14} style={{ color: 'var(--color-primary)' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>
+                            {pendingAdmin} 条待审邀请申请
+                          </p>
+                          <p className="text-[10px]" style={{ color: 'var(--color-text)', opacity: 0.4 }}>前往管理员后台</p>
+                        </div>
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: '#f59e0b' }} />
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </div>
           </div>
         </>,
         document.body
+      )}
+      {profileCard && (
+        <ProfileCard username={profileCard} onClose={() => setProfileCard(null)} />
       )}
     </div>
   )

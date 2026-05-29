@@ -46,7 +46,9 @@ function listPayload(list: List) {
 
 export const userApi = {
   search: (q: string) =>
-    api.get<{ username: string; displayName: string }[]>(`/users/search?q=${encodeURIComponent(q)}`),
+    api.get<{ id: string; username: string; displayName: string }[]>(`/users/search?q=${encodeURIComponent(q)}`),
+  getProfile: (username: string) =>
+    api.get<import('../types/user.types').PublicProfile>(`/users/${encodeURIComponent(username)}/profile`),
 }
 
 export const claimApi = {
@@ -63,7 +65,7 @@ export const inviteRequestApi = {
 }
 
 export const pokeApi = {
-  send: (recipientId: string) => api.post<{ ok: boolean; pokeMessage: string | null }>('/pokes', { recipientId }),
+  send: (recipientId: string) => api.post<{ ok: boolean }>('/pokes', { recipientId }),
   inbox: () => api.get<import('../types/user.types').PokeInfo[]>('/pokes/inbox'),
   markRead: (pokeId: string) => api.put<{ ok: boolean }>(`/pokes/${pokeId}/read`, {}),
 }
@@ -72,6 +74,15 @@ export const notificationApi = {
   getAll: () => api.get<import('../types/user.types').NotificationsResponse>('/notifications'),
   markPokeRead: (pokeId: string) => api.put<{ ok: boolean }>(`/pokes/${pokeId}/read`, {}),
   markInvitationRead: (id: string) => api.put<{ ok: boolean }>(`/list-invitations/${id}/read`, {}),
+}
+
+export const friendApi = {
+  sendRequest: (addresseeId: string) => api.post<{ ok: boolean }>('/friends/request', { addresseeId }),
+  accept: (id: string) => api.put<{ ok: boolean }>(`/friends/${id}/accept`, {}),
+  remove: (id: string) => api.delete<{ ok: boolean }>(`/friends/${id}`),
+  block: (id: string) => api.put<{ ok: boolean }>(`/friends/${id}/block`, {}),
+  list: () => api.get<import('../types/user.types').FriendInfo[]>('/friends'),
+  requests: () => api.get<import('../types/user.types').FriendRequest[]>('/friends/requests'),
 }
 
 export const adminApi = {
@@ -122,6 +133,7 @@ export interface PresenceUser {
   displayName?: string
   isAnonymous: boolean
   avatarImage?: string
+  username?:   string
 }
 
 export const presenceApi = {
