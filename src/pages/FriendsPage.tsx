@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { UserPlus, Zap, UserMinus, Check, X, Search, Share2 } from 'lucide-react'
+import { UserPlus, Zap, Check, X, Search, Share2, MoreHorizontal } from 'lucide-react'
 import { friendApi, pokeApi, userApi, listApi } from '../lib/api'
 import { useAuthStore } from '../hooks/useAuth'
 import { AvatarDisplay } from '../components/ui/AvatarDisplay'
@@ -34,11 +34,9 @@ export default function FriendsPage({ asPanel, onClose, currentListId }: Friends
 
   // Poke state per friend
   const [pokeStates, setPokeStates] = useState<Record<string, 'idle' | 'sent' | 'error'>>({})
-
-  // Share state per friend
   const [shareStates, setShareStates] = useState<Record<string, 'idle' | 'sent' | 'error'>>({})
-
-  // Profile card
+  const [menuOpen, setMenuOpen] = useState<string | null>(null)       // friendId with open menu
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null) // friendId pending confirm
   const [profileCard, setProfileCard] = useState<string | null>(null)
 
   const fetchAll = useCallback(async () => {
@@ -219,7 +217,7 @@ export default function FriendsPage({ asPanel, onClose, currentListId }: Friends
             {t('friendsEmpty')}
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2" onClick={() => { setMenuOpen(null); setConfirmDelete(null) }}>
             {friends.map(f => (
               <div
                 key={f.id}
@@ -257,14 +255,46 @@ export default function FriendsPage({ asPanel, onClose, currentListId }: Friends
                       <Share2 size={14} />
                     </button>
                   )}
-                  <button
-                    onClick={() => void removeFriend(f.id)}
-                    className="p-2 rounded-lg hover:opacity-70 transition-opacity"
-                    title={t('friendRemove')}
-                    style={{ color: 'var(--color-text)', opacity: 0.35 }}
-                  >
-                    <UserMinus size={14} />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === f.id ? null : f.id); setConfirmDelete(null) }}
+                      className="p-2 rounded-lg hover:opacity-70 transition-opacity"
+                      style={{ color: 'var(--color-text)', opacity: 0.35 }}
+                    >
+                      <MoreHorizontal size={14} />
+                    </button>
+                    {menuOpen === f.id && (
+                      <div
+                        className="absolute right-0 top-full mt-1 rounded-xl shadow-xl overflow-hidden z-50 min-w-[120px]"
+                        style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {confirmDelete === f.id ? (
+                          <div className="px-3 py-2 space-y-1">
+                            <p className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.6 }}>{t('friendRemove')}？</p>
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => { void removeFriend(f.id); setMenuOpen(null); setConfirmDelete(null) }}
+                                className="flex-1 py-1 rounded-lg text-xs font-medium"
+                                style={{ backgroundColor: '#ef4444', color: 'white' }}
+                              >{t('confirmDelete')}</button>
+                              <button
+                                onClick={() => setConfirmDelete(null)}
+                                className="flex-1 py-1 rounded-lg text-xs"
+                                style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
+                              >{t('cancel')}</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDelete(f.id)}
+                            className="w-full text-left px-3 py-2.5 text-sm hover:opacity-70"
+                            style={{ color: '#ef4444' }}
+                          >{t('friendRemove')}</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

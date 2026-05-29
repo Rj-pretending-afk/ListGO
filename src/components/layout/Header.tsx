@@ -7,6 +7,7 @@ import { NotificationBell } from './NotificationBell'
 import { useAuthStore } from '../../hooks/useAuth'
 import { useLangStore, useT } from '../../hooks/useLang'
 import { AvatarDisplay } from '../ui/AvatarDisplay'
+import { ProfileCard } from '../ui/ProfileCard'
 import FriendsPage from '../../pages/FriendsPage'
 import { useLists } from '../../hooks/useList'
 
@@ -108,59 +109,75 @@ function UserMenu() {
   const t = useT()
   const { user, logout } = useAuthStore()
   const [open, setOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   const handleLogout = () => { setOpen(false); navigate('/'); logout() }
 
   return (
-    <div className="relative">
-      <button
-        ref={btnRef}
-        onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-2 px-2 rounded-lg hover:opacity-80 transition-opacity h-10"
-      >
-        <AvatarDisplay user={user!} size={32} />
-        <span className="text-sm font-medium max-w-[90px] truncate" style={{ color: 'var(--color-text)' }}>
-          {user!.displayName}
-        </span>
-      </button>
+    <>
+      <div className="relative flex items-center">
+        {/* Avatar — opens own ProfileCard */}
+        <button
+          onClick={() => setProfileOpen(true)}
+          className="flex items-center justify-center rounded-full hover:opacity-80 transition-opacity"
+          style={{ width: 36, height: 36 }}
+        >
+          <AvatarDisplay user={user!} size={32} />
+        </button>
 
-      {open && createPortal(
-        <>
-          <div className="fixed inset-0 z-[300]" onClick={() => setOpen(false)} />
-          <div
-            className="fixed z-[301] rounded-xl shadow-xl overflow-hidden"
-            style={{
-              top: (btnRef.current?.getBoundingClientRect().bottom ?? 0) + 6,
-              right: window.innerWidth - (btnRef.current?.getBoundingClientRect().right ?? 0),
-              width: '10rem',
-              backgroundColor: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <Link to="/profile" onClick={() => setOpen(false)}
-              className="flex items-center px-4 py-3 text-sm hover:opacity-70"
-              style={{ color: 'var(--color-text)' }}>
-              {t('profileSettings')}
-            </Link>
-            <div style={{ borderTop: '1px solid var(--color-border)' }} />
-            <button onClick={() => { logout(); setOpen(false); navigate('/login') }}
-              className="w-full flex items-center px-4 py-3 text-sm hover:opacity-70"
-              style={{ color: 'var(--color-text)', opacity: 0.65 }}>
-              {t('switchAccount')}
-            </button>
-            <div style={{ borderTop: '1px solid var(--color-border)' }} />
-            <button onClick={handleLogout}
-              className="w-full flex items-center px-4 py-3 text-sm hover:opacity-70"
-              style={{ color: '#ef4444' }}>
-              {t('logout')}
-            </button>
-          </div>
-        </>,
-        document.body
+        {/* Name — opens settings dropdown */}
+        <button
+          ref={btnRef}
+          onClick={() => setOpen(v => !v)}
+          className="flex items-center pl-1.5 pr-2 rounded-lg hover:opacity-80 transition-opacity h-10"
+        >
+          <span className="text-sm font-medium max-w-[80px] truncate" style={{ color: 'var(--color-text)' }}>
+            {user!.displayName}
+          </span>
+        </button>
+
+        {open && createPortal(
+          <>
+            <div className="fixed inset-0 z-[300]" onClick={() => setOpen(false)} />
+            <div
+              className="fixed z-[301] rounded-xl shadow-xl overflow-hidden"
+              style={{
+                top: (btnRef.current?.getBoundingClientRect().bottom ?? 0) + 6,
+                right: window.innerWidth - (btnRef.current?.getBoundingClientRect().right ?? 0),
+                width: '10rem',
+                backgroundColor: 'var(--color-card)',
+                border: '1px solid var(--color-border)',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Link to="/profile" onClick={() => setOpen(false)}
+                className="flex items-center px-4 py-3 text-sm hover:opacity-70"
+                style={{ color: 'var(--color-text)' }}>
+                {t('profileSettings')}
+              </Link>
+              <div style={{ borderTop: '1px solid var(--color-border)' }} />
+              <button onClick={() => { logout(); setOpen(false); navigate('/login') }}
+                className="w-full flex items-center px-4 py-3 text-sm hover:opacity-70"
+                style={{ color: 'var(--color-text)', opacity: 0.65 }}>
+                {t('switchAccount')}
+              </button>
+              <div style={{ borderTop: '1px solid var(--color-border)' }} />
+              <button onClick={handleLogout}
+                className="w-full flex items-center px-4 py-3 text-sm hover:opacity-70"
+                style={{ color: '#ef4444' }}>
+                {t('logout')}
+              </button>
+            </div>
+          </>,
+          document.body
+        )}
+      </div>
+
+      {profileOpen && user && (
+        <ProfileCard username={user.username} onClose={() => setProfileOpen(false)} />
       )}
-    </div>
+    </>
   )
 }
 

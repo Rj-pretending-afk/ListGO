@@ -25,6 +25,7 @@ export function ProfileCard({ username, onClose, isPokeBack = false }: ProfileCa
   const [friendStatus, setFriendStatus] = useState<FriendshipStatus>('none')
   const [friendshipId, setFriendshipId] = useState<string | undefined>()
   const [friendAction, setFriendAction] = useState<'idle' | 'loading'>('idle')
+  const [confirmRemove, setConfirmRemove] = useState(false)
 
   useEffect(() => {
     userApi.getProfile(username)
@@ -193,16 +194,30 @@ export function ProfileCard({ username, onClose, isPokeBack = false }: ProfileCa
                       {t('friendPendingReceived')}
                     </button>
                   )}
-                  {friendStatus === 'accepted' && (
+                  {friendStatus === 'accepted' && !confirmRemove && (
                     <button
-                      onClick={() => void handleFriendAction()}
-                      disabled={friendAction === 'loading'}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
+                      onClick={() => setConfirmRemove(true)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium hover:opacity-80 transition-opacity"
                       style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
                     >
                       <UserX size={12} />
                       {t('friendRemove')}
                     </button>
+                  )}
+                  {friendStatus === 'accepted' && confirmRemove && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => void handleFriendAction()}
+                        disabled={friendAction === 'loading'}
+                        className="px-3 py-2 rounded-xl text-xs font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
+                        style={{ backgroundColor: '#ef4444', color: 'white' }}
+                      >{t('confirmDelete')}</button>
+                      <button
+                        onClick={() => setConfirmRemove(false)}
+                        className="px-3 py-2 rounded-xl text-xs hover:opacity-70 transition-opacity"
+                        style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
+                      >{t('cancel')}</button>
+                    </div>
                   )}
                   {/* Poke */}
                   <button
