@@ -38,22 +38,30 @@ export function ProfileRichEditor({ value, onChange, minHeight = 60, placeholder
     el.focus()
     const img = document.createElement('img')
     img.src = src
-    img.style.cssText = 'max-width:100%;border-radius:6px;display:block;margin-top:6px'
+    // max-height limits display in editor so text area below stays visible
+    img.style.cssText = 'max-width:100%;max-height:180px;object-fit:contain;border-radius:6px;display:block;margin-top:6px'
     el.appendChild(img)
-    // Add empty paragraph after image so cursor can be placed there
     const p = document.createElement('p')
     p.appendChild(document.createElement('br'))
     el.appendChild(p)
-    // Move cursor into the paragraph
-    const range = document.createRange()
-    range.setStart(p, 0)
-    range.collapse(true)
-    const sel = window.getSelection()
-    sel?.removeAllRanges()
-    sel?.addRange(range)
     onChange(DOMPurify.sanitize(el.innerHTML))
     setUrlOpen(false)
     setUrlInput('')
+    // Wait for React to re-render (innerHTML reset) before positioning cursor
+    setTimeout(() => {
+      const editorEl = editorRef.current?.getEl()
+      if (!editorEl) return
+      const lastChild = editorEl.lastElementChild
+      if (!lastChild) return
+      const r = document.createRange()
+      r.setStart(lastChild, 0)
+      r.collapse(true)
+      const sel = window.getSelection()
+      sel?.removeAllRanges()
+      sel?.addRange(r)
+      editorEl.focus()
+      lastChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }, 50)
   }
 
   const dataUrlToR2 = async (dataUrl: string): Promise<string> => {
