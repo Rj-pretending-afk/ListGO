@@ -526,9 +526,33 @@ listgo/
 - [x] **Cron Trigger**：每天凌晨清理 30 天未访问的匿名清单（workers/cron.ts）
 - [x] PWA 配置（manifest.json + sw.js + Apple meta tags）
 - [x] SEO（OG meta tags 写入 index.html；OG 图需后续添加实体 PNG）
-- [ ] Cloudflare Pages 自动部署
+- [x] CI 自动部署 Worker（GitHub Actions，push main 时触发 wrangler deploy）
+  - 需在 GitHub Secrets 添加 `CLOUDFLARE_API_TOKEN`
 
-#### 5.4 发布
+#### 5.4 好友系统
+
+> Phase 5 补充功能，独立于戳系统
+
+- [x] DB：`friendships` 表（id, requester_id, addressee_id, status, created_at, updated_at）
+- [x] 后端：`POST /friends/request` — 发送好友申请
+- [x] 后端：`PUT /friends/:id/accept` — 接受申请
+- [x] 后端：`DELETE /friends/:id` — 删除好友 / 拒绝申请
+- [x] 后端：`PUT /friends/:id/block` — 屏蔽
+- [x] 后端：`GET /friends` — 好友列表（双向查询）
+- [x] 后端：`GET /friends/requests` — 收到的待处理申请
+- [x] 后端：`GET /notifications` 扩展返回 `friendRequests` 字段
+- [x] 后端：`GET /users/:username/profile` 返回 `friendshipStatus` + `friendshipId`
+- [x] 后端：`friends-only` 清单权限（查询好友关系后放行）
+- [x] 前端：`/friends` 好友管理页（搜索用户 / 好友列表 / 申请列表）
+- [x] 前端：ProfileCard 集成完整主页（bio、好友按钮、戳回去按钮）
+- [x] 前端：通知铃铛显示好友申请，支持直接接受 / 拒绝
+- [x] 前端：Header 添加好友页入口图标
+- [x] 前端：分享面板新增 `friends-only` 权限选项
+- [x] 戳系统重构：B 点击戳通知时自动将 B 的 poke_message 快照发回给 A
+  - `poke_message_snapshot` 字段区分原始戳（NULL）与回传戳（非 NULL）
+  - A 收到「@B 感受到了戳」通知，含 B 的提示语 snippet
+
+#### 5.5 发布
 
 - [ ] 完善 README（GIF 演示）
 - [ ] v1.0.0 tag + Release
