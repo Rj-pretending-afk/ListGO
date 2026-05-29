@@ -45,13 +45,29 @@ function debouncedSync(list: List) {
       if (result.version) _patchVersion?.(list.id, result.version)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'sync failed'
-      // List not in D1 yet (initial create failed) — create it now
       if (msg.includes('Not found') || msg.includes('404')) {
+        // List not in D1 yet (initial create failed) — create it now
         try {
           await listApi.create(list)
           syncErrors.delete(list.id)
         } catch (e2) {
           syncErrors.set(list.id, e2 instanceof Error ? e2.message : 'create failed')
+        }
+      } else if (msg.includes('Version conflict')) {
+        // Stale version — extract server version from error message and retry once.
+        // This happens when rapid edits (checkbox, vote) outpace the debounce window.
+        const serverVersion = parseInt(msg.match(/server=(\d+)/)?.[1] ?? '', 10)
+        if (!isNaN(serverVersion)) {
+          _patchVersion?.(list.id, serverVersion)
+          try {
+            const retry = await listApi.update({ ...list, version: serverVersion })
+            syncErrors.delete(list.id)
+            if (retry.version) _patchVersion?.(list.id, retry.version)
+          } catch {
+            syncErrors.set(list.id, msg)
+          }
+        } else {
+          syncErrors.set(list.id, msg)
         }
       } else {
         syncErrors.set(list.id, msg)
