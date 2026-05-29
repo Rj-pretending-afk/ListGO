@@ -26,7 +26,7 @@ export default function FriendsPage() {
 
   // Add friend search
   const [searchQ, setSearchQ] = useState('')
-  const [searchResults, setSearchResults] = useState<{ id: string; username: string; displayName: string }[]>([])
+  const [searchResults, setSearchResults] = useState<{ id: string; username: string; displayName: string; avatarColor: string; avatarImage?: string }[]>([])
   const [addingId, setAddingId] = useState<string | null>(null)
   const [addedSet, setAddedSet] = useState<Set<string>>(new Set())
 
@@ -98,7 +98,7 @@ export default function FriendsPage() {
   if (!user) {
     return (
       <div className="text-center py-24 text-sm" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
-        请先登录
+        {t('pleaseLogin')}
       </div>
     )
   }
@@ -120,7 +120,7 @@ export default function FriendsPage() {
         <input
           value={searchQ}
           onChange={e => setSearchQ(e.target.value)}
-          placeholder="搜索用户名…"
+          placeholder={t('friendSearch')}
           className="flex-1 bg-transparent text-sm outline-none"
           style={{ color: 'var(--color-text)' }}
         />
@@ -139,7 +139,7 @@ export default function FriendsPage() {
               style={{ borderBottom: '1px solid var(--color-border)' }}
             >
               <button className="flex-1 flex items-center gap-3 text-left" onClick={() => setProfileCard(r.username)}>
-                <AvatarDisplay user={{ username: r.username, avatarColor: '#10B981' }} size={32} />
+                <AvatarDisplay user={{ username: r.username, avatarColor: r.avatarColor, avatarImage: r.avatarImage }} size={32} />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text)' }}>{r.displayName}</p>
                   <p className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.45 }}>@{r.username}</p>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Share2, RefreshCw } from 'lucide-react'
+import { ProfileCard } from '../ui/ProfileCard'
 import { useShallow } from 'zustand/react/shallow'
 import { ListTitle } from './ListTitle'
 import { ModuleList } from './ModuleList'
@@ -34,6 +35,7 @@ export function ListView({ list, canEdit = true, adminView = false, onModuleUpda
   const updateInvitedUsers = useAppStore(s => s.updateInvitedUsers)
   const [shareOpen, setShareOpen] = useState(false)
   const shareRef = useRef<HTMLDivElement>(null)
+  const [ownerCard, setOwnerCard] = useState<string | null>(null)
   const [syncErr, setSyncErr] = useState<string | null>(null)
   const [spinning, setSpinning] = useState(false)
   // Strip ownerId for admin view so useListSync is a no-op (avoids polluting admin's local store)
@@ -93,7 +95,7 @@ export function ListView({ list, canEdit = true, adminView = false, onModuleUpda
         {!canEdit && !adminView && list.ownerUsername && (
           <div
             className="flex items-center gap-1.5 flex-shrink-0 ml-1 cursor-pointer hover:opacity-70 transition-opacity"
-            onClick={() => navigate(`/u/${list.ownerUsername}`)}
+            onClick={() => setOwnerCard(list.ownerUsername!)}
           >
             <AvatarDisplay
               user={{
@@ -201,6 +203,7 @@ export function ListView({ list, canEdit = true, adminView = false, onModuleUpda
         />
         {canEdit && <AddModuleButton onAdd={type => addModule(list.id, type)} />}
       </div>
+      {ownerCard && <ProfileCard username={ownerCard} onClose={() => setOwnerCard(null)} />}
     </div>
   )
 }

@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
+import { ProfileCard } from '../ui/ProfileCard'
+import { useT } from '../../hooks/useLang'
 import type { PresenceUser } from '../../lib/api'
 
 interface AvatarStackProps {
   users: PresenceUser[]
-  selfUserId: string | null  // to dim or exclude self
+  selfUserId: string | null
 }
 
 const MAX_SHOWN = 5
 
 export function AvatarStack({ users, selfUserId }: AvatarStackProps) {
+  const t = useT()
   const [expanded, setExpanded] = useState(false)
-  const navigate = useNavigate()
+  const [profileCard, setProfileCard] = useState<string | null>(null)
 
   if (users.length === 0) return null
 
@@ -20,12 +22,12 @@ export function AvatarStack({ users, selfUserId }: AvatarStackProps) {
   const overflow = users.length - MAX_SHOWN
 
   const label = (u: PresenceUser) => {
-    const name = u.displayName ?? (u.isAnonymous ? '访客' : '?')
+    const name = u.displayName ?? (u.isAnonymous ? t('userGuest') : '?')
     return name[0].toUpperCase()
   }
 
   const title = (u: PresenceUser) =>
-    u.displayName ?? (u.isAnonymous ? '匿名访客' : '未知用户')
+    u.displayName ?? (u.isAnonymous ? t('userAnonymous') : t('userUnknown'))
 
   return (
     <div className="relative flex items-center flex-shrink-0">
@@ -33,7 +35,7 @@ export function AvatarStack({ users, selfUserId }: AvatarStackProps) {
       <div
         className="flex cursor-pointer"
         onClick={() => setExpanded(v => !v)}
-        title={`${users.length} 人在线`}
+        title={t('onlineCount').replace('{n}', String(users.length))}
         style={{ gap: 0 }}
       >
         {shown.map((u, i) => (
@@ -72,7 +74,7 @@ export function AvatarStack({ users, selfUserId }: AvatarStackProps) {
         )}
       </div>
 
-      {/* Expanded tooltip/popover */}
+      {/* Expanded popover */}
       {expanded && createPortal(
         <>
           <div className="fixed inset-0 z-[150]" onClick={() => setExpanded(false)} />
@@ -81,20 +83,23 @@ export function AvatarStack({ users, selfUserId }: AvatarStackProps) {
             style={{
               backgroundColor: 'var(--color-card)',
               border: '1px solid var(--color-border)',
-              // positioned below the header — JS would be more precise,
-              // but a fixed top works well enough for the sub-header height
               top: 112,
               right: 16,
             }}
           >
             <p className="text-xs px-3 pb-1.5 border-b" style={{ color: 'var(--color-text)', opacity: 0.4, borderColor: 'var(--color-border)' }}>
-              {users.length} 人在线
+              {t('onlineCount').replace('{n}', String(users.length))}
             </p>
             {users.map(u => (
               <div
                 key={u.userId}
                 className={`flex items-center gap-2 px-3 py-1.5 ${!u.isAnonymous && u.username ? 'cursor-pointer hover:opacity-70' : ''}`}
-                onClick={() => { if (!u.isAnonymous && u.username) { setExpanded(false); navigate(`/u/${u.username}`) } }}
+                onClick={() => {
+                  if (!u.isAnonymous && u.username) {
+                    setExpanded(false)
+                    setProfileCard(u.username)
+                  }
+                }}
               >
                 <div
                   className="w-5 h-5 rounded-full flex-shrink-0 overflow-hidden"
@@ -106,13 +111,17 @@ export function AvatarStack({ users, selfUserId }: AvatarStackProps) {
                   }
                 </div>
                 <span className="text-xs truncate" style={{ color: 'var(--color-text)', opacity: u.userId === selfUserId ? 0.45 : 0.85 }}>
-                  {title(u)}{u.userId === selfUserId ? ' (你)' : ''}
+                  {title(u)}{u.userId === selfUserId ? ` (${t('selfLabel')})` : ''}
                 </span>
               </div>
             ))}
           </div>
         </>,
         document.body
+      )}
+
+      {profileCard && (
+        <ProfileCard username={profileCard} onClose={() => setProfileCard(null)} />
       )}
     </div>
   )

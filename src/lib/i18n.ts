@@ -129,6 +129,14 @@ export const zh = {
   friendRequestSent: '申请已发送', friendRequestFailed: '发送失败',
   // Not found
   notFound: '页面不存在', backHome: '回到首页',
+  // ProfileCard
+  profileNoBio: '暂无简介', profileEditProfile: '编辑资料',
+  pokeBack: '戳回去', profileLoadFailed: '无法加载用户信息',
+  // Presence / AvatarStack
+  userGuest: '访客', userAnonymous: '匿名访客', userUnknown: '未知用户',
+  selfLabel: '你', onlineCount: '{n} 人在线',
+  // Friends page
+  friendSearch: '搜索用户名…', pleaseLogin: '请先登录',
 } as const
 
 export type I18nKey = keyof typeof zh
@@ -238,6 +246,11 @@ export const en: Record<I18nKey, string> = {
   friendRemove: 'Remove friend', friendBlock: 'Block',
   friendRequestSent: 'Request sent', friendRequestFailed: 'Failed to send',
   notFound: 'Page not found', backHome: 'Back to home',
+  profileNoBio: 'No bio yet', profileEditProfile: 'Edit profile',
+  pokeBack: 'Poke back', profileLoadFailed: 'Unable to load profile',
+  userGuest: 'Guest', userAnonymous: 'Anonymous', userUnknown: 'Unknown',
+  selfLabel: 'you', onlineCount: '{n} online',
+  friendSearch: 'Search username…', pleaseLogin: 'Please log in',
 }
 
 export const translations = { zh, en }

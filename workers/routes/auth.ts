@@ -324,8 +324,14 @@ export async function handleSearchUsers(
   const q = new URL(request.url).searchParams.get('q') ?? ''
   if (q.length < 1) return json([])
   const rows = await env.DB.prepare(
-    'SELECT id, username, display_name FROM users WHERE username LIKE ? AND id != ? LIMIT 8'
-  ).bind(`${q}%`, auth.userId).all<{ id: string; username: string; display_name: string | null }>()
-  return json((rows.results ?? []).map(r => ({ id: r.id, username: r.username, displayName: r.display_name ?? r.username })))
+    'SELECT id, username, display_name, avatar_color, avatar_image FROM users WHERE username LIKE ? AND id != ? LIMIT 8'
+  ).bind(`${q}%`, auth.userId).all<{ id: string; username: string; display_name: string | null; avatar_color: string; avatar_image: string | null }>()
+  return json((rows.results ?? []).map(r => ({
+    id: r.id,
+    username: r.username,
+    displayName: r.display_name ?? r.username,
+    avatarColor: r.avatar_color,
+    avatarImage: r.avatar_image ?? undefined,
+  })))
 }
 

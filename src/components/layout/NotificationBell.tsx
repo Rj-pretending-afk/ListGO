@@ -31,7 +31,7 @@ export function NotificationBell() {
   const [friendReqs, setFriendReqs] = useState<FriendRequest[]>([])
   const [pendingAdmin, setPendingAdmin] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [profileCard, setProfileCard] = useState<string | null>(null)
+  const [profileCard, setProfileCard] = useState<{ username: string; isPokeBack: boolean } | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   const totalUnread = pokes.length + invites.length + friendReqs.length + pendingAdmin
@@ -59,7 +59,7 @@ export function NotificationBell() {
     // Backend auto-sends reader's poke_message back to the poker on mark-read
     await notificationApi.markPokeRead(p.id).catch(() => undefined)
     setPokes(prev => prev.filter(item => item.id !== p.id))
-    setProfileCard(p.senderUsername)
+    setProfileCard({ username: p.senderUsername, isPokeBack: true })
   }
 
   const markInviteRead = async (id: string, listId: string) => {
@@ -217,7 +217,7 @@ export function NotificationBell() {
                         <div key={r.id} className="flex items-center gap-3 px-4 py-2.5"
                           style={{ borderBottom: '1px solid var(--color-border)' }}>
                           <button className="flex-1 flex items-center gap-3 text-left hover:opacity-80"
-                            onClick={() => setProfileCard(r.requesterUsername)}>
+                            onClick={() => setProfileCard({ username: r.requesterUsername, isPokeBack: false })}>
                             <AvatarDisplay
                               user={{ username: r.requesterUsername, avatarColor: r.requesterAvatarColor, avatarImage: r.requesterAvatarImage }}
                               size={30}
@@ -287,7 +287,7 @@ export function NotificationBell() {
         document.body
       )}
       {profileCard && (
-        <ProfileCard username={profileCard} onClose={() => setProfileCard(null)} />
+        <ProfileCard username={profileCard.username} isPokeBack={profileCard.isPokeBack} onClose={() => setProfileCard(null)} />
       )}
     </div>
   )

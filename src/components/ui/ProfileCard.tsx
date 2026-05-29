@@ -6,14 +6,17 @@ import DOMPurify from 'dompurify'
 import { userApi, pokeApi, friendApi } from '../../lib/api'
 import { AvatarDisplay } from './AvatarDisplay'
 import { useAuthStore } from '../../hooks/useAuth'
+import { useT } from '../../hooks/useLang'
 import type { PublicProfile, FriendshipStatus } from '../../types/user.types'
 
 interface ProfileCardProps {
   username: string
   onClose: () => void
+  isPokeBack?: boolean
 }
 
-export function ProfileCard({ username, onClose }: ProfileCardProps) {
+export function ProfileCard({ username, onClose, isPokeBack = false }: ProfileCardProps) {
+  const t = useT()
   const navigate = useNavigate()
   const currentUser = useAuthStore(s => s.user)
   const [profile, setProfile] = useState<PublicProfile | null>(null)
@@ -84,7 +87,9 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
           transform: 'translate(-50%, -50%)',
           width: '22rem',
           maxHeight: '85vh',
-          backgroundColor: 'var(--color-card)',
+          backgroundColor: 'var(--color-modal-bg, var(--color-card))',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid var(--color-border)',
         }}
         onClick={e => e.stopPropagation()}
@@ -135,7 +140,7 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
                 />
               ) : (
                 <p className="text-xs italic" style={{ color: 'var(--color-text)', opacity: 0.3 }}>
-                  暂无简介
+                  {t('profileNoBio')}
                 </p>
               )}
             </div>
@@ -152,7 +157,7 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
                   style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
                 >
                   <Pencil size={12} />
-                  编辑资料
+                  {t('profileEditProfile')}
                 </button>
               ) : currentUser ? (
                 <>
@@ -165,7 +170,7 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
                       style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
                     >
                       <UserPlus size={12} />
-                      加好友
+                      {t('friendAdd')}
                     </button>
                   )}
                   {friendStatus === 'pending_sent' && (
@@ -174,7 +179,7 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
                       style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)', opacity: 0.5 }}
                     >
                       <Clock size={12} />
-                      等待确认
+                      {t('friendPending')}
                     </span>
                   )}
                   {friendStatus === 'pending_received' && (
@@ -185,7 +190,7 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
                       style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
                     >
                       <UserCheck size={12} />
-                      接受申请
+                      {t('friendPendingReceived')}
                     </button>
                   )}
                   {friendStatus === 'accepted' && (
@@ -196,7 +201,7 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
                       style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
                     >
                       <UserX size={12} />
-                      删除好友
+                      {t('friendRemove')}
                     </button>
                   )}
                   {/* Poke */}
@@ -207,7 +212,7 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
                   >
                     <Zap size={12} />
-                    {pokeState === 'sent' ? '已戳！' : pokeState === 'error' ? '失败' : '戳回去'}
+                    {pokeState === 'sent' ? t('userPokeSent') : pokeState === 'error' ? t('userPokeError') : isPokeBack ? t('pokeBack') : t('userPokeBtn')}
                   </button>
                 </>
               ) : null}
@@ -216,7 +221,7 @@ export function ProfileCard({ username, onClose }: ProfileCardProps) {
         ) : (
           <div className="flex items-center justify-center h-40">
             <p className="text-xs" style={{ color: 'var(--color-text)', opacity: 0.4 }}>
-              无法加载用户信息
+              {t('profileLoadFailed')}
             </p>
           </div>
         )}

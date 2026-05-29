@@ -46,7 +46,7 @@ function listPayload(list: List) {
 
 export const userApi = {
   search: (q: string) =>
-    api.get<{ id: string; username: string; displayName: string }[]>(`/users/search?q=${encodeURIComponent(q)}`),
+    api.get<{ id: string; username: string; displayName: string; avatarColor: string; avatarImage?: string }[]>(`/users/search?q=${encodeURIComponent(q)}`),
   getProfile: (username: string) =>
     api.get<import('../types/user.types').PublicProfile>(`/users/${encodeURIComponent(username)}/profile`),
 }

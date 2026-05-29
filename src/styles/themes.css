@@ -42,6 +42,7 @@
   --color-bg-gradient: linear-gradient(135deg, #A5B4FC 0%, #C4B5FD 45%, #F9A8D4 100%);
   --color-card:        rgba(255, 255, 255, 0.22);
   --color-card-rgb:    255, 255, 255;
+  --color-modal-bg:    rgba(240, 238, 255, 0.92);
   --color-primary:     #7C3AED;
   --color-text:        #1E1B4B;
   --color-border:      rgba(255, 255, 255, 0.45);
@@ -60,6 +61,7 @@
   --color-bg-gradient: linear-gradient(135deg, #1a1040 0%, #2d1b69 45%, #4a0e2e 100%);
   --color-card:        rgba(255, 255, 255, 0.08);
   --color-card-rgb:    255, 255, 255;
+  --color-modal-bg:    rgba(22, 12, 55, 0.94);
   --color-primary:     #A78BFA;
   --color-text:        #EDE9FE;
   --color-border:      rgba(255, 255, 255, 0.15);
