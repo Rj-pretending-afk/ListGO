@@ -36,6 +36,7 @@ export default function ProfilePage() {
   const [bio, setBio] = useState(user?.bio ?? '')
   const [bioLoading, setBioLoading] = useState(false)
   const [bioSaved, setBioSaved] = useState(false)
+  const [bioError, setBioError] = useState(false)
   const [pendingRequests, setPendingRequests] = useState(0)
 
   const fileRef = useRef<HTMLInputElement>(null)
@@ -147,12 +148,16 @@ export default function ProfilePage() {
 
   const saveBio = async () => {
     setBioLoading(true)
+    setBioError(false)
     try {
       await api.put('/auth/profile', { bio: bio.trim() || null })
       updateUser({ bio: bio.trim() || undefined })
       setBioSaved(true)
       setTimeout(() => setBioSaved(false), 2000)
-    } catch { /* ignore */ }
+    } catch {
+      setBioError(true)
+      setTimeout(() => setBioError(false), 3000)
+    }
     finally { setBioLoading(false) }
   }
 
@@ -366,7 +371,7 @@ export default function ProfilePage() {
           <button onClick={saveBio} disabled={bioLoading}
             className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-40"
             style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-            {bioSaved ? <Check size={14} /> : bioLoading ? '…' : t('profileSave')}
+            {bioSaved ? <Check size={14} /> : bioLoading ? '…' : bioError ? t('saveFailed') : t('profileSave')}
           </button>
         </div>
       </div>

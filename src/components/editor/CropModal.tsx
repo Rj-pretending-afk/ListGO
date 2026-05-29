@@ -6,7 +6,7 @@ interface Circle { cx: number; cy: number; r: number }
 
 interface CropModalProps {
   src: string
-  onConfirm: (dataUrl: string) => void
+  onConfirm: (dataUrl: string) => void | Promise<void>
   onClose: () => void
   shape?: 'rect' | 'circle'
 }

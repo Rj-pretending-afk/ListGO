@@ -64,9 +64,22 @@ export function ProfileRichEditor({ value, onChange, minHeight = 60, placeholder
     }
   }
 
+  const uploadOrEmbed = async (dataUrl: string): Promise<string> => {
+    if (user) {
+      const blob = await fetch(dataUrl).then(r => r.blob())
+      const file = new File([blob], 'image.jpg', { type: blob.type || 'image/jpeg' })
+      const { url } = await uploadApi.uploadImage(file)
+      return url
+    }
+    return resizeDataUrl(dataUrl)
+  }
+
   const handlePasteImage = async (dataUrl: string) => {
     if (imageAlreadyInserted) return
-    insertImageSrc(await resizeDataUrl(dataUrl))
+    setUploading(true)
+    try { insertImageSrc(await uploadOrEmbed(dataUrl)) }
+    catch { /* silent */ }
+    finally { setUploading(false) }
   }
 
   const handleImageClick = (img: HTMLImageElement) => setSelectedImg(img)
@@ -82,11 +95,15 @@ export function ProfileRichEditor({ value, onChange, minHeight = 60, placeholder
     setSelectedImg(null)
   }
 
-  const handleCropConfirm = (dataUrl: string) => {
+  const handleCropConfirm = async (dataUrl: string) => {
     if (!selectedImg) return
-    selectedImg.src = dataUrl
-    selectedImg.style.width = ''
-    syncContent()
+    setUploading(true)
+    try {
+      selectedImg.src = await uploadOrEmbed(dataUrl)
+      selectedImg.style.width = ''
+      syncContent()
+    } catch { /* silent */ }
+    finally { setUploading(false) }
     setShowCrop(false)
     setSelectedImg(null)
   }
