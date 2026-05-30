@@ -214,14 +214,6 @@ export function ProfileCard({ username, onClose, isPokeBack = false }: ProfileCa
                       {t('friendPendingReceived')}
                     </button>
                   )}
-                  {friendStatus === 'accepted' && (
-                    <span
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs"
-                      style={{ color: 'var(--color-primary)', opacity: 0.7 }}
-                    >
-                      {t('friendAdded')}
-                    </span>
-                  )}
                   {/* Poke */}
                   <button
                     onClick={() => void handlePoke()}
