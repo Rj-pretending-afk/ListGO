@@ -35,7 +35,7 @@ export function ModuleSettingsPicker({ background, onBgChange }: ModuleSettingsP
       const panelW = 18 * rem
       const panelMaxH = Math.min(window.innerHeight * 0.82, 600)
       const top = Math.max(8, Math.min(r.bottom + 4, window.innerHeight - panelMaxH - 8))
-      const left = Math.max(8, Math.min(r.right - panelW, window.innerWidth - panelW - 8))
+      const left = Math.max(8, Math.min(r.right - panelW, document.documentElement.clientWidth - panelW - 8))
       setPanelPos({ top, left })
     }
     setOpen(v => !v)

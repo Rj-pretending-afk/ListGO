@@ -45,7 +45,7 @@ export function StylePicker() {
             className="fixed z-[301] rounded-xl p-2"
             style={{
               top: rect.bottom + 6,
-              left: Math.min(rect.left, window.innerWidth - 220),
+              left: Math.min(rect.left, document.documentElement.clientWidth - 220),
               width: 210,
               backgroundColor: 'var(--color-card)',
               border: '1px solid var(--color-border)',

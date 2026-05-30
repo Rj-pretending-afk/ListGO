@@ -67,8 +67,8 @@ function JoinListButton() {
             className="fixed z-[301] rounded-xl shadow-xl p-3"
             style={{
               top: (btnRef.current?.getBoundingClientRect().bottom ?? 0) + 6,
-              right: window.innerWidth - (btnRef.current?.getBoundingClientRect().right ?? 0),
-              width: '18rem',
+              right: Math.max(4, document.documentElement.clientWidth - (btnRef.current?.getBoundingClientRect().right ?? document.documentElement.clientWidth)),
+              width: 'min(18rem, calc(100vw - 8px))',
               backgroundColor: 'var(--color-card)',
               border: '1px solid var(--color-border)',
             }}
@@ -117,20 +117,20 @@ function UserMenu() {
   return (
     <>
       <div className="relative flex items-center">
-        {/* Avatar — opens own ProfileCard */}
+        {/* Avatar — opens own ProfileCard (all devices) */}
         <button
           onClick={() => setProfileOpen(true)}
-          className="flex items-center justify-center rounded-full hover:opacity-80 transition-opacity"
+          className="flex items-center justify-center rounded-full hover:opacity-80 transition-opacity flex-shrink-0"
           style={{ width: 36, height: 36 }}
         >
           <AvatarDisplay user={user!} size={32} />
         </button>
 
-        {/* Name — opens settings dropdown */}
+        {/* Name + dropdown — hidden on mobile, visible on sm+ */}
         <button
           ref={btnRef}
           onClick={() => setOpen(v => !v)}
-          className="flex items-center pl-1.5 pr-2 rounded-lg hover:opacity-80 transition-opacity h-10"
+          className="hidden sm:flex items-center pl-1.5 pr-2 rounded-lg hover:opacity-80 transition-opacity h-10"
         >
           <span className="text-sm font-medium max-w-[80px] truncate" style={{ color: 'var(--color-text)' }}>
             {user!.displayName}
@@ -144,7 +144,7 @@ function UserMenu() {
               className="fixed z-[301] rounded-xl shadow-xl overflow-hidden"
               style={{
                 top: (btnRef.current?.getBoundingClientRect().bottom ?? 0) + 6,
-                right: window.innerWidth - (btnRef.current?.getBoundingClientRect().right ?? 0),
+                right: Math.max(4, document.documentElement.clientWidth - (btnRef.current?.getBoundingClientRect().right ?? document.documentElement.clientWidth)),
                 width: '10rem',
                 backgroundColor: 'var(--color-card)',
                 border: '1px solid var(--color-border)',

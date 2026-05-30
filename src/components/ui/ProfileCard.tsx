@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { X, Zap, Pencil, UserPlus, UserCheck, Clock } from 'lucide-react'
+import { X, Zap, UserPlus, UserCheck, Clock, Settings, LogOut, RefreshCw } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import { userApi, pokeApi, friendApi } from '../../lib/api'
 import { AvatarDisplay } from './AvatarDisplay'
@@ -19,6 +19,7 @@ export function ProfileCard({ username, onClose, isPokeBack = false }: ProfileCa
   const t = useT()
   const navigate = useNavigate()
   const currentUser = useAuthStore(s => s.user)
+  const logout = useAuthStore(s => s.logout)
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [pokeState, setPokeState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
@@ -151,14 +152,34 @@ export function ProfileCard({ username, onClose, isPokeBack = false }: ProfileCa
               style={{ borderTop: '1px solid var(--color-border)' }}
             >
               {profile.isSelf ? (
-                <button
-                  onClick={goToEdit}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium hover:opacity-80 transition-opacity"
-                  style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
-                >
-                  <Pencil size={12} />
-                  {t('profileEditProfile')}
-                </button>
+                <div className="flex flex-col gap-1.5 w-full">
+                  <button
+                    onClick={goToEdit}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium hover:opacity-80 transition-opacity w-full"
+                    style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}
+                  >
+                    <Settings size={12} />
+                    {t('profileSettings')}
+                  </button>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => { onClose(); logout(); navigate('/login') }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs hover:opacity-70 transition-opacity"
+                      style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)', opacity: 0.7 }}
+                    >
+                      <RefreshCw size={11} />
+                      {t('switchAccount')}
+                    </button>
+                    <button
+                      onClick={() => { onClose(); logout(); navigate('/') }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs hover:opacity-70 transition-opacity"
+                      style={{ backgroundColor: 'color-mix(in srgb, #ef4444 12%, transparent)', color: '#ef4444' }}
+                    >
+                      <LogOut size={11} />
+                      {t('logout')}
+                    </button>
+                  </div>
+                </div>
               ) : currentUser ? (
                 <>
                   {/* Friend action */}

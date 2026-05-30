@@ -117,7 +117,7 @@ export function NotificationBell() {
             className="fixed z-[301] rounded-xl shadow-xl overflow-hidden flex flex-col"
             style={{
               top: (btnRef.current?.getBoundingClientRect().bottom ?? 0) + 6,
-              right: window.innerWidth - (btnRef.current?.getBoundingClientRect().right ?? 0),
+              right: document.documentElement.clientWidth - (btnRef.current?.getBoundingClientRect().right ?? 0),
               width: '22rem',
               maxHeight: '26rem',
               ...cardStyle,

@@ -75,7 +75,7 @@ export function ImageResizeOverlay({ imgEl, onResizeEnd, onCrop, onRemove, onRes
   // Keep action bar visible within viewport; widen estimate when restore button is present
   const barWidth = hasOriginal ? 280 : 220
   const barTop = Math.min(window.innerHeight - 52, Math.max(4, rect.bottom + 6))
-  const barLeft = Math.max(4, Math.min(window.innerWidth - barWidth, rect.left))
+  const barLeft = Math.max(4, Math.min(document.documentElement.clientWidth - barWidth, rect.left))
 
   return (
     <>

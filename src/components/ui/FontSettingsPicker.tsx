@@ -31,7 +31,7 @@ export function FontSettingsPicker({ fontSettings, onFontChange }: FontSettingsP
       const panelW = 14 * rem
       const panelH = 220
       const top = Math.max(8, Math.min(r.bottom + 4, window.innerHeight - panelH - 8))
-      const left = Math.max(8, Math.min(r.left, window.innerWidth - panelW - 8))
+      const left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - panelW - 8))
       setPanelPos({ top, left })
     }
     setOpen(v => !v)

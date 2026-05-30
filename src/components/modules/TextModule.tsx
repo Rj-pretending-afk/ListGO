@@ -136,7 +136,7 @@ export function TextModule({ module, onChange, contentFontSettings, canEdit = tr
     ? {
         position: 'fixed' as const,
         top: Math.max(4, selRect.top - 48),
-        left: Math.min(window.innerWidth - 240, Math.max(4, selRect.left + selRect.width / 2 - 120)),
+        left: Math.min(document.documentElement.clientWidth - 240, Math.max(4, selRect.left + selRect.width / 2 - 120)),
         zIndex: 50,
         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
       }
